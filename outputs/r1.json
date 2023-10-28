@@ -1,0 +1,6 @@
+
+R1(config-if-range)#int range fa0/0 - 1
+R1(config-if-range)#no sh
+R1(config-if-range)#exit
+R1(config)#end
+R1#

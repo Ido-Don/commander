@@ -1,0 +1,5 @@
+int range fa0/0 - 1
+R3(config-if-range)#no sh
+R3(config-if-range)#exit
+R3(config)#end
+R3#

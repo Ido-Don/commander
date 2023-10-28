@@ -1,0 +1,21 @@
+R1# show cdp neighbor detail
+-------------------------
+Device ID: R2
+Entry address(es): 
+  IP address: 1.1.1.2
+Platform: Cisco 3725,  Capabilities: Router Switch IGMP 
+Interface: FastEthernet0/0,  Port ID (outgoing port): FastEthernet0/0
+
+Holdtime : 158 sec
+
+Version :
+Cisco IOS Software, 3700 Software (C3725-ADVENTERPRISEK9-M), Version 12.4(15)T14, RELEASE SOFTWARE (fc2)
+Technical Support: http://www.cisco.com/techsupport
+
+Copyright (c) 1986-2010 by Cisco Systems, Inc.
+
+Compiled Tue 17-Aug-10 12:08 by prod_rel_team
+
+advertisement version: 2
+VTP Management Domain: ''
+Duplex: half
