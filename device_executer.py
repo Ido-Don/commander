@@ -37,14 +37,14 @@ def execute_script(command_file_path, device_file_path, output_file_path, permis
     connect(device_options, permission_escalation)
 
 
-def escalate_permission(execute, permissions):
+def escalate_permission(callback, permissions):
     permission_escalation = None
     if permissions == "enable":
-        permission_escalation = enter_enable_mode(execute)
+        permission_escalation = enter_enable_mode(callback)
     if permissions == "configure terminal":
-        permission_escalation = enter_configure_terminal_mode(execute)
+        permission_escalation = enter_configure_terminal_mode(callback)
     if permissions == "user":
-        permission_escalation = enter_user_mode(execute)
+        permission_escalation = enter_user_mode(callback)
     return permission_escalation
 
 

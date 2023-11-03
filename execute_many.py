@@ -1,6 +1,7 @@
 import argparse
 import os
-
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from device_executer import execute_script
 
 
@@ -28,7 +29,7 @@ def get_arguments():
     return command_file_path, device_folder_path, output_folder_path, permission_level
 
 
-def get_file(folder_path):
+def get_files(folder_path):
     files = os.scandir(folder_path)
     files = filter(lambda path: os.path.isfile(path), files)
     return files
@@ -36,14 +37,21 @@ def get_file(folder_path):
 
 def main():
     command_file_path, device_folder_path, output_folder_path, permission_level = get_arguments()
-    device_files = get_file(device_folder_path)
+    device_files = get_files(device_folder_path)
     if not os.path.isdir(output_folder_path):
         os.mkdir(output_folder_path)
 
+    threads = []
     for device_file_path in device_files:
         device_file = os.path.basename(device_file_path)
         output_file_path = os.path.join(output_folder_path, device_file)
-        execute_script(command_file_path, device_file_path, output_file_path, permission_level)
+        t = threading.Thread(target=execute_script,
+                             args=(command_file_path, device_file_path, output_file_path, permission_level))
+        t.start()
+        threads.append(t)
+    for thread in threads:
+        thread.join()
+
 
 
 if __name__ == '__main__':
