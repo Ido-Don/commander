@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -29,15 +30,36 @@ def get_arguments():
     return command_file_path, device_folder_path, output_folder_path, permission_level
 
 
-def get_files(folder_path):
+def list_files_in_folder(folder_path):
     files = os.scandir(folder_path)
     files = filter(lambda path: os.path.isfile(path), files)
     return files
 
 
+def device_reader(device_file_path):
+    with open(device_file_path) as device_file:
+        device_options = json.load(device_file)
+    return device_options
+
+
+def is_valid_command(command: str):
+    if command:
+        return True
+    return False
+
+
+def commands_reader(command_file_path):
+    with open(command_file_path) as commands_file:
+        commands = commands_file.readlines()
+        commands = [command.strip("\n ") for command in commands]
+        commands = filter(lambda command: is_valid_command(command), commands)
+        commands = list(commands)
+    return commands
+
+
 def main():
     command_file_path, device_folder_path, output_folder_path, permission_level = get_arguments()
-    device_files = get_files(device_folder_path)
+    device_files = list_files_in_folder(device_folder_path)
     if not os.path.isdir(output_folder_path):
         os.mkdir(output_folder_path)
 
@@ -45,13 +67,15 @@ def main():
     for device_file_path in device_files:
         device_file = os.path.basename(device_file_path)
         output_file_path = os.path.join(output_folder_path, device_file)
+
+        commands = commands_reader(command_file_path)
+        device_options = device_reader(device_file_path)
         t = threading.Thread(target=execute_script,
-                             args=(command_file_path, device_file_path, output_file_path, permission_level))
+                             args=(commands, device_options, output_file_path, permission_level))
         t.start()
         threads.append(t)
     for thread in threads:
         thread.join()
-
 
 
 if __name__ == '__main__':

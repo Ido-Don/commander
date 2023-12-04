@@ -28,12 +28,11 @@ def enter_user_mode(callback):
     return user
 
 
-def execute_script(command_file_path, device_file_path, output_file_path, permission_level="user"):
-    commands = commands_reader(command_file_path)
-    device_options = device_reader(device_file_path)
+def execute_script(commands, device_options, output_file_path, permission_level="user"):
     write_output = handle_result(output_file_path)
     execute = execute_commands(commands, write_output)
     permission_escalation = escalate_permission(execute, permission_level)
+
     connect(device_options, permission_escalation)
 
 
@@ -48,12 +47,6 @@ def escalate_permission(callback, permissions):
     return permission_escalation
 
 
-def is_valid_command(command: str):
-    if command:
-        return True
-    return False
-
-
 def handle_result(output_file_path: str):
     def write_result(result):
         with open(output_file_path, 'w') as output_file:
@@ -66,6 +59,7 @@ def execute_commands(commands: List[str], result_callback):
     def execute(device: netmiko.BaseConnection):
         result = device.send_config_set(commands)
         result_callback(result)
+
     return execute
 
 
@@ -73,18 +67,3 @@ def connect(device_options, callback):
     device = netmiko.ConnectHandler(**device_options)
     callback(device)
     device.disconnect()
-
-
-def device_reader(device_file_path):
-    with open(device_file_path) as device_file:
-        device_options = json.load(device_file)
-    return device_options
-
-
-def commands_reader(command_file_path):
-    with open(command_file_path) as commands_file:
-        commands = commands_file.readlines()
-        commands = [command.strip("\n ") for command in commands]
-        commands = filter(lambda command: is_valid_command(command), commands)
-        commands = list(commands)
-    return commands
