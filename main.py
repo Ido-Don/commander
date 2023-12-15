@@ -1,18 +1,12 @@
 import argparse
 import concurrent.futures
-import json
-import os
-import threading
-from getpass import getpass
-
-import pykeepass
 
 import os
 
 from device_executer import execute_commands
 from src.get_devices import get_all_devices
-from src.global_variables import KEEPASS_PASSWORD, KEEPASS_DB_PATH, COMMANDER_DIRECTORY
-from src.init import init_program, create_new_keepass_db
+from src.global_variables import COMMANDER_DIRECTORY
+from src.init import is_initialized, init_program
 
 
 def get_arguments():
@@ -57,15 +51,14 @@ def handle_results(results, device_name):
 
 def main():
     command_file_path, permission_level = get_arguments()
-    commands = commands_reader(command_file_path)
-    if not os.path.isdir(COMMANDER_DIRECTORY):
+    execute_commands_on_devices(command_file_path, permission_level)
+
+
+def execute_commands_on_devices(command_file_path, permission_level):
+    if not is_initialized():
         init_program()
-
-    if not os.path.isfile(KEEPASS_DB_PATH):
-        create_new_keepass_db()
-
     devices = get_all_devices()
-
+    commands = commands_reader(command_file_path)
     max_workers = 5
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as execute_pool:
         future_to_name = {}
@@ -78,7 +71,6 @@ def main():
             try:
                 results = future.result()
                 handle_results(results, device_name)
-
             except Exception as e:
                 # Handle exceptions raised during the task execution
                 print(f"device {device_name} encountered an exception: {e}")
