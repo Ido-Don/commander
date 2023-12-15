@@ -10,7 +10,7 @@ import pykeepass
 import os
 
 from device_executer import execute_commands
-from src.get_devices import get_devices
+from src.get_devices import get_all_devices
 from src.global_variables import KEEPASS_PASSWORD, KEEPASS_DB_PATH, COMMANDER_DIRECTORY
 from src.init import init_program, create_new_keepass_db
 
@@ -64,7 +64,7 @@ def main():
     if not os.path.isfile(KEEPASS_DB_PATH):
         create_new_keepass_db()
 
-    devices = get_devices()
+    devices = get_all_devices()
 
     max_workers = 5
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as execute_pool:
