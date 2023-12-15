@@ -1,69 +1,67 @@
-import json
-from typing import List
+from typing import List, Literal
+
 import netmiko
 
 
-def enter_enable_mode(callback):
-    def enable(device: netmiko.BaseConnection):
-        device.enable()
-        callback(device)
-
-    return enable
-
-
-def enter_configure_terminal_mode(callback):
-    def configure_terminal(device: netmiko.BaseConnection):
-        device.enable()
-        device.config_mode()
-        callback(device)
-
-    return configure_terminal
-
-
-def enter_user_mode(callback):
-    def user(device: netmiko.BaseConnection):
-        device.exit_enable_mode()
-        callback(device)
-
-    return user
-
-
-def execute_script(commands, device_options, output_file_path, permission_level="user"):
-    write_output = handle_result(output_file_path)
-    execute = execute_commands(commands, write_output)
-    permission_escalation = escalate_permission(execute, permission_level)
-
-    connect(device_options, permission_escalation)
+def change_permission(device: netmiko.BaseConnection, permission_level: str):
+    is_in_config_mode = device.check_config_mode()
+    is_in_enable_mode = device.check_enable_mode()
+    if permission_level == "enable":
+        if is_in_config_mode:
+            device.exit_config_mode()
+        elif not is_in_enable_mode:
+            device.enable()
+        return
+    if permission_level == 'user':
+        if is_in_enable_mode:
+            device.exit_enable_mode()
+        elif is_in_config_mode:
+            device.exit_config_mode()
+            device.exit_enable_mode()
+        return
+    if permission_level == "configure terminal":
+        if is_in_enable_mode:
+            device.config_mode()
+        else:
+            device.enable()
+            device.config_mode()
+        return
 
 
-def escalate_permission(callback, permissions):
-    permission_escalation = None
-    if permissions == "enable":
-        permission_escalation = enter_enable_mode(callback)
-    if permissions == "configure terminal":
-        permission_escalation = enter_configure_terminal_mode(callback)
-    if permissions == "user":
-        permission_escalation = enter_user_mode(callback)
-    return permission_escalation
+def execute_commands(device_options: dict, commands: List[str], permission_level: str) -> str:
+    output = ""
+    with Connection(device_options) as device:
+        change_permission(device, permission_level)
+        if permission_level in ["user", "enable"]:
+            output = gather_output(device, commands)
+        elif permission_level in ["configure terminal"]:
+            output = send_config_commands(device, commands)
+    return output
 
 
-def handle_result(output_file_path: str):
-    def write_result(result):
-        with open(output_file_path, 'w') as output_file:
-            output_file.write(result)
-
-    return write_result
-
-
-def execute_commands(commands: List[str], result_callback):
-    def execute(device: netmiko.BaseConnection):
-        result = device.send_config_set(commands)
-        result_callback(result)
-
-    return execute
+def gather_output(device: netmiko.BaseConnection, commands: List[str]) -> str:
+    output = ""
+    for command in commands:
+        output += device.find_prompt()
+        output += command
+        output += device.send_command(command)
+    return output
 
 
-def connect(device_options, callback):
-    device = netmiko.ConnectHandler(**device_options)
-    callback(device)
-    device.disconnect()
+def send_config_commands(device: netmiko.BaseConnection, commands: List[str]) -> str:
+    output = ""
+    output += device.find_prompt()
+    output += device.send_config_set(commands)
+    return output
+
+
+class Connection:
+    def __init__(self, device_options):
+        self._device_options = device_options
+
+    def __enter__(self) -> netmiko.BaseConnection:
+        self._device = netmiko.ConnectHandler(**self._device_options)
+        return self._device
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._device.disconnect()
