@@ -1,5 +1,0 @@
-{
-  "device_type": "cisco_ios_telnet",
-  "host": "localhost",
-  "port": 5003
-}

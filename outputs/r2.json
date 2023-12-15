@@ -1,5 +1,0 @@
-int range fa0/0 - 1
-R2(config-if-range)#no sh
-R2(config-if-range)#exit
-R2(config)#end
-R2#
