@@ -14,6 +14,23 @@ def get_all_devices():
     return devices
 
 
+def does_device_exist(device_name):
+    kp = pykeepass.PyKeePass(KEEPASS_DB_PATH, password=KEEPASS_PASSWORD)
+    device_group = kp.find_groups(name="devices")[0]
+    return device_name in [device.title for device in device_group.entries]
+
+
+def insert_device(device_name, username, password, device_options):
+    if does_device_exist(device_name):
+        raise Exception(f"{device_name} already exist in db")
+
+    kp = pykeepass.PyKeePass(KEEPASS_DB_PATH, password=KEEPASS_PASSWORD)
+    device_group = kp.find_groups(name="devices")[0]
+    new_entry = kp.add_entry(device_group, device_name, username, password)
+    for key, val in device_options.items():
+        new_entry.set_custom_property(key, val, True)
+
+
 def get_device_options(device: pykeepass.Entry):
     device_options = {**device.custom_properties}
     username = device.username
