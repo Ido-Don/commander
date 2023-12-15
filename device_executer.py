@@ -44,7 +44,9 @@ def gather_output(device: netmiko.BaseConnection, commands: List[str]) -> str:
     for command in commands:
         output += device.find_prompt()
         output += command
+        output += '\n'
         output += device.send_command(command)
+        output += '\n'
     return output
 
 
