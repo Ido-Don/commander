@@ -4,7 +4,7 @@ import concurrent.futures
 import os
 
 from device_executer import execute_commands
-from src.get_devices import get_all_devices
+from src.device import get_all_devices
 from src.global_variables import COMMANDER_DIRECTORY
 from src.init import is_initialized, init_program
 
