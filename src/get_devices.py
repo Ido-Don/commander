@@ -3,7 +3,7 @@ from pykeepass import pykeepass
 from src.global_variables import KEEPASS_DB_PATH, KEEPASS_PASSWORD
 
 
-def get_devices():
+def get_all_devices():
     kp = pykeepass.PyKeePass(KEEPASS_DB_PATH, password=KEEPASS_PASSWORD)
     device_group = kp.find_groups(name="devices")[0]
     devices = {}
