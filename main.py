@@ -10,20 +10,6 @@ from src.init import is_initialized, init_program
 
 MAX_WORKERS = 5
 
-def get_arguments():
-    arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("commands_file",
-                            help="the file path for commands, default is 'commands.txt' under the current working "
-                                 "directory",
-                            default="commands.txt")
-    arg_parser.add_argument("-p", "--permission-level",
-                            help="execute the commands in which permission level - user, enable or configure terminal",
-                            default="enable", type=str)
-    arguments = arg_parser.parse_args()
-    command_file_path = arguments.commands_file
-    permission_level = arguments.permission_level
-    return command_file_path, permission_level
-
 
 def is_valid_command(command: str):
     if command:
@@ -50,9 +36,65 @@ def handle_results(results, device_name):
     print(f"{results}")
 
 
+def list_devices(subparsers):
+    deploy = subparsers.add_parser(
+        "deploy",
+        help="deploy the commands in the commands file to devices stored in .commander"
+    )
+    deploy.add_argument(
+        "commands_file",
+        help="the file path for commands"
+    )
+    deploy.add_argument(
+        "-p",
+        "--permission-level",
+        help="execute the commands in permission level - 'user', 'enable' or 'configure terminal'",
+        default="user",
+        type=str
+    )
+
+
+
 def main():
-    command_file_path, permission_level = get_arguments()
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(
+        title="command multiple network devices",
+        dest="subcommand",
+        help="Available subcommands"
+    )
+
+    deploy_subcommand(subparsers)
+
+    list_devices(subparsers)
+    args = parser.parse_args()
+    if args.subcommand == "deploy":
+        deploy(args)
+    else:
+        parser.print_help()
+
+
+def deploy(args):
+    command_file_path = args.commands_file
+    permission_level = args.permission_level
     execute_commands_on_devices(command_file_path, permission_level)
+
+
+def create_subcommand(subparsers):
+    deploy_subcommand = subparsers.add_parser(
+        "deploy",
+        help="deploy the commands in the commands file to devices stored in .commander"
+    )
+    deploy_subcommand.add_argument(
+        "commands_file",
+        help="the file path for commands"
+    )
+    deploy_subcommand.add_argument(
+        "-p",
+        "--permission-level",
+        help="execute the commands in permission level - 'user', 'enable' or 'configure terminal'",
+        default="user",
+        type=str
+    )
 
 
 def execute_commands_on_devices(command_file_path, permission_level):
