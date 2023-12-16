@@ -1,12 +1,14 @@
+from typing import Dict
+
 from pydantic import BaseModel
 from pykeepass import pykeepass
 
 
 class DeviceEntry(BaseModel):
-    device_name: str
+    name: str
     username: str
     password: str
-    device_options: dict[str: str]
+    device_options: Dict[str, str]
 
 
 def get_all_devices(kp):
@@ -26,7 +28,7 @@ def does_device_exist(device_name, keepass_db_path, keepass_password):
 
 
 def add_device_entry(device_entry: DeviceEntry, db_path, keepass_password):
-    entry_title = device_entry.device_name
+    entry_title = device_entry.name
     if does_device_exist(entry_title, db_path, keepass_password):
         raise Exception(f"{entry_title} already exist in db")
 
