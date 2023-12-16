@@ -5,9 +5,10 @@ import os
 
 from device_executer import execute_commands
 from src.device import get_all_devices
-from src.global_variables import COMMANDER_DIRECTORY
+from src.global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH, KEEPASS_PASSWORD
 from src.init import is_initialized, init_program
 
+MAX_WORKERS = 5
 
 def get_arguments():
     arg_parser = argparse.ArgumentParser()
@@ -55,12 +56,11 @@ def main():
 
 
 def execute_commands_on_devices(command_file_path, permission_level):
-    if not is_initialized():
-        init_program()
-    devices = get_all_devices()
+    if not is_initialized(KEEPASS_DB_PATH, KEEPASS_PASSWORD):
+        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, KEEPASS_PASSWORD)
+    devices = get_all_devices(KEEPASS_DB_PATH, KEEPASS_PASSWORD)
     commands = commands_reader(command_file_path)
-    max_workers = 5
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as execute_pool:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as execute_pool:
         future_to_name = {}
         for device_name, device_options in devices.items():
             future = execute_pool.submit(execute_commands, device_options, commands, permission_level)
