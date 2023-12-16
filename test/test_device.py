@@ -34,7 +34,8 @@ def create_new_test_db():
                 "username": "",
                 "password": "",
                 "device_options": {}
-            }, True
+            },
+            True
     )
 ])
 def test_insert_device(create_new_test_db, device, expectation):
