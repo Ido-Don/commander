@@ -36,41 +36,11 @@ def handle_results(results, device_name):
     print(f"{results}")
 
 
-def list_devices(subparsers):
-    deploy = subparsers.add_parser(
-        "deploy",
+def create_list_devices_subcommand(subparsers):
+    subparsers.add_parser(
+        "list_devices",
         help="deploy the commands in the commands file to devices stored in .commander"
     )
-    deploy.add_argument(
-        "commands_file",
-        help="the file path for commands"
-    )
-    deploy.add_argument(
-        "-p",
-        "--permission-level",
-        help="execute the commands in permission level - 'user', 'enable' or 'configure terminal'",
-        default="user",
-        type=str
-    )
-
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(
-        title="command multiple network devices",
-        dest="subcommand",
-        help="Available subcommands"
-    )
-
-    deploy_subcommand(subparsers)
-
-    list_devices(subparsers)
-    args = parser.parse_args()
-    if args.subcommand == "deploy":
-        deploy(args)
-    else:
-        parser.print_help()
 
 
 def deploy(args):
@@ -79,7 +49,7 @@ def deploy(args):
     execute_commands_on_devices(command_file_path, permission_level)
 
 
-def create_subcommand(subparsers):
+def create_deploy_subcommand(subparsers):
     deploy_subcommand = subparsers.add_parser(
         "deploy",
         help="deploy the commands in the commands file to devices stored in .commander"
@@ -116,6 +86,39 @@ def execute_commands_on_devices(command_file_path, permission_level):
             except Exception as e:
                 # Handle exceptions raised during the task execution
                 print(f"device {device_name} encountered an exception: {e}")
+
+
+def create_add_device_subcommand(subparsers):
+    subparser = subparsers.add_parser(
+        "add_device",
+        help="deploy the commands in the commands file to devices stored in .commander"
+    )
+    subparser.add_argument(
+        "-f",
+        "--file",
+        help="add a device from file",
+        required=False
+    )
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(
+        title="connect and manage multiple network devices",
+        dest="subcommand",
+        help="Available subcommands"
+    )
+
+    create_deploy_subcommand(subparsers)
+
+    create_list_devices_subcommand(subparsers)
+
+    create_add_device_subcommand(subparsers)
+    args = parser.parse_args()
+    if args.subcommand == "deploy":
+        deploy(args)
+    else:
+        parser.print_help()
 
 
 if __name__ == '__main__':
