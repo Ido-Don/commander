@@ -1,5 +1,4 @@
 from typing import Dict
-
 from pydantic import BaseModel
 from pykeepass import pykeepass
 
@@ -11,7 +10,8 @@ class DeviceEntry(BaseModel):
     device_options: Dict[str, str]
 
 
-def get_all_devices(kp):
+def get_all_devices(keepass_db_path, keepass_password):
+    kp = pykeepass.PyKeePass(keepass_db_path, password=keepass_password)
     device_group = kp.find_groups(name="devices")[0]
     devices = {}
     for device in device_group.entries:
