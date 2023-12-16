@@ -1,10 +1,15 @@
+from pydantic import BaseModel
 from pykeepass import pykeepass
 
-from src.global_variables import KEEPASS_DB_PATH, KEEPASS_PASSWORD
+
+class DeviceEntry(BaseModel):
+    device_name: str
+    username: str
+    password: str
+    device_options: dict[str: str]
 
 
-def get_all_devices():
-    kp = pykeepass.PyKeePass(KEEPASS_DB_PATH, password=KEEPASS_PASSWORD)
+def get_all_devices(kp):
     device_group = kp.find_groups(name="devices")[0]
     devices = {}
     for device in device_group.entries:
@@ -14,30 +19,37 @@ def get_all_devices():
     return devices
 
 
-def does_device_exist(device_name):
-    kp = pykeepass.PyKeePass(KEEPASS_DB_PATH, password=KEEPASS_PASSWORD)
+def does_device_exist(device_name, keepass_db_path, keepass_password):
+    kp = pykeepass.PyKeePass(keepass_db_path, password=keepass_password)
     device_group = kp.find_groups(name="devices")[0]
     return device_name in [device.title for device in device_group.entries]
 
 
-def insert_device(device_name, username, password, device_options):
-    if does_device_exist(device_name):
-        raise Exception(f"{device_name} already exist in db")
+def add_device_entry(device_entry: DeviceEntry, db_path, keepass_password):
+    entry_title = device_entry.device_name
+    if does_device_exist(entry_title, db_path, keepass_password):
+        raise Exception(f"{entry_title} already exist in db")
 
-    kp = pykeepass.PyKeePass(KEEPASS_DB_PATH, password=KEEPASS_PASSWORD)
+    kp = pykeepass.PyKeePass(db_path, password=keepass_password)
     device_group = kp.find_groups(name="devices")[0]
-    new_entry = kp.add_entry(device_group, device_name, username, password)
-    for key, val in device_options.items():
+
+    username = device_entry.username
+    password = device_entry.password
+    new_entry = kp.add_entry(device_group, entry_title, username, password)
+
+    optional_data = device_entry.device_options
+    for key, val in optional_data.items():
         new_entry.set_custom_property(key, val, True)
+    kp.save()
 
 
-def get_device_options(device: pykeepass.Entry):
-    device_options = {**device.custom_properties}
-    username = device.username
+def get_device_options(entry: pykeepass.Entry):
+    device_options = {**entry.custom_properties}
+    username = entry.username
     if username:
         device_options["username"] = username
 
-    password = device.password
+    password = entry.password
     if password:
         device_options["password"] = password
     return device_options
