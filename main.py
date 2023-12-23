@@ -1,7 +1,9 @@
 import argparse
 import concurrent.futures
-
+import logging
 import os
+import sys
+import yaml
 
 from device_executer import execute_commands
 from src.device import get_all_devices
@@ -9,6 +11,11 @@ from src.global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH, KEEPASS_P
 from src.init import is_initialized, init_program
 
 MAX_WORKERS = 5
+logger = logging.Logger("commander")
+logging.basicConfig(level=logging.INFO)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel("INFO")
+logger.addHandler(handler)
 
 
 def is_valid_command(command: str):
@@ -30,10 +37,10 @@ def handle_results(results, device_name):
     outputs_folder = os.path.join(COMMANDER_DIRECTORY, 'ouputs')
     if not os.path.isdir(outputs_folder):
         os.mkdir(outputs_folder)
-    with open(os.path.join(outputs_folder, device_name + ".txt"), 'w+') as f:
+    device_output_txt_file = os.path.join(outputs_folder, device_name + ".txt")
+    with open(device_output_txt_file, 'w+') as f:
         f.write(results)
-    print(f"results: ")
-    print(f"{results}")
+    logger.info(f'saved results in "{device_output_txt_file}"')
 
 
 def create_list_devices_subcommand(subparsers):
@@ -76,7 +83,7 @@ def execute_commands_on_devices(command_file_path, permission_level):
         future_to_name = {}
         for device_name, device_options in devices.items():
             future = execute_pool.submit(execute_commands, device_options, commands, permission_level)
-            future_to_name[future] = device_name
+            future_to_name[future] = device_nameq
 
         for future in concurrent.futures.as_completed(future_to_name.keys()):
             device_name = future_to_name[future]
@@ -85,7 +92,7 @@ def execute_commands_on_devices(command_file_path, permission_level):
                 handle_results(results, device_name)
             except Exception as e:
                 # Handle exceptions raised during the task execution
-                print(f"device {device_name} encountered an exception: {e}")
+                logger.error(f"device {device_name} encountered an exception: {e}")
 
 
 def create_add_device_subcommand(subparsers):
@@ -99,6 +106,14 @@ def create_add_device_subcommand(subparsers):
         help="add a device from file",
         required=False
     )
+
+
+def list_devices(args):
+    if not is_initialized(KEEPASS_DB_PATH, KEEPASS_PASSWORD):
+        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, KEEPASS_PASSWORD)
+    devices = get_all_devices(KEEPASS_DB_PATH, KEEPASS_PASSWORD)
+    formatted_string = yaml.dump(devices)
+    logger.info(formatted_string)
 
 
 def main():
@@ -117,6 +132,8 @@ def main():
     args = parser.parse_args()
     if args.subcommand == "deploy":
         deploy(args)
+    if args.subcommand == "list_devices":
+        list_devices(args)
     else:
         parser.print_help()
 
