@@ -6,7 +6,7 @@ import sys
 import yaml
 
 from device_executer import execute_commands
-from src.device import get_all_devices
+from src.device import get_all_devices, DeviceEntry, add_device_entry
 from src.global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH, KEEPASS_PASSWORD
 from src.init import is_initialized, init_program
 
@@ -83,7 +83,7 @@ def execute_commands_on_devices(command_file_path, permission_level):
         future_to_name = {}
         for device_name, device_options in devices.items():
             future = execute_pool.submit(execute_commands, device_options, commands, permission_level)
-            future_to_name[future] = device_nameq
+            future_to_name[future] = device_name
 
         for future in concurrent.futures.as_completed(future_to_name.keys()):
             device_name = future_to_name[future]
@@ -116,6 +116,47 @@ def list_devices(args):
     logger.info(formatted_string)
 
 
+def retrieve_device_from_file(file):
+    return retrieve_device_from_input()
+
+
+def retrieve_device_from_input():
+    return {
+        "name": "r2",
+        "username": "",
+        "password": "",
+        "device_options": {
+            "host": "127.0.0.1",
+            "port": "5002",
+            "device_type": "cisco_ios"
+        }
+    }
+
+
+def clear_device(device):
+    if device:
+        return True
+    return False
+
+
+def recruit_device(args):
+    if not is_initialized(KEEPASS_DB_PATH, KEEPASS_PASSWORD):
+        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, KEEPASS_PASSWORD)
+
+    file = args.file
+    if file:
+        device = retrieve_device_from_file(file)
+    else:
+        device = retrieve_device_from_input()
+
+    if not clear_device(device):
+        logger.error(f"the device {device} is not properly formatted")
+        return
+
+    device_entry = DeviceEntry(**device)
+    add_device_entry(device_entry, KEEPASS_DB_PATH, KEEPASS_PASSWORD)
+
+
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(
@@ -132,8 +173,10 @@ def main():
     args = parser.parse_args()
     if args.subcommand == "deploy":
         deploy(args)
-    if args.subcommand == "list_devices":
+    elif args.subcommand == "list_devices":
         list_devices(args)
+    elif args.subcommand == "add_device":
+        recruit_device(args)
     else:
         parser.print_help()
 

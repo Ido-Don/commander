@@ -16,6 +16,7 @@ def get_all_devices(keepass_db_path, keepass_password):
     devices = {}
     for device in device_group.entries:
         device_options = get_device_options(device)
+
         device_title = device.title
         devices[device_title] = device_options
     return devices
