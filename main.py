@@ -95,9 +95,9 @@ def execute_commands_on_devices(command_file_path, permission_level):
                 logger.error(f"device {device_name} encountered an exception: {e}")
 
 
-def create_add_device_subcommand(subparsers):
+def create_recruit_device_subcommand(subparsers):
     subparser = subparsers.add_parser(
-        "add_device",
+        "recruit_device",
         help="deploy the commands in the commands file to devices stored in .commander"
     )
     subparser.add_argument(
@@ -169,13 +169,13 @@ def main():
 
     create_list_devices_subcommand(subparsers)
 
-    create_add_device_subcommand(subparsers)
+    create_recruit_device_subcommand(subparsers)
     args = parser.parse_args()
     if args.subcommand == "deploy":
         deploy(args)
     elif args.subcommand == "list_devices":
         list_devices(args)
-    elif args.subcommand == "add_device":
+    elif args.subcommand == "recrute_device":
         recruit_device(args)
     else:
         parser.print_help()
