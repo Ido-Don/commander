@@ -3,11 +3,14 @@ import concurrent.futures
 import logging
 import os
 import sys
-import yaml
+from getpass import getpass
+from typing import Annotated, Optional
 
+import yaml
+import typer
 from device_executer import execute_commands
 from src.device import get_all_devices, DeviceEntry, add_device_entry
-from src.global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH, KEEPASS_PASSWORD
+from src.global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
 from src.init import is_initialized, init_program
 
 MAX_WORKERS = 5
@@ -16,6 +19,8 @@ logging.basicConfig(level=logging.INFO)
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel("INFO")
 logger.addHandler(handler)
+
+app = typer.Typer()
 
 
 def is_valid_command(command: str):
@@ -50,10 +55,9 @@ def create_list_devices_subcommand(subparsers):
     )
 
 
-def deploy(args):
-    command_file_path = args.commands_file
-    permission_level = args.permission_level
-    execute_commands_on_devices(command_file_path, permission_level)
+@app.command()
+def deploy(command_file: str, permission_level: str = "user"):
+    execute_commands_on_devices(command_file, permission_level)
 
 
 def create_deploy_subcommand(subparsers):
@@ -75,9 +79,10 @@ def create_deploy_subcommand(subparsers):
 
 
 def execute_commands_on_devices(command_file_path, permission_level):
-    if not is_initialized(KEEPASS_DB_PATH, KEEPASS_PASSWORD):
-        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, KEEPASS_PASSWORD)
-    devices = get_all_devices(KEEPASS_DB_PATH, KEEPASS_PASSWORD)
+    keepass_password = getpass("enter keepass database master password: ")
+    if not is_initialized(KEEPASS_DB_PATH, keepass_password):
+        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, keepass_password)
+    devices = get_all_devices(KEEPASS_DB_PATH, keepass_password)
     commands = commands_reader(command_file_path)
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as execute_pool:
         future_to_name = {}
@@ -108,10 +113,12 @@ def create_recruit_device_subcommand(subparsers):
     )
 
 
-def list_devices(args):
-    if not is_initialized(KEEPASS_DB_PATH, KEEPASS_PASSWORD):
-        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, KEEPASS_PASSWORD)
-    devices = get_all_devices(KEEPASS_DB_PATH, KEEPASS_PASSWORD)
+@app.command()
+def list_devices():
+    keepass_password = getpass("enter keepass database master password: ")
+    if not is_initialized(KEEPASS_DB_PATH, keepass_password):
+        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, keepass_password)
+    devices = get_all_devices(KEEPASS_DB_PATH, keepass_password)
     formatted_string = yaml.dump(devices)
     logger.info(formatted_string)
 
@@ -122,7 +129,7 @@ def retrieve_device_from_file(file):
 
 def retrieve_device_from_input():
     return {
-        "name": "r2",
+        "name": "123123",
         "username": "",
         "password": "",
         "device_options": {
@@ -139,11 +146,12 @@ def clear_device(device):
     return False
 
 
-def recruit_device(args):
-    if not is_initialized(KEEPASS_DB_PATH, KEEPASS_PASSWORD):
-        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, KEEPASS_PASSWORD)
+@app.command()
+def recruit_device(file: Annotated[Optional[str], typer.Argument()] = None):
+    keepass_password = getpass("enter keepass database master password: ")
+    if not is_initialized(KEEPASS_DB_PATH, keepass_password):
+        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, keepass_password)
 
-    file = args.file
     if file:
         device = retrieve_device_from_file(file)
     else:
@@ -154,31 +162,12 @@ def recruit_device(args):
         return
 
     device_entry = DeviceEntry(**device)
-    add_device_entry(device_entry, KEEPASS_DB_PATH, KEEPASS_PASSWORD)
+    add_device_entry(device_entry, KEEPASS_DB_PATH, keepass_password)
+    logger.info("added device to database")
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(
-        title="connect and manage multiple network devices",
-        dest="subcommand",
-        help="Available subcommands"
-    )
-
-    create_deploy_subcommand(subparsers)
-
-    create_list_devices_subcommand(subparsers)
-
-    create_recruit_device_subcommand(subparsers)
-    args = parser.parse_args()
-    if args.subcommand == "deploy":
-        deploy(args)
-    elif args.subcommand == "list_devices":
-        list_devices(args)
-    elif args.subcommand == "recrute_device":
-        recruit_device(args)
-    else:
-        parser.print_help()
+    app()
 
 
 if __name__ == '__main__':
