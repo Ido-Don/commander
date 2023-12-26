@@ -1,4 +1,3 @@
-import argparse
 import concurrent.futures
 import logging
 import os
@@ -6,8 +5,9 @@ import sys
 from getpass import getpass
 from typing import Annotated, Optional
 
-import yaml
 import typer
+import yaml
+
 from device_executer import execute_commands
 from src.device import get_all_devices, DeviceEntry, add_device_entry
 from src.global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
@@ -48,34 +48,9 @@ def handle_results(results, device_name):
     logger.info(f'saved results in "{device_output_txt_file}"')
 
 
-def create_list_devices_subcommand(subparsers):
-    subparsers.add_parser(
-        "list_devices",
-        help="deploy the commands in the commands file to devices stored in .commander"
-    )
-
-
 @app.command()
 def deploy(command_file: str, permission_level: str = "user"):
     execute_commands_on_devices(command_file, permission_level)
-
-
-def create_deploy_subcommand(subparsers):
-    deploy_subcommand = subparsers.add_parser(
-        "deploy",
-        help="deploy the commands in the commands file to devices stored in .commander"
-    )
-    deploy_subcommand.add_argument(
-        "commands_file",
-        help="the file path for commands"
-    )
-    deploy_subcommand.add_argument(
-        "-p",
-        "--permission-level",
-        help="execute the commands in permission level - 'user', 'enable' or 'configure terminal'",
-        default="user",
-        type=str
-    )
 
 
 def execute_commands_on_devices(command_file_path, permission_level):
@@ -100,19 +75,6 @@ def execute_commands_on_devices(command_file_path, permission_level):
                 logger.error(f"device {device_name} encountered an exception: {e}")
 
 
-def create_recruit_device_subcommand(subparsers):
-    subparser = subparsers.add_parser(
-        "recruit_device",
-        help="deploy the commands in the commands file to devices stored in .commander"
-    )
-    subparser.add_argument(
-        "-f",
-        "--file",
-        help="add a device from file",
-        required=False
-    )
-
-
 @app.command()
 def list_devices():
     keepass_password = getpass("enter keepass database master password: ")
@@ -129,7 +91,7 @@ def retrieve_device_from_file(file):
 
 def retrieve_device_from_input():
     return {
-        "name": "123123",
+        "name": "12q3123",
         "username": "",
         "password": "",
         "device_options": {
@@ -162,6 +124,7 @@ def recruit_device(file: Annotated[Optional[str], typer.Argument()] = None):
         return
 
     device_entry = DeviceEntry(**device)
+
     add_device_entry(device_entry, KEEPASS_DB_PATH, keepass_password)
     logger.info("added device to database")
 
