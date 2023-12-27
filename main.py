@@ -1,6 +1,4 @@
-import concurrent.futures
 import logging
-import os
 import sys
 from getpass import getpass
 from typing import Annotated, Optional
@@ -8,12 +6,11 @@ from typing import Annotated, Optional
 import typer
 import yaml
 
-from device_executer import execute_commands
+from src.deploy import deploy_commands_on_devices
 from src.device import get_all_devices, DeviceEntry, add_device_entry
 from src.global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
 from src.init import is_initialized, init_program
 
-MAX_WORKERS = 5
 logger = logging.Logger("commander")
 logging.basicConfig(level=logging.INFO)
 handler = logging.StreamHandler(sys.stdout)
@@ -23,66 +20,24 @@ logger.addHandler(handler)
 app = typer.Typer()
 
 
-def is_valid_command(command: str):
-    if command:
-        return True
-    return False
-
-
-def commands_reader(command_file_path):
-    with open(command_file_path) as commands_file:
-        commands = commands_file.readlines()
-        commands = [command.strip("\n ") for command in commands]
-        commands = filter(lambda command: is_valid_command(command), commands)
-        commands = list(commands)
-    return commands
-
-
-def handle_results(results, device_name):
-    outputs_folder = os.path.join(COMMANDER_DIRECTORY, 'ouputs')
-    if not os.path.isdir(outputs_folder):
-        os.mkdir(outputs_folder)
-    device_output_txt_file = os.path.join(outputs_folder, device_name + ".txt")
-    with open(device_output_txt_file, 'w+') as f:
-        f.write(results)
-    logger.info(f'saved results in "{device_output_txt_file}"')
-
-
-@app.command()
+@app.command(help="deploy command to all the devices in your database")
 def deploy(command_file: str, permission_level: str = "user"):
-    execute_commands_on_devices(command_file, permission_level)
+    deploy_commands_on_devices(command_file, permission_level)
 
 
-def execute_commands_on_devices(command_file_path, permission_level):
-    keepass_password = getpass("enter keepass database master password: ")
-    if not is_initialized(KEEPASS_DB_PATH, keepass_password):
-        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, keepass_password)
-    devices = get_all_devices(KEEPASS_DB_PATH, keepass_password)
-    commands = commands_reader(command_file_path)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as execute_pool:
-        future_to_name = {}
-        for device_name, device_options in devices.items():
-            future = execute_pool.submit(execute_commands, device_options, commands, permission_level)
-            future_to_name[future] = device_name
-
-        for future in concurrent.futures.as_completed(future_to_name.keys()):
-            device_name = future_to_name[future]
-            try:
-                results = future.result()
-                handle_results(results, device_name)
-            except Exception as e:
-                # Handle exceptions raised during the task execution
-                logger.error(f"device {device_name} encountered an exception: {e}")
-
-
-@app.command()
+@app.command(name="list", help="list all the devices in your command")
 def list_devices():
     keepass_password = getpass("enter keepass database master password: ")
-    if not is_initialized(KEEPASS_DB_PATH, keepass_password):
-        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, keepass_password)
-    devices = get_all_devices(KEEPASS_DB_PATH, keepass_password)
-    formatted_string = yaml.dump(devices)
-    logger.info(formatted_string)
+    device_list = get_device_list(keepass_password, KEEPASS_DB_PATH, COMMANDER_DIRECTORY)
+    logger.info(device_list)
+
+
+def get_device_list(keepass_password, keepass_db_path, commander_directory):
+    if not is_initialized(keepass_db_path, keepass_password):
+        init_program(commander_directory, keepass_db_path, keepass_password)
+    devices = get_all_devices(keepass_db_path, keepass_password)
+    formatted_device_list = yaml.dump(devices)
+    return formatted_device_list
 
 
 def retrieve_device_from_file(file):
@@ -108,17 +63,17 @@ def clear_device(device):
     return False
 
 
-@app.command()
-def recruit_device(file: Annotated[Optional[str], typer.Argument()] = None):
+@app.command(help="add a device to the list of devices")
+def recruit(file: Annotated[Optional[str], typer.Argument()] = None):
     keepass_password = getpass("enter keepass database master password: ")
     if not is_initialized(KEEPASS_DB_PATH, keepass_password):
         init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, keepass_password)
 
+    device = None
     if file:
         device = retrieve_device_from_file(file)
     else:
         device = retrieve_device_from_input()
-
     if not clear_device(device):
         logger.error(f"the device {device} is not properly formatted")
         return
