@@ -1,24 +1,20 @@
 import concurrent.futures
 import os
+from typing import List
 
 from device_executer import execute_commands
 from main import logger
 from src.device import get_all_devices, DataBase
 from src.global_variables import KEEPASS_DB_PATH, COMMANDER_DIRECTORY
-from src.init import is_initialized
 
 MAX_WORKERS = 10
 
 
-def deploy_commands_on_devices(command_file_path, permission_level):
-    if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
-        logger.error("program is not initialized! please run commander init!")
-        return
+def deploy_commands_on_devices(commands: List[str], permission_level):
 
     with DataBase(KEEPASS_DB_PATH) as kp:
         devices = get_all_devices(kp)
 
-    commands = commands_reader(command_file_path)
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as execute_pool:
         future_to_name = {}
         for device_name, device_options in devices.items():
@@ -35,15 +31,6 @@ def deploy_commands_on_devices(command_file_path, permission_level):
                 logger.error(f"device {device_name} encountered an exception: {e}")
 
 
-def commands_reader(command_file_path):
-    with open(command_file_path) as commands_file:
-        commands = commands_file.readlines()
-        commands = [command.strip("\n ") for command in commands]
-        commands = filter(lambda command: is_valid_command(command), commands)
-        commands = list(commands)
-    return commands
-
-
 def handle_results(results, device_name):
     outputs_folder = os.path.join(COMMANDER_DIRECTORY, 'ouputs')
     if not os.path.isdir(outputs_folder):
@@ -54,7 +41,3 @@ def handle_results(results, device_name):
     logger.info(f'saved results in "{device_output_txt_file}"')
 
 
-def is_valid_command(command: str):
-    if command:
-        return True
-    return False

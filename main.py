@@ -21,9 +21,29 @@ app = typer.Typer()
 device_entry_type: TypeAlias = dict[str, str | dict[str, str]]
 
 
+def commands_reader(command_file_path):
+    with open(command_file_path) as commands_file:
+        commands = commands_file.readlines()
+        commands = [command.strip("\n ") for command in commands]
+        commands = filter(lambda command: is_valid_command(command), commands)
+        commands = list(commands)
+    return commands
+
+
+def is_valid_command(command: str):
+    if command:
+        return True
+    return False
+
+
 @app.command(help="deploy command to all the devices in your database")
 def deploy(command_file: str, permission_level: str = "user"):
-    deploy_commands_on_devices(command_file, permission_level)
+    if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
+        logger.error("program is not initialized! please run commander init!")
+        return
+
+    commands = commands_reader(command_file)
+    deploy_commands_on_devices(commands, permission_level)
 
 
 @app.command(name="list", help="list all the devices in your command")
