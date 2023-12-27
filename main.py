@@ -53,9 +53,10 @@ def deploy(command_file: str, permission_level: str = "user"):
 @app.command(name="list", help="list all the devices in your command")
 def list_devices():
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
-        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH)
-    with DataBase(KEEPASS_DB_PATH) as kp:
-        device_list = get_device_list(kp)
+        logger.error("program is not initialized! please run commander init!")
+        return
+
+    device_list = get_device_list(KEEPASS_DB_PATH)
     logger.info(device_list)
 
 
