@@ -18,6 +18,8 @@ handler.setLevel("INFO")
 logger.addHandler(handler)
 
 app = typer.Typer()
+
+
 device_entry_type: TypeAlias = dict[str, str | dict[str, str]]
 
 
@@ -31,9 +33,11 @@ def commands_reader(command_file_path):
 
 
 def is_valid_command(command: str):
-    if command:
-        return True
-    return False
+    if not command:
+        return False
+    if command[0] != '#':
+        return False
+    return True
 
 
 @app.command(help="deploy command to all the devices in your database")
@@ -48,7 +52,6 @@ def deploy(command_file: str, permission_level: str = "user"):
 
 @app.command(name="list", help="list all the devices in your command")
 def list_devices():
-
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
         init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH)
     with DataBase(KEEPASS_DB_PATH) as kp:
