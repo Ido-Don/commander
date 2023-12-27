@@ -1,8 +1,8 @@
 from main import logger
-from src.device import DeviceEntry, add_device_entry
+from src.device import DeviceEntry, add_device_entry, DataBase
 
 
-def recruit_device(file, keepass_db_path, keepass_password):
+def recruit_device(file, keepass_db_path):
     device, error = get_device(file)
 
     if error:
@@ -10,7 +10,8 @@ def recruit_device(file, keepass_db_path, keepass_password):
         return
 
     device_entry = DeviceEntry(**device)
-    add_device_entry(device_entry, keepass_db_path, keepass_password)
+    with DataBase(keepass_db_path) as kp:
+        add_device_entry(device_entry, kp)
 
     logger.info(f"added device {device_entry.name}to database")
 

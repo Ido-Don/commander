@@ -33,12 +33,7 @@ class DataBase:
 
 def get_all_devices(kp: pykeepass.PyKeePass):
     device_group = kp.find_groups(name="devices")[0]
-    devices = {}
-    for device in device_group.entries:
-        device_options = get_device_options(device)
-
-        device_title = device.title
-        devices[device_title] = device_options
+    devices = {device.title: get_device_options(device) for device in device_group.entries}
     return devices
 
 

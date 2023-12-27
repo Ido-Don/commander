@@ -1,11 +1,11 @@
 import logging
 import sys
-from getpass import getpass
 from typing import Annotated, Optional, TypeAlias
 
 import typer
 
 from src.deploy import deploy_commands_on_devices
+from src.device import DataBase
 from src.device_list import get_device_list
 from src.global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
 from src.init import is_initialized, init_program
@@ -28,17 +28,19 @@ def deploy(command_file: str, permission_level: str = "user"):
 
 @app.command(name="list", help="list all the devices in your command")
 def list_devices():
-    keepass_password = getpass("enter keepass database master password: ")
-    device_list = get_device_list(keepass_password, KEEPASS_DB_PATH, COMMANDER_DIRECTORY)
+
+    if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
+        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH)
+    with DataBase(KEEPASS_DB_PATH) as kp:
+        device_list = get_device_list(kp)
     logger.info(device_list)
 
 
 @app.command(help="add a device to the list of devices")
 def recruit(file: Annotated[Optional[str], typer.Argument()] = None):
-    keepass_password = getpass("enter keepass database master password: ")
-    if not is_initialized(KEEPASS_DB_PATH, keepass_password):
-        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, keepass_password)
-    recruit_device(file, KEEPASS_DB_PATH, keepass_password)
+    if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
+        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH)
+    recruit_device(file, KEEPASS_DB_PATH)
 
 
 def main():

@@ -1,21 +1,23 @@
 import concurrent.futures
 import os
-from getpass import getpass
 
 from device_executer import execute_commands
 from main import logger
-from src.device import get_all_devices
+from src.device import get_all_devices, DataBase
 from src.global_variables import KEEPASS_DB_PATH, COMMANDER_DIRECTORY
-from src.init import is_initialized, init_program
+from src.init import is_initialized
 
-MAX_WORKERS = 5
+MAX_WORKERS = 10
 
 
 def deploy_commands_on_devices(command_file_path, permission_level):
-    keepass_password = getpass("enter keepass database master password: ")
-    if not is_initialized(KEEPASS_DB_PATH, keepass_password):
-        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH, keepass_password)
-    devices = get_all_devices(KEEPASS_DB_PATH, keepass_password)
+    if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
+        logger.error("program is not initialized! please run commander init!")
+        return
+
+    with DataBase(KEEPASS_DB_PATH) as kp:
+        devices = get_all_devices(kp)
+
     commands = commands_reader(command_file_path)
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as execute_pool:
         future_to_name = {}
