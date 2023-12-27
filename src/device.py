@@ -1,3 +1,5 @@
+import os.path
+from getpass import getpass
 from typing import Dict
 from pydantic import BaseModel
 from pykeepass import pykeepass
@@ -10,8 +12,26 @@ class DeviceEntry(BaseModel):
     device_options: Dict[str, str]
 
 
-def get_all_devices(keepass_db_path, keepass_password):
-    kp = pykeepass.PyKeePass(keepass_db_path, password=keepass_password)
+class DataBase:
+    def __init__(self, keepass_db_path, keepass_password=None):
+        self._keepass_db_path = keepass_db_path
+        self._keepass_password = keepass_password
+        if not self._keepass_password:
+            self._keepass_password = getpass("enter keepass database master password: ")
+
+    def __enter__(self):
+        if not os.path.isfile(self._keepass_db_path):
+            self._kp = pykeepass.create_database(self._keepass_db_path, password=self._keepass_password)
+        else:
+            self._kp = pykeepass.PyKeePass(self._keepass_db_path, password=self._keepass_password)
+        return self._kp
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not exc_val:
+            self._kp.save()
+
+
+def get_all_devices(kp: pykeepass.PyKeePass):
     device_group = kp.find_groups(name="devices")[0]
     devices = {}
     for device in device_group.entries:
@@ -22,18 +42,16 @@ def get_all_devices(keepass_db_path, keepass_password):
     return devices
 
 
-def does_device_exist(device_name, keepass_db_path, keepass_password):
-    kp = pykeepass.PyKeePass(keepass_db_path, password=keepass_password)
+def does_device_exist(device_name, kp: pykeepass.PyKeePass) -> bool:
     device_group = kp.find_groups(name="devices")[0]
     return device_name in [device.title for device in device_group.entries]
 
 
-def add_device_entry(device_entry: DeviceEntry, db_path, keepass_password):
+def add_device_entry(device_entry: DeviceEntry, kp: pykeepass.PyKeePass):
     entry_title = device_entry.name
-    if does_device_exist(entry_title, db_path, keepass_password):
+    if does_device_exist(entry_title, kp):
         raise Exception(f"{entry_title} already exist in db")
 
-    kp = pykeepass.PyKeePass(db_path, password=keepass_password)
     device_group = kp.find_groups(name="devices")[0]
 
     username = device_entry.username
@@ -43,7 +61,6 @@ def add_device_entry(device_entry: DeviceEntry, db_path, keepass_password):
     optional_data = device_entry.device_options
     for key, val in optional_data.items():
         new_entry.set_custom_property(key, val, True)
-    kp.save()
 
 
 def get_device_options(entry: pykeepass.Entry):

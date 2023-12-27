@@ -1,6 +1,7 @@
 import os
-
 from pykeepass import pykeepass
+
+from src.device import DataBase
 
 
 def init_program(commander_directory, keepass_db_path, keepass_password):
@@ -13,9 +14,8 @@ def init_program(commander_directory, keepass_db_path, keepass_password):
 
 
 def create_new_keepass_db(keepass_db_path, keepass_password):
-    kp = pykeepass.create_database(keepass_db_path, password=keepass_password)
-    kp.add_group(kp.root_group, "devices")
-    kp.save()
+    with DataBase(keepass_db_path, keepass_password) as kp:
+        kp.add_group(kp.root_group, "devices")
 
 
 def is_initialized(directory, keepass_db_path):
