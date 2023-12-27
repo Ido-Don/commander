@@ -1,17 +1,16 @@
 import concurrent.futures
 import os
+from logging import Logger
 from typing import List
 
 from device_executer import execute_commands
-from main import logger
 from src.device import get_all_devices, DataBase
 from src.global_variables import KEEPASS_DB_PATH, COMMANDER_DIRECTORY
 
 MAX_WORKERS = 10
 
 
-def deploy_commands_on_devices(commands: List[str], permission_level):
-
+def deploy_commands_on_devices(commands: List[str], permission_level, logger: Logger):
     with DataBase(KEEPASS_DB_PATH) as kp:
         devices = get_all_devices(kp)
 
@@ -25,13 +24,13 @@ def deploy_commands_on_devices(commands: List[str], permission_level):
             device_name = future_to_name[future]
             try:
                 results = future.result()
-                handle_results(results, device_name)
+                handle_results(results, device_name, logger)
             except Exception as e:
                 # Handle exceptions raised during the task execution
                 logger.error(f"device {device_name} encountered an exception: {e}")
 
 
-def handle_results(results, device_name):
+def handle_results(results, device_name, logger):
     outputs_folder = os.path.join(COMMANDER_DIRECTORY, 'ouputs')
     if not os.path.isdir(outputs_folder):
         os.mkdir(outputs_folder)
@@ -39,5 +38,3 @@ def handle_results(results, device_name):
     with open(device_output_txt_file, 'w+') as f:
         f.write(results)
     logger.info(f'saved results in "{device_output_txt_file}"')
-
-

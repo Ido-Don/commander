@@ -47,7 +47,7 @@ def deploy(command_file: str, permission_level: str = "user"):
         return
 
     commands = commands_reader(command_file)
-    deploy_commands_on_devices(commands, permission_level)
+    deploy_commands_on_devices(commands, permission_level, logger)
 
 
 @app.command(name="list", help="list all the devices in your command")
@@ -63,7 +63,7 @@ def list_devices():
 def recruit(file: Annotated[Optional[str], typer.Argument()] = None):
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
         init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH)
-    recruit_device(file, KEEPASS_DB_PATH)
+    recruit_device(file, KEEPASS_DB_PATH, logger)
 
 
 def main():
