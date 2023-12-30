@@ -1,11 +1,13 @@
 import logging
 import sys
-from typing import Annotated, Optional, TypeAlias
+from typing import Annotated, Optional, TypeAlias, List
 
+import inquirer
 import typer
-
+from rich.prompt import Prompt
+from rich import print as rprint
 from src.deploy import deploy_commands_on_devices
-from src.device import DataBase
+from src.device import DataBase, does_device_exist, get_all_devices, remove_device
 from src.device_list import get_device_list
 from src.global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
 from src.init import is_initialized, init_program
@@ -18,7 +20,6 @@ handler.setLevel("INFO")
 logger.addHandler(handler)
 
 app = typer.Typer()
-
 
 device_entry_type: TypeAlias = dict[str, str | dict[str, str]]
 
@@ -65,6 +66,30 @@ def recruit(file: Annotated[Optional[str], typer.Argument()] = None):
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
         init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH)
     recruit_device(file, KEEPASS_DB_PATH, logger)
+
+
+@app.command(help="remove a device from list")
+def remove(devices: Annotated[Optional[List[str]], typer.Option("--device")] = None):
+    with DataBase(KEEPASS_DB_PATH) as kp:
+        if not devices:
+            devices = select_devices_from_all_devices(kp)
+        # find all the non-existent devices
+        non_existing_devices = list(filter(lambda device: not does_device_exist(device, kp), devices))
+        if non_existing_devices:
+            for device_name in non_existing_devices:
+                logger.error(f"device {device_name} doesn't exist so it can't be deleted")
+            return
+        rprint(devices)
+        typer.confirm(f"are you sure you want to delete {len(devices)} devices?", abort=True)
+        for device_name in devices:
+            remove_device(device_name, kp)
+
+
+def select_devices_from_all_devices(kp):
+    all_devices = get_all_devices(kp)
+    all_device_names = all_devices.keys()
+    devices = inquirer.checkbox(message="which devices do you want to remove?", choices=all_device_names)
+    return devices
 
 
 def main():

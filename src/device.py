@@ -37,12 +37,28 @@ def get_all_devices(kp: pykeepass.PyKeePass):
     return devices
 
 
-def does_device_exist(device_name, kp: pykeepass.PyKeePass) -> bool:
+def does_device_exist(device_name: str, kp: pykeepass.PyKeePass) -> bool:
     device_group = kp.find_groups(name="devices")[0]
     return device_name in [device.title for device in device_group.entries]
 
 
-def add_device_entry(device_entry: DeviceEntry, kp: pykeepass.PyKeePass):
+def remove_device(device_name, kp: pykeepass.PyKeePass) -> None:
+    if not does_device_exist(device_name, kp):
+        raise Exception(f"{device_name} doesn't exist in db")
+    device_entries = get_device_entries(device_name, kp)
+    for device_entry in device_entries:
+        kp.delete_entry(device_entry)
+
+
+def get_device_entries(device_name, kp):
+    if not does_device_exist(device_name, kp):
+        raise Exception(f"{device_name} doesn't exist in db")
+    device_group = kp.find_groups(name="devices")[0]
+    device_entries = kp.find_entries(group=device_group, title=device_name)
+    return device_entries
+
+
+def add_device_entry(device_entry: DeviceEntry, kp: pykeepass.PyKeePass) -> None:
     entry_title = device_entry.name
     if does_device_exist(entry_title, kp):
         raise Exception(f"{entry_title} already exist in db")
