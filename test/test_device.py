@@ -2,8 +2,8 @@ import os.path
 
 import pytest
 
-from src.device import add_device_entry, does_device_exist, DeviceEntry
-from src.init import create_new_keepass_db
+from commander.device import add_device_entry, does_device_exist, DeviceEntry
+from commander.init import create_new_keepass_db
 
 KEEPASS_TEST_DB_PATH = r"test.kdbx"
 KEEPASS_TEST_PASSWORD = "T3st"

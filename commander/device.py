@@ -75,12 +75,5 @@ def add_device_entry(device_entry: DeviceEntry, kp: pykeepass.PyKeePass) -> None
 
 
 def get_device_options(entry: pykeepass.Entry):
-    device_options = {**entry.custom_properties}
-    username = entry.username
-    if username:
-        device_options["username"] = username
-
-    password = entry.password
-    if password:
-        device_options["password"] = password
+    device_options = {**entry.custom_properties, "username": entry.username, "password": entry.password}
     return device_options
