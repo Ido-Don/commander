@@ -1,8 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel
 
-MAIN_GROUP_NAME = "device"
-
 
 class Device(BaseModel):
     name: str
@@ -23,6 +21,7 @@ class Device(BaseModel):
         ssh_string += self.host
         if self.port:
             ssh_string += f":{self.port}"
+        return ssh_string
 
     @property
     def device_options(self):
@@ -35,5 +34,3 @@ class Device(BaseModel):
         if self.port:
             _device_options["port"] = self.port
         return _device_options
-
-

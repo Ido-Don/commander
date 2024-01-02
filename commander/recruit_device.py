@@ -17,7 +17,7 @@ def recruit_device(file, keepass_db_path, logger: Logger):
     with KeepassDB(keepass_db_path) as kp:
         add_device_entry(device_entry, kp)
 
-    logger.info(f"added device {device_entry.name}to database")
+    logger.info(f"added device {device_entry.name} to database")
 
 
 def get_device(file):
@@ -44,8 +44,12 @@ SUPPORTED_DEVICES = [
 
 def retrieve_device_from_input():
     name = Prompt.ask("Device's name")
-    username = Prompt.ask("Device's username", )
-    password = Prompt.ask("Device's password", password=True, default="123")
+    username = Prompt.ask("Device's username")
+    if not username:
+        username = ''
+    password = Prompt.ask("Device's password", password=True)
+    if not password:
+        password = ''
     host = Prompt.ask("Device's ip/hostname")
     device_type = Prompt.ask("Device's software Type", choices=SUPPORTED_DEVICES, default=SUPPORTED_DEVICES[0])
     default_port = "22"

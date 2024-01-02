@@ -87,7 +87,7 @@ def remove(devices: Annotated[Optional[List[str]], typer.Option("--device")] = N
             remove_device(device_name, kp)
 
 
-@app.command()
+@app.command(help="initialize the project")
 def init():
     logger.info("Welcome to commander!")
     if is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):

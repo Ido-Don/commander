@@ -4,7 +4,9 @@ from typing import List
 
 from pykeepass import pykeepass
 
-from device import Device, MAIN_GROUP_NAME
+from device import Device
+
+DEVICE_GROUP_NAME = "device"
 
 
 class KeepassDB:
@@ -33,13 +35,13 @@ def convert_device_entry_to_device(device_entry: pykeepass.Entry) -> Device:
 
 
 def get_all_devices(kp: pykeepass.PyKeePass) -> List[Device]:
-    device_group = kp.find_groups(name=MAIN_GROUP_NAME)[0]
+    device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     devices = [convert_device_entry_to_device(device) for device in device_group.entries]
     return devices
 
 
 def does_device_exist(device_name: str, kp: pykeepass.PyKeePass) -> bool:
-    device_group = kp.find_groups(name=MAIN_GROUP_NAME)[0]
+    device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     return device_name in [device_entry.title for device_entry in device_group.entries]
 
 
@@ -54,7 +56,7 @@ def remove_device(device_name: str, kp: pykeepass.PyKeePass) -> None:
 def get_device_entries(device_name, kp):
     if not does_device_exist(device_name, kp):
         raise Exception(f"{device_name} doesn't exist in db")
-    device_group = kp.find_groups(name=MAIN_GROUP_NAME)[0]
+    device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     device_entries = kp.find_entries(group=device_group, title=device_name)
     return device_entries
 
@@ -64,7 +66,7 @@ def add_device_entry(device: Device, kp: pykeepass.PyKeePass) -> None:
     if does_device_exist(entry_title, kp):
         raise Exception(f"{entry_title} already exist in db")
 
-    device_group = kp.find_groups(name=MAIN_GROUP_NAME)[0]
+    device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
 
     username = device.username
     password = device.password
@@ -81,8 +83,16 @@ def add_device_entry(device: Device, kp: pykeepass.PyKeePass) -> None:
 def convert_device_to_json(entry: pykeepass.Entry) -> dict[str, str]:
     device_options = {
         **entry.custom_properties,
+    }
+    device_options = {
+        **device_options,
         "username": entry.username,
         "password": entry.password,
         "name": entry.title
     }
+    if not device_options["username"]:
+        device_options["username"] = ""
+    if not device_options["password"]:
+        device_options["password"] = ''
+
     return device_options
