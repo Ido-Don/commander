@@ -1,18 +1,43 @@
 import os.path
 from getpass import getpass
-from typing import Dict
+from typing import List, Optional
 from pydantic import BaseModel
 from pykeepass import pykeepass
-
 
 MAIN_GROUP_NAME = "device"
 
 
-class DeviceEntry(BaseModel):
+class Device(BaseModel):
     name: str
     username: str
     password: str
-    device_options: Dict[str, str]
+    host: str
+    device_type: str
+    port: Optional[str] = None
+
+    def __str__(self):
+        device_string = f"{self.name}({self.device_type}) -> {self.get_ssh_string()}"
+        return device_string
+
+    def get_ssh_string(self):
+        ssh_string = ""
+        if self.username:
+            ssh_string += f"{self.username}@"
+        ssh_string += self.host
+        if self.port:
+            ssh_string += f":{self.port}"
+
+    @property
+    def device_options(self):
+        _device_options = {
+            "username": self.username,
+            "password": self.password,
+            "host": self.host,
+            "device_type": self.device_type
+        }
+        if self.port:
+            _device_options["port"] = self.port
+        return _device_options
 
 
 class KeepassDB:
@@ -34,18 +59,24 @@ class KeepassDB:
             self._kp.save()
 
 
-def get_all_devices(kp: pykeepass.PyKeePass):
+def convert_device_entry_to_device(device_entry: pykeepass.Entry) -> Device:
+    device_json = convert_device_to_json(device_entry)
+    device_entry = Device(**device_json)
+    return device_entry
+
+
+def get_all_devices(kp: pykeepass.PyKeePass) -> List[Device]:
     device_group = kp.find_groups(name=MAIN_GROUP_NAME)[0]
-    devices = {device.title: get_device_options(device) for device in device_group.entries}
+    devices = [convert_device_entry_to_device(device) for device in device_group.entries]
     return devices
 
 
 def does_device_exist(device_name: str, kp: pykeepass.PyKeePass) -> bool:
     device_group = kp.find_groups(name=MAIN_GROUP_NAME)[0]
-    return device_name in [device.title for device in device_group.entries]
+    return device_name in [device_entry.title for device_entry in device_group.entries]
 
 
-def remove_device(device_name, kp: pykeepass.PyKeePass) -> None:
+def remove_device(device_name: str, kp: pykeepass.PyKeePass) -> None:
     if not does_device_exist(device_name, kp):
         raise Exception(f"{device_name} doesn't exist in db")
     device_entries = get_device_entries(device_name, kp)
@@ -61,22 +92,30 @@ def get_device_entries(device_name, kp):
     return device_entries
 
 
-def add_device_entry(device_entry: DeviceEntry, kp: pykeepass.PyKeePass) -> None:
-    entry_title = device_entry.name
+def add_device_entry(device: Device, kp: pykeepass.PyKeePass) -> None:
+    entry_title = device.name
     if does_device_exist(entry_title, kp):
         raise Exception(f"{entry_title} already exist in db")
 
     device_group = kp.find_groups(name=MAIN_GROUP_NAME)[0]
 
-    username = device_entry.username
-    password = device_entry.password
+    username = device.username
+    password = device.password
     new_entry = kp.add_entry(device_group, entry_title, username, password)
 
-    optional_data = device_entry.device_options
+    optional_data = {"host": device.host, "device_type": device.device_type}
+
+    if device.port:
+        optional_data["port"] = device.port
     for key, val in optional_data.items():
         new_entry.set_custom_property(key, val, True)
 
 
-def get_device_options(entry: pykeepass.Entry):
-    device_options = {**entry.custom_properties, "username": entry.username, "password": entry.password}
+def convert_device_to_json(entry: pykeepass.Entry) -> dict[str, str]:
+    device_options = {
+        **entry.custom_properties,
+        "username": entry.username,
+        "password": entry.password,
+        "name": entry.title
+    }
     return device_options
