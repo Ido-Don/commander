@@ -4,14 +4,14 @@ from typing import Annotated, Optional, TypeAlias, List
 
 import inquirer
 import typer
-from rich.prompt import Prompt
 from rich import print as rprint
-from src.deploy import deploy_commands_on_devices
-from src.device import DataBase, does_device_exist, get_all_devices, remove_device
-from src.device_list import get_device_list
-from src.global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
-from src.init import is_initialized, init_program
-from src.recruit_device import recruit_device
+
+from deploy import deploy_commands_on_devices
+from device import DataBase, does_device_exist, get_all_devices, remove_device
+from device_list import get_device_list
+from global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
+from init import is_initialized, init_program
+from recruit_device import recruit_device
 
 logger = logging.Logger("commander")
 logging.basicConfig(level=logging.INFO)

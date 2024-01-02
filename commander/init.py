@@ -1,6 +1,6 @@
 import os
 
-from src.device import DataBase
+from device import DataBase
 
 
 def init_program(directory, keepass_db_path):

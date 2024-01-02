@@ -1,3 +1,0 @@
-int range fa0/0 - 1
-no sh
-exit

@@ -2,7 +2,7 @@ from logging import Logger
 
 from rich.prompt import Prompt
 
-from src.device import DeviceEntry, add_device_entry, DataBase
+from device import DeviceEntry, add_device_entry, DataBase
 
 
 def recruit_device(file, keepass_db_path, logger: Logger):
