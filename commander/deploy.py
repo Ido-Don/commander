@@ -4,7 +4,7 @@ from logging import Logger
 from typing import List
 
 from device_executer import execute_commands
-from device import get_all_devices, KeepassDB
+from keepass import KeepassDB, get_all_devices
 from global_variables import KEEPASS_DB_PATH, COMMANDER_DIRECTORY
 
 MAX_WORKERS = 10

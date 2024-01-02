@@ -1,6 +1,6 @@
 import os
 
-from device import KeepassDB
+from keepass import KeepassDB
 
 
 def init_program(directory, keepass_db_path):

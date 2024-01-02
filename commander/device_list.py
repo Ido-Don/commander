@@ -1,6 +1,7 @@
 from typing import List
 
-from device import get_all_devices, KeepassDB, Device
+from device import Device
+from keepass import KeepassDB, get_all_devices
 
 
 def get_device_list(keepass_db_path: str) -> str:

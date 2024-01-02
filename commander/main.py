@@ -7,7 +7,7 @@ import typer
 from rich import print as rprint
 
 from deploy import deploy_commands_on_devices
-from device import KeepassDB, does_device_exist, get_all_devices, remove_device
+from keepass import KeepassDB, get_all_devices, does_device_exist, remove_device
 from device_list import get_device_list
 from global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
 from init import is_initialized, init_program

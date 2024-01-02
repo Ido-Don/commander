@@ -2,7 +2,8 @@ import os.path
 
 import pytest
 
-from commander.device import add_device_entry, does_device_exist, DeviceEntry
+from commander.device import Device
+from commander.keepass import does_device_exist, add_device_entry
 from commander.init import create_new_keepass_db
 
 KEEPASS_TEST_DB_PATH = r"test.kdbx"
@@ -39,6 +40,6 @@ def create_new_test_db():
     )
 ])
 def test_insert_device(create_new_test_db, device, expectation):
-    add_device_entry(DeviceEntry(**device), KEEPASS_TEST_DB_PATH, KEEPASS_TEST_PASSWORD)
+    add_device_entry(Device(**device), KEEPASS_TEST_DB_PATH, KEEPASS_TEST_PASSWORD)
     device_name = device["name"]
     assert does_device_exist(device_name, KEEPASS_TEST_DB_PATH, KEEPASS_TEST_PASSWORD) == expectation
