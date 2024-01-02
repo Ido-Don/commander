@@ -3,7 +3,7 @@ from typing import List
 
 from pykeepass import pykeepass
 
-from commander.device import Device, MAIN_GROUP_NAME
+from device import Device, MAIN_GROUP_NAME
 
 
 class KeepassDB:
