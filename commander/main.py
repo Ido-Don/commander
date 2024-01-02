@@ -10,7 +10,7 @@ from deploy import deploy_commands_on_devices
 from keepass import KeepassDB, get_all_devices, does_device_exist, remove_device
 from device_list import get_device_list
 from global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
-from init import is_initialized, init_program
+from init import is_initialized, init_program, delete_project_files
 from recruit_device import recruit_device
 
 logger = logging.Logger("commander")
@@ -72,7 +72,9 @@ def recruit(file: Annotated[Optional[str], typer.Argument()] = None):
 def remove(devices: Annotated[Optional[List[str]], typer.Option("--device")] = None):
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         if not devices:
-            devices = select_devices_from_all_devices(kp)
+            all_devices = get_all_devices(kp)
+            all_device_names = [device.name for device in all_devices]
+            devices = inquirer.checkbox(message="which devices do you want to remove?", choices=all_device_names)
         # find all the non-existent devices
         non_existing_devices = list(filter(lambda device: not does_device_exist(device, kp), devices))
         if non_existing_devices:
@@ -85,11 +87,20 @@ def remove(devices: Annotated[Optional[List[str]], typer.Option("--device")] = N
             remove_device(device_name, kp)
 
 
-def select_devices_from_all_devices(kp):
-    all_devices = get_all_devices(kp)
-    all_device_names = all_devices.keys()
-    devices = inquirer.checkbox(message="which devices do you want to remove?", choices=all_device_names)
-    return devices
+@app.command()
+def init():
+    logger.info("Welcome to commander!")
+    if is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
+        logger.info("commander is already initialized")
+        reinitialize: bool = typer.confirm("do you want to delete everything and start over?")
+        if reinitialize:
+            logger.info(f"deleting directory: {COMMANDER_DIRECTORY}")
+            delete_project_files(COMMANDER_DIRECTORY)
+    if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
+        logger.info(f"creating new database in {COMMANDER_DIRECTORY}")
+        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH)
+
+    logger.info("finished the initialization process, have a great day")
 
 
 def main():

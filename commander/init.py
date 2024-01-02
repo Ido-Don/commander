@@ -1,6 +1,13 @@
 import os
+import shutil
 
 from keepass import KeepassDB
+
+
+def delete_project_files(directory):
+    if not os.path.isdir(directory):
+        raise Exception(f"directory {directory} doesn't exist")
+    shutil.rmtree(directory)
 
 
 def init_program(directory, keepass_db_path):
