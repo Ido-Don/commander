@@ -16,9 +16,10 @@ def deploy_commands_on_devices(commands: List[str], permission_level, logger: Lo
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as execute_pool:
         future_to_name = {}
-        for device_name, device_options in devices.items():
+        for device in devices:
+            device_options = device.device_options
             future = execute_pool.submit(execute_commands, device_options, commands, permission_level)
-            future_to_name[future] = device_name
+            future_to_name[future] = device.name
 
         for future in concurrent.futures.as_completed(future_to_name.keys()):
             device_name = future_to_name[future]
