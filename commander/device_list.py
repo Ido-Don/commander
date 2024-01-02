@@ -1,4 +1,6 @@
-from device import get_all_devices, KeepassDB
+from typing import List
+
+from device import get_all_devices, KeepassDB, Device
 
 
 def get_device_list(keepass_db_path: str) -> str:
@@ -9,25 +11,8 @@ def get_device_list(keepass_db_path: str) -> str:
     return formatted_device_list
 
 
-def format_device_list(devices):
+def format_device_list(devices: List[Device]) -> str:
     output = ""
-    for device_name, device_options in devices.items():
-        username = device_options["username"]
-        port = device_options["port"]
-        host = device_options["host"]
-        device_type = device_options["device_type"]
-        device_string = f"{device_name}({device_type}) -> "
-        device_string += ssh_string(host, port, username)
-        device_string += '\n'
-        output += device_string
+    for device in devices:
+        output += str(device) + '\n'
     return output
-
-
-def ssh_string(host, port, username):
-    device_string = ''
-    if username:
-        device_string += f"{username}@"
-    device_string += host
-    if port:
-        device_string += f":{port}"
-    return device_string
