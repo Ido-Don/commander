@@ -5,6 +5,9 @@ from pydantic import BaseModel
 from pykeepass import pykeepass
 
 
+MAIN_GROUP_NAME = "device"
+
+
 class DeviceEntry(BaseModel):
     name: str
     username: str
@@ -12,7 +15,7 @@ class DeviceEntry(BaseModel):
     device_options: Dict[str, str]
 
 
-class DataBase:
+class KeepassDB:
     def __init__(self, keepass_db_path, keepass_password=None):
         self._keepass_db_path = keepass_db_path
         self._keepass_password = keepass_password
@@ -32,13 +35,13 @@ class DataBase:
 
 
 def get_all_devices(kp: pykeepass.PyKeePass):
-    device_group = kp.find_groups(name="devices")[0]
+    device_group = kp.find_groups(name=MAIN_GROUP_NAME)[0]
     devices = {device.title: get_device_options(device) for device in device_group.entries}
     return devices
 
 
 def does_device_exist(device_name: str, kp: pykeepass.PyKeePass) -> bool:
-    device_group = kp.find_groups(name="devices")[0]
+    device_group = kp.find_groups(name=MAIN_GROUP_NAME)[0]
     return device_name in [device.title for device in device_group.entries]
 
 
@@ -53,7 +56,7 @@ def remove_device(device_name, kp: pykeepass.PyKeePass) -> None:
 def get_device_entries(device_name, kp):
     if not does_device_exist(device_name, kp):
         raise Exception(f"{device_name} doesn't exist in db")
-    device_group = kp.find_groups(name="devices")[0]
+    device_group = kp.find_groups(name=MAIN_GROUP_NAME)[0]
     device_entries = kp.find_entries(group=device_group, title=device_name)
     return device_entries
 
@@ -63,7 +66,7 @@ def add_device_entry(device_entry: DeviceEntry, kp: pykeepass.PyKeePass) -> None
     if does_device_exist(entry_title, kp):
         raise Exception(f"{entry_title} already exist in db")
 
-    device_group = kp.find_groups(name="devices")[0]
+    device_group = kp.find_groups(name=MAIN_GROUP_NAME)[0]
 
     username = device_entry.username
     password = device_entry.password

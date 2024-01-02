@@ -1,8 +1,8 @@
-from device import get_all_devices, DataBase
+from device import get_all_devices, KeepassDB
 
 
 def get_device_list(keepass_db_path: str) -> str:
-    with DataBase(keepass_db_path) as kp:
+    with KeepassDB(keepass_db_path) as kp:
         devices = get_all_devices(kp)
 
     formatted_device_list = format_device_list(devices)

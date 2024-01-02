@@ -1,6 +1,6 @@
 import os
 
-from device import DataBase
+from device import KeepassDB
 
 
 def init_program(directory, keepass_db_path):
@@ -13,7 +13,7 @@ def init_program(directory, keepass_db_path):
 
 
 def create_new_keepass_db(keepass_db_path):
-    with DataBase(keepass_db_path) as kp:
+    with KeepassDB(keepass_db_path) as kp:
         kp.add_group(kp.root_group, "devices")
 
 

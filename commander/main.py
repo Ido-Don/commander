@@ -7,7 +7,7 @@ import typer
 from rich import print as rprint
 
 from deploy import deploy_commands_on_devices
-from device import DataBase, does_device_exist, get_all_devices, remove_device
+from device import KeepassDB, does_device_exist, get_all_devices, remove_device
 from device_list import get_device_list
 from global_variables import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
 from init import is_initialized, init_program
@@ -70,7 +70,7 @@ def recruit(file: Annotated[Optional[str], typer.Argument()] = None):
 
 @app.command(help="remove a device from list")
 def remove(devices: Annotated[Optional[List[str]], typer.Option("--device")] = None):
-    with DataBase(KEEPASS_DB_PATH) as kp:
+    with KeepassDB(KEEPASS_DB_PATH) as kp:
         if not devices:
             devices = select_devices_from_all_devices(kp)
         # find all the non-existent devices
