@@ -2,7 +2,7 @@ from logging import Logger
 
 from rich.prompt import Prompt
 
-from device import DeviceEntry, add_device_entry, KeepassDB
+from device import Device, add_device_entry, KeepassDB
 
 
 def recruit_device(file, keepass_db_path, logger: Logger):
@@ -12,7 +12,7 @@ def recruit_device(file, keepass_db_path, logger: Logger):
         logger.error(str(error))
         return
 
-    device_entry = DeviceEntry(**device)
+    device_entry = Device(**device)
     with KeepassDB(keepass_db_path) as kp:
         add_device_entry(device_entry, kp)
 
@@ -55,11 +55,9 @@ def retrieve_device_from_input():
         "name": name,
         "username": username,
         "password": password,
-        "device_options": {
-            "host": host,
-            "port": port,
-            "device_type": device_type
-        }
+        "host": host,
+        "port": port,
+        "device_type": device_type
     }
     return device
 
