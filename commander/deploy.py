@@ -3,17 +3,14 @@ import os
 from logging import Logger
 from typing import List
 
+from device import Device
 from device_executer import execute_commands
-from keepass import KeepassDB, get_all_devices
-from global_variables import KEEPASS_DB_PATH, COMMANDER_DIRECTORY
+from __init__ import COMMANDER_DIRECTORY
 
 MAX_WORKERS = 10
 
 
-def deploy_commands_on_devices(commands: List[str], permission_level, logger: Logger):
-    with KeepassDB(KEEPASS_DB_PATH) as kp:
-        devices = get_all_devices(kp)
-
+def deploy_commands(commands: List[str], devices: List[Device], permission_level, logger: Logger):
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as execute_pool:
         future_to_name = {}
         for device in devices:
