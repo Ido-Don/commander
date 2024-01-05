@@ -13,7 +13,7 @@ from __init__ import COMMANDER_DIRECTORY
 MAX_WORKERS = 10
 
 
-def deploy_commands(commands: List[str], devices: List[Device], permission_level: PermissionLevel, logger: Logger):
+def deploy_commands(commands: List[str], devices: List[Device], permission_level: PermissionLevel):
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as execute_pool:
         future_to_device = {}
         for device in devices:
@@ -24,21 +24,23 @@ def deploy_commands(commands: List[str], devices: List[Device], permission_level
         for future in concurrent.futures.as_completed(future_to_device.keys()):
             device = future_to_device[future]
             try:
-                handle_results(future.result(), device.name, logger)
+                result = future.result()
+                typer.echo(f"✅  connected successfully to {device}")
+                yield result, device
             except netmiko.NetmikoAuthenticationException as e:
-                typer.echo(f"⛔ wasn't able to authenticate to {str(device)}", err=True)
-            except netmiko.ConnectionException as e:
-                typer.echo(f"⛔ wasn't able to connect to {str(device)}", err=True)
+                typer.echo(f"⛔  wasn't able to authenticate to {str(device)}", err=True)
+            except netmiko.NetmikoTimeoutException as e:
+                typer.echo(f"⛔  wasn't able to connect to {str(device)}", err=True)
             except Exception as e:
                 # Handle exceptions raised during the task execution
-                typer.echo(f"⛔ device {str(device)} encountered an exception: {e}", err=True)
+                typer.echo(f"⛔  device {str(device)} encountered an exception: {e}", err=True)
 
 
-def handle_results(results: str, device_name: str, logger):
+def handle_results(results: str, device_name: str):
     outputs_folder = os.path.join(COMMANDER_DIRECTORY, 'outputs')
     if not os.path.isdir(outputs_folder):
         os.mkdir(outputs_folder)
     device_output_txt_file = os.path.join(outputs_folder, device_name + ".txt")
     with open(device_output_txt_file, 'w+') as f:
         f.write(results)
-    typer.echo(f'✅ saved results in "{device_output_txt_file}"')
+    typer.echo(f'✅  saved results in "{device_output_txt_file}"')

@@ -7,7 +7,7 @@ import rich
 import typer
 
 from __init__ import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
-from deploy import deploy_commands
+from deploy import deploy_commands, handle_results
 from device_executer import PermissionLevel
 from device_list import print_devices
 from init import is_initialized, init_program, delete_project_files
@@ -22,7 +22,8 @@ handler.setLevel("INFO")
 logger.addHandler(handler)
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
-device_group = typer.Typer(pretty_exceptions_show_locals=False, help="control and manage the devices under your command")
+device_group = typer.Typer(pretty_exceptions_show_locals=False,
+                           help="control and manage the devices under your command")
 app.add_typer(device_group, name="device")
 
 
@@ -38,6 +39,20 @@ def is_valid_command(command: str):
 def check_initialization():
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
         raise Exception("⛔ program is not initialized, please run commander init!")
+
+
+@device_group.command(help="try to connect to all the devices in your database")
+def ping():
+    with KeepassDB(KEEPASS_DB_PATH) as kp:
+        devices = get_all_devices(kp)
+
+    if not devices:
+        raise Exception("😔 you don't have any devices in the database.")
+
+    print_devices(devices)
+
+    # deploy no commands just to test connectivity
+    list(deploy_commands([], devices, PermissionLevel.USER))
 
 
 @device_group.command(help="deploy command to all the devices in your database")
@@ -77,7 +92,8 @@ def deploy(
     print_devices(devices)
 
     typer.confirm(f"do you want to deploy these {len(all_commands)} commands on {len(devices)} devices?", abort=True)
-    deploy_commands(all_commands, devices, permission_level, logger)
+    for result, device in deploy_commands(all_commands, devices, permission_level):
+        handle_results(result, device.name)
 
 
 @device_group.command(name="list", help="list all the devices in your command")
