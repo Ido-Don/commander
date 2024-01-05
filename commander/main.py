@@ -5,14 +5,13 @@ from typing import Annotated, List
 import inquirer
 import rich
 import typer
-from rich import print as rprint
 
 from __init__ import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
 from deploy import deploy_commands
 from device_executer import PermissionLevel
 from device_list import print_devices
 from init import is_initialized, init_program, delete_project_files
-from keepass import KeepassDB, get_all_devices, does_device_exist, remove_device, add_device_entry
+from keepass import KeepassDB, get_all_devices, remove_device, add_device_entry
 from recruit_device import retrieve_device_from_file
 from recruit_device import retrieve_device_from_input
 
@@ -23,8 +22,8 @@ handler.setLevel("INFO")
 logger.addHandler(handler)
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
-device = typer.Typer(pretty_exceptions_show_locals=False, help="control and manage the devices under your command")
-app.add_typer(device, name="device")
+device_group = typer.Typer(pretty_exceptions_show_locals=False, help="control and manage the devices under your command")
+app.add_typer(device_group, name="device")
 
 
 def is_valid_command(command: str):
@@ -35,13 +34,13 @@ def is_valid_command(command: str):
     return True
 
 
-@device.callback()
+@device_group.callback()
 def check_initialization():
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
         raise Exception("⛔ program is not initialized, please run commander init!")
 
 
-@device.command(help="deploy command to all the devices in your database")
+@device_group.command(help="deploy command to all the devices in your database")
 def deploy(
         command_list: Annotated[List[str], typer.Option("--command")] = None,
         command_file: typer.FileText = None,
@@ -78,7 +77,7 @@ def deploy(
     deploy_commands(all_commands, devices, permission_level, logger)
 
 
-@device.command(name="list", help="list all the devices in your command")
+@device_group.command(name="list", help="list all the devices in your command")
 def list_devices():
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         devices = get_all_devices(kp)
@@ -86,7 +85,7 @@ def list_devices():
     print_devices(devices)
 
 
-@device.command(help="add a device to the list of devices")
+@device_group.command(help="add a device to the list of devices")
 def recruit(file: Annotated[typer.FileText, typer.Argument()] = None):
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         devices = get_all_devices(kp)
@@ -100,19 +99,21 @@ def recruit(file: Annotated[typer.FileText, typer.Argument()] = None):
         typer.echo(f"😄 added device {device.name} to database")
 
 
-@device.command(help="remove a device from list")
+@device_group.command(help="remove a device from list")
 def remove(devices: Annotated[List[str], typer.Option("--device")] = None):
     with KeepassDB(KEEPASS_DB_PATH) as kp:
+
+        all_devices = get_all_devices(kp)
+        all_device_names = [device.name for device in all_devices]
+
         if not devices:
-            all_devices = get_all_devices(kp)
-            all_device_names = [device.name for device in all_devices]
             devices = inquirer.checkbox(message="⚠️ which devices do you want to remove?", choices=all_device_names)
-        # find all the non-existent devices
-        non_existing_devices = list(filter(lambda device: not does_device_exist(device, kp), devices))
+
+        non_existing_devices = set(devices) - set(all_device_names)
         if non_existing_devices:
-            is_plural = len(non_existing_devices) > 1
-            raise Exception(f"⛔  {'devices' if is_plural else 'device'} {', '.join(non_existing_devices)} don't exist")
-        rprint(devices)
+            raise Exception(f"⛔ devices {', '.join(non_existing_devices)} don't exist")
+
+        print_devices(devices)
         typer.confirm(f"⚠️ are you sure you want to delete {len(devices)} devices?", abort=True)
         for device_name in devices:
             remove_device(device_name, kp)
