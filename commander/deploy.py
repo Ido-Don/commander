@@ -4,13 +4,13 @@ from logging import Logger
 from typing import List
 
 from device import Device
-from device_executer import execute_commands
+from device_executer import execute_commands, PermissionLevel
 from __init__ import COMMANDER_DIRECTORY
 
 MAX_WORKERS = 10
 
 
-def deploy_commands(commands: List[str], devices: List[Device], permission_level, logger: Logger):
+def deploy_commands(commands: List[str], devices: List[Device], permission_level: PermissionLevel, logger: Logger):
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as execute_pool:
         future_to_name = {}
         for device in devices:

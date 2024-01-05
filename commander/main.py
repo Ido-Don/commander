@@ -7,6 +7,7 @@ import rich
 import typer
 from rich import print as rprint
 
+from device_executer import PermissionLevel
 from deploy import deploy_commands
 from keepass import KeepassDB, get_all_devices, does_device_exist, remove_device
 from device_list import get_device_list
@@ -25,15 +26,6 @@ app = typer.Typer(pretty_exceptions_show_locals=False)
 device_entry_type: TypeAlias = dict[str, str | dict[str, str]]
 
 
-def commands_reader(command_file_path):
-    with open(command_file_path) as commands_file:
-        commands = commands_file.readlines()
-        commands = [command.strip("\n ") for command in commands]
-        commands = filter(lambda command: is_valid_command(command), commands)
-        commands = list(commands)
-    return commands
-
-
 def is_valid_command(command: str):
     if not command:
         return False
@@ -44,13 +36,13 @@ def is_valid_command(command: str):
 
 @app.command(help="deploy command to all the devices in your database")
 def deploy(
+        command_list: Annotated[List[str], typer.Option("--command")] = None,
         command_file: Optional[typer.FileText] = None,
-        command_list: Annotated[Optional[List[str]], typer.Option()] = None,
-        permission_level: str = "user"
+        permission_level: PermissionLevel = PermissionLevel.USER
 ):
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
-        logger.error("program is not initialized! please run commander init!")
-        return
+        typer.echo("program is not initialized! please run commander init!", err=True)
+        typer.Abort()
     all_commands = []
     if command_file:
         striped_command_file = [command.strip("\n ") for command in command_file]
@@ -92,7 +84,7 @@ def recruit(file: Annotated[Optional[str], typer.Argument()] = None):
 
 
 @app.command(help="remove a device from list")
-def remove(devices: Annotated[Optional[List[str]], typer.Option("--device")] = None):
+def remove(devices: List[str] = typer.Option(None, "--device")):
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         if not devices:
             all_devices = get_all_devices(kp)

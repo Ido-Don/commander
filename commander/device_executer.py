@@ -1,9 +1,16 @@
+from enum import Enum
 from typing import List
 
 import netmiko
 
 
-def change_permission(device: netmiko.BaseConnection, permission_level: str):
+class PermissionLevel(str, Enum):
+    USER = "user",
+    Enable = "enable",
+    CONFIGURE_TERMINAL = "configure_terminal"
+
+
+def change_permission(device: netmiko.BaseConnection, permission_level: PermissionLevel):
     is_in_config_mode = device.check_config_mode()
     is_in_enable_mode = device.check_enable_mode()
     if permission_level == "enable":
@@ -28,7 +35,7 @@ def change_permission(device: netmiko.BaseConnection, permission_level: str):
         return
 
 
-def execute_commands(device_options: dict, commands: List[str], permission_level: str) -> str:
+def execute_commands(device_options: dict, commands: List[str], permission_level: PermissionLevel) -> str:
     output = ""
     with Connection(device_options) as device:
         change_permission(device, permission_level)
