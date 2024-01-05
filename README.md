@@ -16,6 +16,6 @@ networking and IT teams work hard to maintain a level of standardization in the 
 
 with commander, you can push a configuration change in seconds to every device in your organization
 ```bash
-commander deploy change_snmp_secret.txt
+network-commander deploy change_snmp_secret.txt
 ```
 

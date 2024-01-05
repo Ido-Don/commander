@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "commander"
+name = "network-commander"
 version = "0.1.2a"
 description = "cli scraping tools for network devices "
 authors = ["Ido Don <76511079+Ido-Don@users.noreply.github.com>"]
