@@ -24,6 +24,7 @@ class Device(BaseModel):
         example - Device(host="google", username="root", port="22"...).get_ssh_string() -> root@google:22
         then you can use it with ssh command to connect to the remote device.
         example - ssh root@google:22
+
         :return: an ssh string (username@{ip/hostname}:port)
         """
         ssh_string = ""
