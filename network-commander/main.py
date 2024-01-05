@@ -15,7 +15,7 @@ from keepass import KeepassDB, get_all_devices, remove_device, add_device_entry
 from recruit_device import retrieve_device_from_file
 from recruit_device import retrieve_device_from_input
 
-logger = logging.Logger("network-commander")
+logger = logging.Logger("commander")
 logging.basicConfig(level=logging.INFO)
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel("INFO")
@@ -38,7 +38,7 @@ def is_valid_command(command: str):
 @device_group.callback()
 def check_initialization():
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
-        raise Exception("⛔ program is not initialized, please run network-commander init!")
+        raise Exception("⛔ program is not initialized, please run commander init!")
 
 
 @device_group.command(help="try to connect to all the devices in your database")
@@ -143,9 +143,9 @@ def remove(devices: Annotated[List[str], typer.Option("--device")] = None):
 
 @app.command(help="initialize the project")
 def init():
-    rich.print("Welcome to network-commander! 🥳")
+    rich.print("Welcome to commander! 🥳")
     if is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
-        rich.print("😯 network-commander is already initialized")
+        rich.print("😯 commander is already initialized")
         reinitialize = typer.confirm("⚠️ do you want to delete everything and start over?")
 
         if reinitialize:
