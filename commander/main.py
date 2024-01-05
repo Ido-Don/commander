@@ -1,7 +1,6 @@
-import json
 import logging
 import sys
-from typing import Annotated, Optional, List
+from typing import Annotated, List
 
 import inquirer
 import rich
@@ -9,12 +8,12 @@ import typer
 from rich import print as rprint
 
 from __init__ import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
-from commander.device_list import print_devices
 from deploy import deploy_commands
-from device import Device, SUPPORTED_DEVICE_TYPES
 from device_executer import PermissionLevel
+from device_list import print_devices
 from init import is_initialized, init_program, delete_project_files
 from keepass import KeepassDB, get_all_devices, does_device_exist, remove_device, add_device_entry
+from recruit_device import retrieve_device_from_file
 from recruit_device import retrieve_device_from_input
 
 logger = logging.Logger("commander")
@@ -24,6 +23,8 @@ handler.setLevel("INFO")
 logger.addHandler(handler)
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
+device = typer.Typer(pretty_exceptions_show_locals=False, help="control and manage the devices under your command")
+app.add_typer(device, name="device")
 
 
 def is_valid_command(command: str):
@@ -34,14 +35,18 @@ def is_valid_command(command: str):
     return True
 
 
-@app.command(help="deploy command to all the devices in your database")
+@device.callback()
+def check_initialization():
+    if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
+        raise Exception("⛔ program is not initialized, please run commander init!")
+
+
+@device.command(help="deploy command to all the devices in your database")
 def deploy(
         command_list: Annotated[List[str], typer.Option("--command")] = None,
-        command_file: Optional[typer.FileText] = None,
+        command_file: typer.FileText = None,
         permission_level: PermissionLevel = PermissionLevel.USER
 ):
-    check_initialization()
-
     if not command_list and not command_file:
         raise Exception("⛔ you cant deploy to devices without any commands.")
 
@@ -73,19 +78,16 @@ def deploy(
     deploy_commands(all_commands, devices, permission_level, logger)
 
 
-@app.command(name="list", help="list all the devices in your command")
+@device.command(name="list", help="list all the devices in your command")
 def list_devices():
-    check_initialization()
-
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         devices = get_all_devices(kp)
 
     print_devices(devices)
 
 
-@app.command(help="add a device to the list of devices")
-def recruit(file: Annotated[Optional[typer.FileText], typer.Argument()] = None):
-    check_initialization()
+@device.command(help="add a device to the list of devices")
+def recruit(file: Annotated[typer.FileText, typer.Argument()] = None):
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         devices = get_all_devices(kp)
         device_names = [device.name for device in devices]
@@ -98,25 +100,8 @@ def recruit(file: Annotated[Optional[typer.FileText], typer.Argument()] = None):
         typer.echo(f"😄 added device {device.name} to database")
 
 
-def check_initialization():
-    if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
-        raise Exception("⛔ program is not initialized, please run commander init!")
-
-
-def retrieve_device_from_file(device_names: List[str], file: typer.FileText):
-    device_json = json.load(file)
-    device = Device.model_validate(device_json)
-    if device.name in device_names:
-        raise ValueError(f"⛔ device {device.name} is already in database.")
-
-    if device.device_type not in SUPPORTED_DEVICE_TYPES:
-        raise ValueError(f"⛔ device {device.device_type} is not supported.")
-    return device
-
-
-@app.command(help="remove a device from list")
+@device.command(help="remove a device from list")
 def remove(devices: Annotated[List[str], typer.Option("--device")] = None):
-    check_initialization()
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         if not devices:
             all_devices = get_all_devices(kp)
@@ -141,7 +126,7 @@ def init():
         rich.print("😯 commander is already initialized")
         reinitialize: bool = typer.confirm("⚠️ do you want to delete everything and start over?")
         if reinitialize:
-            rich.print(f"📁 deleting directory: {COMMANDER_DIRECTORY}")
+            rich.print(f"🗄️ deleting directory: {COMMANDER_DIRECTORY}")
             delete_project_files(COMMANDER_DIRECTORY)
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
         rich.print(f"creating new database in {COMMANDER_DIRECTORY}")
