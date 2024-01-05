@@ -40,13 +40,13 @@ def execute_commands(device_options: dict, commands: List[str], permission_level
     with Connection(device_options) as device:
         change_permission(device, permission_level)
         if permission_level in ["user", "enable"]:
-            output = gather_output(device, commands)
+            output = send_commands(device, commands)
         elif permission_level in ["configure terminal"]:
             output = send_config_commands(device, commands)
     return output
 
 
-def gather_output(device: netmiko.BaseConnection, commands: List[str]) -> str:
+def send_commands(device: netmiko.BaseConnection, commands: List[str]) -> str:
     output = ""
     for command in commands:
         output += device.find_prompt()
