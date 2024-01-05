@@ -3,6 +3,7 @@ from getpass import getpass
 from typing import List
 
 from pykeepass import pykeepass
+from rich.prompt import Prompt
 
 from device import Device
 
@@ -14,7 +15,7 @@ class KeepassDB:
         self._keepass_db_path = keepass_db_path
         self._keepass_password = keepass_password
         if not self._keepass_password:
-            self._keepass_password = getpass("enter keepass database master password: ")
+            self._keepass_password = Prompt.ask("🔑 enter keepass database master password", password=True)
 
     def __enter__(self):
         if not os.path.isfile(self._keepass_db_path):
