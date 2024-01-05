@@ -1,15 +1,8 @@
 from typing import List
 
+import typer
+
 from device import Device
-from keepass import KeepassDB, get_all_devices
-
-
-def get_device_list(keepass_db_path: str) -> str:
-    with KeepassDB(keepass_db_path) as kp:
-        devices = get_all_devices(kp)
-
-    formatted_device_list = format_device_list(devices)
-    return formatted_device_list
 
 
 def format_device_list(devices: List[Device]) -> str:
@@ -17,3 +10,9 @@ def format_device_list(devices: List[Device]) -> str:
     for device in devices:
         output += str(device) + '\n'
     return output
+
+
+def print_devices(devices: List[Device]):
+    typer.echo("devices: ")
+    for device in devices:
+        typer.echo(f"🖥️ {device}")

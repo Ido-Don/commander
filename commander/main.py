@@ -1,7 +1,7 @@
 import json
 import logging
 import sys
-from typing import Annotated, Optional, TypeAlias, List
+from typing import Annotated, Optional, List
 
 import inquirer
 import rich
@@ -9,10 +9,10 @@ import typer
 from rich import print as rprint
 
 from __init__ import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
+from commander.device_list import print_devices
 from deploy import deploy_commands
 from device import Device, SUPPORTED_DEVICE_TYPES
 from device_executer import PermissionLevel
-from device_list import get_device_list
 from init import is_initialized, init_program, delete_project_files
 from keepass import KeepassDB, get_all_devices, does_device_exist, remove_device, add_device_entry
 from recruit_device import retrieve_device_from_input
@@ -43,14 +43,13 @@ def deploy(
     check_initialization()
 
     if not command_list and not command_file:
-        rich.print("you cant deploy to devices without any commands. use commander deploy --help for more details")
-        typer.Abort()
+        raise Exception("⛔ you cant deploy to devices without any commands.")
 
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         devices = get_all_devices(kp)
 
     if not devices:
-        rich.print("you don't have any devices in the database. use use commander recruit --help for more details")
+        raise Exception("😔 you don't have any devices in the database.")
 
     all_commands = []
     if command_file:
@@ -59,23 +58,29 @@ def deploy(
 
     if command_list:
         all_commands += command_list
+    invalid_commands_exist = all(map(is_valid_command, all_commands))
+    if not invalid_commands_exist:
+        invalid_commands = filter(is_valid_command, all_commands)
+        raise Exception(f"⛔ {','.join(invalid_commands)} are not valid commands.")
 
-    valid_commands = filter(is_valid_command, all_commands)
-    commands = list(valid_commands)
-    rich.print("commands: \n" + '\n'.join(commands))
+    rich.print("commands:")
+    for command in all_commands:
+        rich.print(f"{command}")
 
-    numbered_devices = map(lambda index, device: f"{index}. {str(device)}", devices, range(len(devices)))
-    rich.print("devices: \n" + '\n'.join(numbered_devices))
-    typer.confirm(f"are you sure you want to deploy {len(commands)} commands on {len(devices)} devices?", abort=True)
-    deploy_commands(commands, devices, permission_level, logger)
+    print_devices(devices)
+
+    typer.confirm(f"do you want to deploy these {len(all_commands)} commands on {len(devices)} devices?", abort=True)
+    deploy_commands(all_commands, devices, permission_level, logger)
 
 
 @app.command(name="list", help="list all the devices in your command")
 def list_devices():
     check_initialization()
 
-    device_list = get_device_list(KEEPASS_DB_PATH)
-    logger.info(device_list)
+    with KeepassDB(KEEPASS_DB_PATH) as kp:
+        devices = get_all_devices(kp)
+
+    print_devices(devices)
 
 
 @app.command(help="add a device to the list of devices")
@@ -116,33 +121,33 @@ def remove(devices: Annotated[List[str], typer.Option("--device")] = None):
         if not devices:
             all_devices = get_all_devices(kp)
             all_device_names = [device.name for device in all_devices]
-            devices = inquirer.checkbox(message="which devices do you want to remove?", choices=all_device_names)
+            devices = inquirer.checkbox(message="⚠️ which devices do you want to remove?", choices=all_device_names)
         # find all the non-existent devices
         non_existing_devices = list(filter(lambda device: not does_device_exist(device, kp), devices))
         if non_existing_devices:
-            for device_name in non_existing_devices:
-                logger.error(f"device {device_name} doesn't exist so it can't be deleted")
-            return
+            is_plural = len(non_existing_devices) > 1
+            raise Exception(f"⛔  {'devices' if is_plural else 'device'} {', '.join(non_existing_devices)} don't exist")
         rprint(devices)
-        typer.confirm(f"are you sure you want to delete {len(devices)} devices?", abort=True)
+        typer.confirm(f"⚠️ are you sure you want to delete {len(devices)} devices?", abort=True)
         for device_name in devices:
             remove_device(device_name, kp)
+        typer.echo(f"🗑️ deleted {len(devices)} devices")
 
 
 @app.command(help="initialize the project")
 def init():
-    rich.print("Welcome to commander!")
+    rich.print("Welcome to commander! 🥳")
     if is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
-        rich.print("commander is already initialized")
-        reinitialize: bool = typer.confirm("do you want to delete everything and start over?")
+        rich.print("😯 commander is already initialized")
+        reinitialize: bool = typer.confirm("⚠️ do you want to delete everything and start over?")
         if reinitialize:
-            rich.print(f"deleting directory: {COMMANDER_DIRECTORY}")
+            rich.print(f"📁 deleting directory: {COMMANDER_DIRECTORY}")
             delete_project_files(COMMANDER_DIRECTORY)
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
         rich.print(f"creating new database in {COMMANDER_DIRECTORY}")
         init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH)
 
-    rich.print("finished the initialization process, have a great day")
+    rich.print("😁 finished the initialization process, have a great day")
 
 
 def main():

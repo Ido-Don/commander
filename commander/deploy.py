@@ -25,8 +25,7 @@ def deploy_commands(commands: List[str], devices: List[Device], permission_level
         for future in concurrent.futures.as_completed(future_to_device.keys()):
             device = future_to_device[future]
             try:
-                results = future.result()
-                handle_results(results, device.name, logger)
+                handle_results(future.result(), device.name, logger)
             except netmiko.NetmikoAuthenticationException as e:
                 typer.echo(f"⛔ wasn't able to authenticate to {str(device)}", err=True)
             except netmiko.ConnectionException as e:
