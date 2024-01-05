@@ -1,6 +1,6 @@
 # commander
 
-a cli scraping tool for network devices.
+cli scraping tool for network devices.
 
 ## abilities
 
