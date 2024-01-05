@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 from typing import Annotated, Optional, TypeAlias, List
@@ -7,13 +8,14 @@ import rich
 import typer
 from rich import print as rprint
 
-from device_executer import PermissionLevel
-from deploy import deploy_commands
-from keepass import KeepassDB, get_all_devices, does_device_exist, remove_device
-from device_list import get_device_list
 from __init__ import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
+from deploy import deploy_commands
+from device import Device, SUPPORTED_DEVICE_TYPES
+from device_executer import PermissionLevel
+from device_list import get_device_list
 from init import is_initialized, init_program, delete_project_files
-from recruit_device import recruit_device
+from keepass import KeepassDB, get_all_devices, does_device_exist, remove_device, add_device_entry
+from recruit_device import retrieve_device_from_input
 
 logger = logging.Logger("commander")
 logging.basicConfig(level=logging.INFO)
@@ -22,7 +24,6 @@ handler.setLevel("INFO")
 logger.addHandler(handler)
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
-
 device_entry_type: TypeAlias = dict[str, str | dict[str, str]]
 
 
@@ -40,9 +41,18 @@ def deploy(
         command_file: Optional[typer.FileText] = None,
         permission_level: PermissionLevel = PermissionLevel.USER
 ):
-    if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
-        typer.echo("program is not initialized! please run commander init!", err=True)
+    check_initialization()
+
+    if not command_list and not command_file:
+        rich.print("you cant deploy to devices without any commands. use commander deploy --help for more details")
         typer.Abort()
+
+    with KeepassDB(KEEPASS_DB_PATH) as kp:
+        devices = get_all_devices(kp)
+
+    if not devices:
+        rich.print("you don't have any devices in the database. use use commander recruit --help for more details")
+
     all_commands = []
     if command_file:
         striped_command_file = [command.strip("\n ") for command in command_file]
@@ -51,40 +61,58 @@ def deploy(
     if command_list:
         all_commands += command_list
 
-    if not command_list and not command_file:
-        rich.print("you cant deploy to devices without any commands. enter a command in the terminal!")
-        exit(1)
-
     valid_commands = filter(is_valid_command, all_commands)
     commands = list(valid_commands)
     rich.print("commands: \n" + '\n'.join(commands))
 
-    with KeepassDB(KEEPASS_DB_PATH) as kp:
-        devices = get_all_devices(kp)
-    rich.print("devices: \n" + '\n'.join(map(str, devices)))
-    typer.confirm(f"are you sure you want to deploy {len(commands)} commands on {len(devices)}?", abort=True)
+    numbered_devices = map(lambda index, device: f"{index}. {str(device)}", devices, range(len(devices)))
+    rich.print("devices: \n" + '\n'.join(numbered_devices))
+    typer.confirm(f"are you sure you want to deploy {len(commands)} commands on {len(devices)} devices?", abort=True)
     deploy_commands(commands, devices, permission_level, logger)
 
 
 @app.command(name="list", help="list all the devices in your command")
 def list_devices():
-    if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
-        logger.error("program is not initialized! please run commander init!")
-        return
+    check_initialization()
 
     device_list = get_device_list(KEEPASS_DB_PATH)
     logger.info(device_list)
 
 
 @app.command(help="add a device to the list of devices")
-def recruit(file: Annotated[Optional[str], typer.Argument()] = None):
+def recruit(file: Annotated[Optional[typer.FileText], typer.Argument()] = None):
+    check_initialization()
+    with KeepassDB(KEEPASS_DB_PATH) as kp:
+        devices = get_all_devices(kp)
+        device_names = [device.name for device in devices]
+        if file:
+            device = retrieve_device_from_file(device_names, file)
+        else:
+            device = retrieve_device_from_input(device_names)
+
+        add_device_entry(device, kp)
+        typer.echo(f"😄 added device {device.name} to database")
+
+
+def check_initialization():
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
-        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH)
-    recruit_device(file, KEEPASS_DB_PATH, logger)
+        raise Exception("⛔ program is not initialized! please run commander init!")
+
+
+def retrieve_device_from_file(device_names: List[str], file: typer.FileText):
+    device_json = json.load(file)
+    device = Device.model_validate(device_json)
+    if device.name in device_names:
+        raise ValueError(f"⛔ device {device.name} is already reserved.")
+
+    if device.device_type not in SUPPORTED_DEVICE_TYPES:
+        raise ValueError(f"⛔ device {device.device_type} is not supported.")
+    return device
 
 
 @app.command(help="remove a device from list")
-def remove(devices: List[str] = typer.Option(None, "--device")):
+def remove(devices: Annotated[List[str], typer.Option("--device")] = None):
+    check_initialization()
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         if not devices:
             all_devices = get_all_devices(kp)
