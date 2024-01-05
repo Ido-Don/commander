@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from keepass import KeepassDB, DEVICE_GROUP_NAME
+from NetworkCommander.keepass import KeepassDB, DEVICE_GROUP_NAME
 
 
 def delete_project_files(directory):

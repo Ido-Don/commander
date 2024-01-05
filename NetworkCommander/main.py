@@ -6,7 +6,7 @@ import inquirer
 import rich
 import typer
 
-from __init__ import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
+from NetworkCommander.__init__ import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
 from NetworkCommander.deploy import deploy_commands, handle_results
 from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.device_list import print_devices

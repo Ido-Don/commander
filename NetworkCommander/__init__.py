@@ -1,5 +1,5 @@
 import os
-__version__ = '0.1.3'
+__version__ = '0.1.3a1'
 HOME_FOLDER = os.path.expanduser("~")
 if "COMMANDER_DIRECTORY" in os.environ:
     COMMANDER_DIRECTORY = os.environ["COMMANDER_DIRECTORY"]
