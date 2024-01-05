@@ -2,7 +2,7 @@ from typing import List
 
 import typer
 
-from device import Device
+from NetworkCommander.device import Device
 
 
 def format_device_list(devices: List[Device]) -> str:

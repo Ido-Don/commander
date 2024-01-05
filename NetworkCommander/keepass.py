@@ -4,7 +4,7 @@ from typing import List
 from pykeepass import pykeepass
 from rich.prompt import Prompt
 
-from device import Device
+from NetworkCommander.device import Device
 
 DEVICE_GROUP_NAME = "device"
 

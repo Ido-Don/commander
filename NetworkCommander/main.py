@@ -7,13 +7,12 @@ import rich
 import typer
 
 from __init__ import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
-from deploy import deploy_commands, handle_results
-from device_executer import PermissionLevel
-from device_list import print_devices
-from init import is_initialized, init_program, delete_project_files
-from keepass import KeepassDB, get_all_devices, remove_device, add_device_entry
-from recruit_device import retrieve_device_from_file
-from recruit_device import retrieve_device_from_input
+from NetworkCommander.deploy import deploy_commands, handle_results
+from NetworkCommander.device_executer import PermissionLevel
+from NetworkCommander.device_list import print_devices
+from NetworkCommander.init import is_initialized, init_program, delete_project_files
+from NetworkCommander.keepass import KeepassDB, get_all_devices, remove_device, add_device_entry
+from NetworkCommander.recruit_device import retrieve_device_from_file, retrieve_device_from_input
 
 logger = logging.Logger("commander")
 logging.basicConfig(level=logging.INFO)

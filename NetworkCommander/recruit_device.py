@@ -4,8 +4,8 @@ from typing import List
 import typer
 from rich.prompt import Prompt
 
-from device import Device
-from device import SUPPORTED_DEVICE_TYPES
+from NetworkCommander.device import Device
+from NetworkCommander.device import SUPPORTED_DEVICE_TYPES
 
 
 def retrieve_device_from_input(reserved_device_names: List[str]) -> Device:

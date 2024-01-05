@@ -1,14 +1,13 @@
 import concurrent.futures
 import os
-from logging import Logger
 from typing import List
 
 import netmiko
 import typer
 
-from device import Device
-from device_executer import execute_commands, PermissionLevel
-from __init__ import COMMANDER_DIRECTORY
+from NetworkCommander.__init__ import COMMANDER_DIRECTORY
+from NetworkCommander.device import Device
+from NetworkCommander.device_executer import execute_commands, PermissionLevel
 
 MAX_WORKERS = 10
 
