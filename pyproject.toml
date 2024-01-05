@@ -16,7 +16,7 @@ textfsm = "^1.1.3"
 
 
 [tool.poetry.scripts]
-commander = "commander.main:app"
+commander = "network-commander.main:app"
 
 [build-system]
 requires = ["poetry-core"]
