@@ -96,14 +96,14 @@ def recruit(file: Annotated[Optional[typer.FileText], typer.Argument()] = None):
 
 def check_initialization():
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
-        raise Exception("⛔ program is not initialized! please run commander init!")
+        raise Exception("⛔ program is not initialized, please run commander init!")
 
 
 def retrieve_device_from_file(device_names: List[str], file: typer.FileText):
     device_json = json.load(file)
     device = Device.model_validate(device_json)
     if device.name in device_names:
-        raise ValueError(f"⛔ device {device.name} is already reserved.")
+        raise ValueError(f"⛔ device {device.name} is already in database.")
 
     if device.device_type not in SUPPORTED_DEVICE_TYPES:
         raise ValueError(f"⛔ device {device.device_type} is not supported.")
