@@ -25,12 +25,14 @@ class Device(BaseModel):
 
     @property
     def device_options(self):
-        _device_options = {
-            "username": self.username,
-            "password": self.password,
-            "host": self.host,
-            "device_type": self.device_type
-        }
-        if self.port:
-            _device_options["port"] = self.port
-        return _device_options
+        json_dump = self.model_dump()
+        del json_dump["name"]
+        return json_dump
+
+
+SUPPORTED_DEVICE_TYPES = [
+    "cisco_ios",
+    "cisco_ios_xe",
+    "cisco_ios_telnet",
+    "cisco_ios_xe_telnet"
+]
