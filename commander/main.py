@@ -61,6 +61,7 @@ def deploy(
 
     if command_list:
         all_commands += command_list
+
     all_commands = [command.strip("\n ") for command in all_commands]
     all_commands = list(filter(bool, all_commands))
 
