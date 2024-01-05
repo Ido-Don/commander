@@ -24,7 +24,6 @@ handler.setLevel("INFO")
 logger.addHandler(handler)
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
-device_entry_type: TypeAlias = dict[str, str | dict[str, str]]
 
 
 def is_valid_command(command: str):
