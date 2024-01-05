@@ -37,7 +37,7 @@ def deploy_commands(commands: List[str], devices: List[Device], permission_level
 
 
 def handle_results(results: str, device_name: str, logger):
-    outputs_folder = os.path.join(COMMANDER_DIRECTORY, 'ouputs')
+    outputs_folder = os.path.join(COMMANDER_DIRECTORY, 'outputs')
     if not os.path.isdir(outputs_folder):
         os.mkdir(outputs_folder)
     device_output_txt_file = os.path.join(outputs_folder, device_name + ".txt")
