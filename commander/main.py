@@ -118,8 +118,10 @@ def remove(devices: Annotated[List[str], typer.Option("--device")] = None):
 
         print_devices(devices)
         typer.confirm(f"⚠️ are you sure you want to delete {len(devices)} devices?", abort=True)
+
         for device_name in devices:
             remove_device(device_name, kp)
+
         typer.echo(f"🗑️ deleted {len(devices)} devices")
 
 
@@ -128,10 +130,12 @@ def init():
     rich.print("Welcome to commander! 🥳")
     if is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
         rich.print("😯 commander is already initialized")
-        reinitialize: bool = typer.confirm("⚠️ do you want to delete everything and start over?")
+        reinitialize = typer.confirm("⚠️ do you want to delete everything and start over?")
+
         if reinitialize:
             rich.print(f"🗄️ deleting directory: {COMMANDER_DIRECTORY}")
             delete_project_files(COMMANDER_DIRECTORY)
+
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
         rich.print(f"creating new database in {COMMANDER_DIRECTORY}")
         init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH)
