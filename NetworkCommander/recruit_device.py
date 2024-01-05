@@ -8,7 +8,7 @@ from device import Device
 from device import SUPPORTED_DEVICE_TYPES
 
 
-def retrieve_device_from_input(reserved_device_names: List[str]):
+def retrieve_device_from_input(reserved_device_names: List[str]) -> Device:
     name = Prompt.ask("Device's name")
     while name in reserved_device_names:
         typer.echo(
