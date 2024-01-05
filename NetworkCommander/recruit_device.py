@@ -17,6 +17,7 @@ def retrieve_device_from_input(reserved_device_names: List[str]):
             err=True
         )
         name = Prompt.ask("Device's name")
+
     username = Prompt.ask("Device's username")
     if not username:
         username = ''
