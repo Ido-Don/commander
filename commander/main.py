@@ -57,11 +57,13 @@ def deploy(
 
     all_commands = []
     if command_file:
-        striped_command_file = [command.strip("\n ") for command in command_file]
-        all_commands += striped_command_file
+        all_commands += command_file
 
     if command_list:
         all_commands += command_list
+    all_commands = [command.strip("\n ") for command in all_commands]
+    all_commands = list(filter(bool, all_commands))
+
     invalid_commands_exist = all(map(is_valid_command, all_commands))
     if not invalid_commands_exist:
         invalid_commands = filter(is_valid_command, all_commands)
