@@ -42,7 +42,8 @@ def get_all_devices(kp: pykeepass.PyKeePass) -> List[Device]:
 
 def does_device_exist(device_name: str, kp: pykeepass.PyKeePass) -> bool:
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
-    return device_name in [device_entry.title for device_entry in device_group.entries]
+    devices = kp.find_entries(group=device_group, title=device_name)
+    return bool(devices)
 
 
 def remove_device(device_name: str, kp: pykeepass.PyKeePass) -> None:

@@ -118,44 +118,44 @@ def recruit(file: Annotated[typer.FileText, typer.Argument()] = None):
 
 
 @device_group.command(help="remove a device from list")
-def remove(devices: Annotated[List[str], typer.Option("--device")] = None):
+def remove(devices: List[str]):
     with KeepassDB(KEEPASS_DB_PATH) as kp:
 
-        all_devices = get_all_devices(kp)
-        all_device_names = [device.name for device in all_devices]
-
-        if not devices:
-            devices = inquirer.checkbox(message="⚠️ which devices do you want to remove?", choices=all_device_names)
-
+        all_device_entry = get_all_devices(kp)
+        all_device_names = [device.name for device in all_device_entry]
         non_existing_devices = set(devices) - set(all_device_names)
         if non_existing_devices:
             raise Exception(f"⛔ devices {', '.join(non_existing_devices)} don't exist")
-
-        print_devices(devices)
-        typer.confirm(f"⚠️ are you sure you want to delete {len(devices)} devices?", abort=True)
+        device_entries = []
+        device_name_map = dict(zip(all_device_names, all_device_entry))
+        for device_name in devices:
+            if device_name in device_name_map:
+                device_entries.append(device_name_map[device_name])
+        print_devices(device_entries)
+        typer.confirm(f"⚠️ are you sure you want to delete {len(device_entries)} devices?", abort=True)
 
         for device_name in devices:
             remove_device(device_name, kp)
 
-        typer.echo(f"🗑️ deleted {len(devices)} devices")
+        typer.echo(f"deleted {len(device_entries)} devices")
 
 
 @app.command(help="initialize the project")
 def init():
-    rich.print("Welcome to commander! 🥳")
+    rich.print("Welcome to commander!")
     if is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
-        rich.print("😯 commander is already initialized")
+        rich.print("commander is already initialized")
         reinitialize = typer.confirm("⚠️ do you want to delete everything and start over?")
 
         if reinitialize:
-            rich.print(f"🗄️ deleting directory: {COMMANDER_DIRECTORY}")
+            rich.print(f"deleting directory: {COMMANDER_DIRECTORY}")
             delete_project_files(COMMANDER_DIRECTORY)
 
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
         rich.print(f"creating new database in {COMMANDER_DIRECTORY}")
         init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH)
 
-    rich.print("😁 finished the initialization process, have a great day")
+    rich.print("finished the initialization process, have a great day")
 
 
 def main():
