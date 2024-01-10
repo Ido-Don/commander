@@ -1,18 +1,26 @@
 from typing import Optional, Any, Dict
-from pydantic import BaseModel
 
 
-class Device(BaseModel):
+class Device:
     """
     netmiko.ConnectHandler takes in a lot of arguments that change from execution to execution.
     this class is here to hold the data netmiko.ConnectHandler needs to run.
     """
-    name: str
-    username: str
-    password: str
-    host: str
-    device_type: str
-    port: Optional[str] = None
+
+    def __init__(self, name: str, username: str, password: str, host: str, device_type: str,
+                 port: Optional[str] = None):
+        self.name = name
+        self.username = username
+        if not username:
+            self.username = ""
+
+        self.password = password
+        if not password:
+            self.password = ""
+
+        self.host = host
+        self.device_type = device_type
+        self.port = port
 
     def __str__(self):
         device_string = f"{self.name}({self.device_type}) -> {self.get_ssh_string()}"
@@ -47,8 +55,14 @@ class Device(BaseModel):
         example - netmiko.ConnectionHandler(**device.device_options).
         :return: a dictionary containing the arguments netmiko.ConnectionHandler() needs to run
         """
-        json_dump = self.model_dump()
-        del json_dump["name"]
+        json_dump = {
+            "username": self.username,
+            "password": self.password,
+            "host": self.host,
+            "device_type": self.device_type
+        }
+        if self.port:
+            json_dump['port'] = self.port
         return json_dump
 
 
