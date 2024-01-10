@@ -2,7 +2,6 @@ import logging
 import sys
 from typing import Annotated, List
 
-import inquirer
 import rich
 import typer
 
@@ -46,7 +45,7 @@ def ping():
         devices = get_all_devices(kp)
 
     if not devices:
-        raise Exception("😔 you don't have any devices in the database.")
+        raise Exception("you don't have any devices in the database.")
 
     print_devices(devices)
 
@@ -67,7 +66,7 @@ def deploy(
         devices = get_all_devices(kp)
 
     if not devices:
-        raise Exception("😔 you don't have any devices in the database.")
+        raise Exception("you don't have any devices in the database.")
 
     all_commands = []
     if command_file:
@@ -114,7 +113,7 @@ def recruit(file: Annotated[typer.FileText, typer.Argument()] = None):
             device = retrieve_device_from_input(device_names)
 
         add_device_entry(device, kp)
-        typer.echo(f"😄 added device {device.name} to database")
+        typer.echo(f"added device {device.name} to database")
 
 
 @device_group.command(help="remove a device from list")
