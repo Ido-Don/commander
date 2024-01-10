@@ -18,13 +18,13 @@ def retrieve_device_from_input(reserved_device_names: List[str]) -> Device:
         )
         name = Prompt.ask("Device's name")
 
-    username = Prompt.ask("Device's username", default="")
+    username = Prompt.ask("Device's username")
     if not username:
         username = ''
-    password = Prompt.ask("Device's password", password=True, default="")
+    password = Prompt.ask("Device's password", password=True)
     if not password:
         password = ''
-    host = Prompt.ask("Device's ip/hostname", default="")
+    host = Prompt.ask("Device's ip/hostname")
     device_type = Prompt.ask("Device's software Type", choices=SUPPORTED_DEVICE_TYPES, default=SUPPORTED_DEVICE_TYPES[0])
     default_port = "22"
     if 'telnet' in device_type:
