@@ -39,6 +39,17 @@ def check_initialization():
         raise Exception("⛔ program is not initialized, please run commander init!")
 
 
+@device_group.command(help="tag a device to better segment them")
+def tag(device_tag: str, devices: List[str]):
+    with KeepassDB(KEEPASS_DB_PATH) as kp:
+
+        all_devices = get_all_devices(kp)
+        all_device_names = [device.name for device in all_devices]
+        non_existent_devices = set(all_device_names) - set(devices)
+        if non_existent_devices:
+            raise Exception(f"devices {', '.join(non_existent_devices)} doesn't exist")
+
+
 @device_group.command(help="try to connect to all the devices in your database")
 def ping():
     with KeepassDB(KEEPASS_DB_PATH) as kp:
