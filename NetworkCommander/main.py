@@ -203,7 +203,6 @@ def remove(devices: List[str]):
     remove a device from your database
     """
     with KeepassDB(KEEPASS_DB_PATH) as kp:
-
         all_device_entry = get_all_device_entries(kp)
         all_device_names = [device.name for device in all_device_entry]
         non_existing_devices = set(devices) - set(all_device_names)

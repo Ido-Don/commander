@@ -85,16 +85,20 @@ def add_device_entry(device: Device, kp: pykeepass.PyKeePass, tags: List[str] = 
         new_entry.set_custom_property(key, val, True)
 
 
-def convert_device_to_json(entry: pykeepass.Entry) -> dict[str, str]:
+def convert_device_to_json(entry: pykeepass.Entry) -> dict[str, str | int]:
     device_options = {
         **entry.custom_properties,
-    }
-    device_options = {
-        **device_options,
         "username": entry.username,
         "password": entry.password,
         "name": entry.title
     }
+    if 'port' in device_options:
+        if not device_options['port']:
+            raise ValueError("port is defined in the entry but doesn't have any value")
+
+        port = device_options['port']
+        device_options['port'] = int(port)
+
     if not device_options["username"]:
         device_options["username"] = ""
     if not device_options["password"]:
