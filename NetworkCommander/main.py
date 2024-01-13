@@ -10,7 +10,8 @@ from NetworkCommander.deploy import deploy_commands, handle_results
 from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
-from NetworkCommander.keepass import KeepassDB, get_all_devices, remove_device, add_device_entry
+from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, add_device_entry, tag_device, \
+    untag_device
 from NetworkCommander.recruit_device import retrieve_device_from_file, retrieve_device_from_input
 
 logger = logging.Logger("commander")
@@ -20,9 +21,12 @@ handler.setLevel("INFO")
 logger.addHandler(handler)
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
-device_group = typer.Typer(pretty_exceptions_show_locals=False,
-                           help="control and manage the devices under your command")
-app.add_typer(device_group, name="device")
+device_command_group = typer.Typer(pretty_exceptions_show_locals=False,
+                                   help="control and manage the devices under your command")
+app.add_typer(device_command_group, name="device")
+tag_command_group = typer.Typer(pretty_exceptions_show_locals=False,
+                                help="tag operations on devices")
+device_command_group.add_typer(tag_command_group, name="tag")
 
 
 def is_valid_command(command: str):
@@ -33,27 +37,44 @@ def is_valid_command(command: str):
     return True
 
 
-@device_group.callback()
+@device_command_group.callback()
 def check_initialization():
     if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
         raise Exception("⛔ program is not initialized, please run commander init!")
 
 
-@device_group.command(help="tag a device to better segment them")
-def tag(device_tag: str, devices: List[str]):
+@tag_command_group.command(help="tag a device to better segment them")
+def add(device_tag: str, devices: List[str]):
     with KeepassDB(KEEPASS_DB_PATH) as kp:
-
-        all_devices = get_all_devices(kp)
+        all_devices = get_all_device_entries(kp)
         all_device_names = [device.name for device in all_devices]
         non_existent_devices = set(all_device_names) - set(devices)
         if non_existent_devices:
             raise Exception(f"devices {', '.join(non_existent_devices)} doesn't exist")
 
+        for device_name in devices:
+            tag_device(kp, device_tag, device_name)
+        rich.print(f"added {device_tag} to {len(devices)} devices")
 
-@device_group.command(help="try to connect to all the devices in your database")
+
+@tag_command_group.command(help="tag a device to better segment them")
+def remove(device_tag: str, devices: List[str]):
+    with KeepassDB(KEEPASS_DB_PATH) as kp:
+        all_devices = get_all_device_entries(kp)
+        all_device_names = [device.name for device in all_devices]
+        non_existent_devices = set(all_device_names) - set(devices)
+        if non_existent_devices:
+            raise Exception(f"devices {', '.join(non_existent_devices)} doesn't exist")
+
+        for device_name in devices:
+            untag_device(kp, device_tag, device_name)
+        rich.print(f"removed {device_tag} from {len(devices)} devices")
+
+
+@device_command_group.command(help="try to connect to all the devices in your database")
 def ping():
     with KeepassDB(KEEPASS_DB_PATH) as kp:
-        devices = get_all_devices(kp)
+        devices = get_all_device_entries(kp)
 
     if not devices:
         raise Exception("you don't have any devices in the database.")
@@ -64,7 +85,7 @@ def ping():
     list(deploy_commands([], devices, PermissionLevel.USER))
 
 
-@device_group.command(help="deploy command to all the devices in your database")
+@device_command_group.command(help="deploy command to all the devices in your database")
 def deploy(
         command_list: Annotated[List[str], typer.Option("--command")] = None,
         command_file: typer.FileText = None,
@@ -74,7 +95,7 @@ def deploy(
         raise Exception("⛔ you cant deploy to devices without any commands.")
 
     with KeepassDB(KEEPASS_DB_PATH) as kp:
-        devices = get_all_devices(kp)
+        devices = get_all_device_entries(kp)
 
     if not devices:
         raise Exception("you don't have any devices in the database.")
@@ -105,18 +126,18 @@ def deploy(
         handle_results(result, device.name)
 
 
-@device_group.command(name="list", help="list all the devices in your command")
+@device_command_group.command(name="list", help="list all the devices in your command")
 def list_devices():
     with KeepassDB(KEEPASS_DB_PATH) as kp:
-        devices = get_all_devices(kp)
+        devices = get_all_device_entries(kp)
 
     print_devices(devices)
 
 
-@device_group.command(help="add a device to the list of devices")
+@device_command_group.command(help="add a device to the list of devices")
 def recruit(file: Annotated[typer.FileText, typer.Argument()] = None):
     with KeepassDB(KEEPASS_DB_PATH) as kp:
-        devices = get_all_devices(kp)
+        devices = get_all_device_entries(kp)
         device_names = [device.name for device in devices]
         if file:
             device = retrieve_device_from_file(device_names, file)
@@ -127,11 +148,11 @@ def recruit(file: Annotated[typer.FileText, typer.Argument()] = None):
         typer.echo(f"added device {device.name} to database")
 
 
-@device_group.command(help="remove a device from list")
+@device_command_group.command(help="remove a device from list")
 def remove(devices: List[str]):
     with KeepassDB(KEEPASS_DB_PATH) as kp:
 
-        all_device_entry = get_all_devices(kp)
+        all_device_entry = get_all_device_entries(kp)
         all_device_names = [device.name for device in all_device_entry]
         non_existing_devices = set(devices) - set(all_device_names)
         if non_existing_devices:

@@ -34,8 +34,10 @@ def convert_device_entry_to_device(device_entry: pykeepass.Entry) -> Device:
     return device_entry
 
 
-def get_all_devices(kp: pykeepass.PyKeePass) -> List[Device]:
+def get_all_device_entries(kp: pykeepass.PyKeePass, tags: List[str]) -> List[Device]:
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
+    devices = kp.find_entries(group=device_group, tags=tags)
+
     devices = [convert_device_entry_to_device(device) for device in device_group.entries]
     return devices
 
@@ -54,7 +56,7 @@ def remove_device(device_name: str, kp: pykeepass.PyKeePass) -> None:
         kp.delete_entry(device_entry)
 
 
-def get_device_entries(device_name, kp):
+def get_device_entries(device_name: str, kp: pykeepass.PyKeePass):
     if not does_device_exist(device_name, kp):
         raise Exception(f"{device_name} doesn't exist in db")
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
@@ -97,3 +99,32 @@ def convert_device_to_json(entry: pykeepass.Entry) -> dict[str, str]:
         device_options["password"] = ''
 
     return device_options
+
+
+def tag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
+    if not does_device_exist(device_name, kp):
+        raise Exception(f"{device_name} doesn't exist in db")
+    device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
+    device_entries = kp.find_entries(group=device_group, title=device_name)
+
+    for device_entry in device_entries:
+        tags = device_entry.tags
+        if tags:
+            tags += [device_tag]
+        else:
+            tags = [device_tag]
+        device_entry.tags = tags
+
+
+def untag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
+    if not does_device_exist(device_name, kp):
+        raise Exception(f"{device_name} doesn't exist in db")
+    device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
+    device_entries = kp.find_entries(group=device_group, title=device_name)
+
+    for device_entry in device_entries:
+        tags = device_entry.tags
+        if not tags or device_tag not in tags:
+            raise ValueError(f"device {device_name} is not tagged with {device_tag}")
+        tags.remove(device_tag)
+        device_entry.tags = tags
