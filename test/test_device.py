@@ -1,45 +1,160 @@
-# import os.path
-#
-# import pytest
-#
-# from commander.device import Device
-# from commander.keepass import does_device_exist, add_device_entry
-# from commander.init import create_new_keepass_db
-#
-# KEEPASS_TEST_DB_PATH = r"test.kdbx"
-# KEEPASS_TEST_PASSWORD = "T3st"
-#
-#
-# @pytest.fixture
-# def create_new_test_db():
-#     # remove old test db if exist
-#     if os.path.isfile(KEEPASS_TEST_DB_PATH):
-#         os.remove(KEEPASS_TEST_DB_PATH)
-#
-#     # recreate the db
-#     create_new_keepass_db(KEEPASS_TEST_DB_PATH, KEEPASS_TEST_PASSWORD)
-#
-#
-# @pytest.mark.parametrize("device, expectation", [
-#     (
-#             {
-#                 "name": "r1",
-#                 "username": "",
-#                 "password": "",
-#                 "device_options": {}
-#             },
-#             True
-#     ), (
-#             {
-#                 "name": "r2",
-#                 "username": "",
-#                 "password": "",
-#                 "device_options": {}
-#             },
-#             True
-#     )
-# ])
-# def test_insert_device(create_new_test_db, device, expectation):
-#     add_device_entry(Device(**device), KEEPASS_TEST_DB_PATH, KEEPASS_TEST_PASSWORD)
-#     device_name = device["name"]
-#     assert does_device_exist(device_name, KEEPASS_TEST_DB_PATH, KEEPASS_TEST_PASSWORD) == expectation
+from typing import Any, Dict
+
+import pytest
+
+from NetworkCommander.device import Device
+
+
+class TestDevice:
+    @pytest.mark.parametrize(("device", "expected_ssh_string"), [
+        (
+                Device("", "Camila", "12345", "asda", "1", 123),
+                "Camila@asda:123"
+        ),
+        (
+                Device("lsdj1", "Iven", "12345", "asda", "1", 123),
+                "Iven@asda:123"
+        ),
+        (
+                Device("", "h3lp", "12345", "asda", "None", 123),
+                "h3lp@asda:123"
+        ),
+        (
+                Device("", "123", "12345", "asda", "1"),
+                "123@asda"
+        ),
+        (
+                Device("", "Camila", "12345", "asda", "1", 123),
+                "Camila@asda:123"
+        ),
+    ]
+                             )
+    def test_get_ssh_string(self, device: Device, expected_ssh_string: str):
+        assert device.get_ssh_string() == expected_ssh_string
+
+    @pytest.mark.parametrize(("device", "expected_string"), [
+        (
+                Device("", "Camila", "12345", "asda", "1", 123),
+                "(1) -> Camila@asda:123"
+        ),
+        (
+                Device("lsdj1", "Iven", "12345", "asda", "1", 123),
+                "lsdj1(1) -> Iven@asda:123"
+        ),
+        (
+                Device("", "h3lp", "12345", "asda", "None", 123),
+                "(None) -> h3lp@asda:123"
+        ),
+        (
+                Device("hello", "123", "12345", "asda", "device"),
+                "hello(device) -> 123@asda"
+        ),
+        (
+                Device("", "Camila", "12345", "asda", "", 123),
+                "Camila@asda:123"
+        ),
+        (
+                Device("", "Camila", "12345", "asda", ""),
+                "Camila@asda"
+        ),
+    ]
+                             )
+    def test_str_conversion(self, device: Device, expected_string: str):
+        assert str(device) == expected_string
+
+    @pytest.mark.parametrize(
+        ("device1", "device2"),
+        [
+            (
+                    Device("123", "133", 'soijda1', "135o", "aa1"),
+                    Device("123", "133", 'soijda1', "135o", "aa1")
+            ),
+            (
+                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
+                    Device("123", "133", 'soijda1', "135o", "aa1", 123)
+            ),
+        ]
+    )
+    def test_eq(self, device1: Device, device2: Device):
+        assert device1 == device2
+
+    @pytest.mark.parametrize(
+        ("device1", "device2"),
+        [
+            (
+                    Device("123", "133", 'soijda1', "135o", "aa1"),
+                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
+            ),
+            (
+                    Device("123", "133", 'soijda1', "135o", "aa1"),
+                    Device("123", "133", 'soijda1', "135o", "aa"),
+            ),
+            (
+                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
+                    Device("123", "133", 'soijda1', "135o", "aa", 123),
+            ),
+            (
+                    Device("123", "133", 'soijda1', "135o", "aa1"),
+                    Device("123", "133", 'soijda1', "135", "aa1"),
+            ),
+            (
+                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
+                    Device("123", "133", 'soijda1', "135", "aa1", 123),
+            ),
+            (
+                    Device("123", "133", 'soijda1', "135o", "aa1"),
+                    Device("123", "133", 'soijda', "135o", "aa1"),
+            ),
+            (
+                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
+                    Device("123", "133", 'soijda', "135o", "aa1", 123),
+            ),
+            (
+                    Device("123", "133", 'soijda1', "135o", "aa1"),
+                    Device("123", "13", 'soijda1', "135o", "aa1"),
+            ),
+            (
+                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
+                    Device("123", "13", 'soijda1', "135o", "aa1", 123),
+            ),
+            (
+                    Device("123", "133", 'soijda1', "135o", "aa1"),
+                    Device("12", "133", 'soijda1', "135o", "aa1"),
+            ),
+            (
+                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
+                    Device("12", "133", 'soijda1', "135o", "aa1", 123),
+            )
+        ]
+    )
+    def test_un_eq(self, device1: Device, device2: Device):
+        assert device1 != device2
+
+    @pytest.mark.parametrize(
+        ("json", "expected_device"),
+        [
+            (
+                    {
+                        "name": "123",
+                        "username": "133",
+                        "password": 'soijda1',
+                        "host": "135o",
+                        "device_type": "aa1"
+                    },
+                    Device("123", "133", 'soijda1', "135o", "aa1"),
+            ),
+            (
+                    {
+                        "name": ";lkdfs",
+                        "username": "133",
+                        "password": '132okdlkf',
+                        "host": "135o",
+                        "device_type": "aa1",
+                        "port": 123
+                    },
+                    Device(";lkdfs", "133", '132okdlkf', "135o", "aa1", 123),
+            )
+        ]
+    )
+    def test_dict_conversion(self, json: Dict[str, Any], expected_device: Device):
+        assert Device.from_dict(json) == expected_device
