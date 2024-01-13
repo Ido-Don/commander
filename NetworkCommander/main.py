@@ -1,11 +1,11 @@
 import logging
 import sys
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 
 import rich
 import typer
 
-from NetworkCommander.__init__ import COMMANDER_DIRECTORY, KEEPASS_DB_PATH
+from NetworkCommander.__init__ import COMMANDER_DIRECTORY, KEEPASS_DB_PATH, __version__
 from NetworkCommander.deploy import deploy_commands, handle_results
 from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.device_list import print_devices
@@ -27,6 +27,16 @@ app.add_typer(device_command_group, name="device")
 tag_command_group = typer.Typer(pretty_exceptions_show_locals=False,
                                 help="tag operations on devices")
 device_command_group.add_typer(tag_command_group, name="tag")
+
+PIPE = "PIPE_FROM_STDIN"
+
+
+@app.command()
+def version():
+    """
+        show the version of the application
+    """
+    typer.echo(f"Commander version: {__version__}")
 
 
 def is_valid_command(command: str):
@@ -87,42 +97,38 @@ def ping(tags: Annotated[List[str], typer.Argument(help="ping the devices that h
 
 @device_command_group.command(help="deploy command to all the devices in your database")
 def deploy(
-        command_list: Annotated[List[str], typer.Option("--command")] = None,
-        command_file: typer.FileText = None,
-        permission_level: PermissionLevel = PermissionLevel.USER
+        tags: Annotated[List[str], typer.Argument()] = None,
+        command: str = typer.Argument(... if sys.stdin.isatty() else PIPE, show_default=False),
+        permission_level: Annotated[PermissionLevel, typer.Option()] = 'user'
 ):
-    if not command_list and not command_file:
-        raise Exception("⛔ you cant deploy to devices without any commands.")
+    # if the commands come from pipe than we need to read them from stdin and filter for empty lines
+    if command == PIPE:
+        command = sys.stdin.read()
+        commands = command.split('\n')
+        commands = list(filter(bool, commands))
+    # if the commands come directly from the user (through the cli argument) then we need to convert them to a list
+    else:
+        commands = [command]
 
     with KeepassDB(KEEPASS_DB_PATH) as kp:
-        devices = get_all_device_entries(kp)
+        devices = get_all_device_entries(kp, tags)
 
     if not devices:
         raise Exception("you don't have any devices in the database.")
 
-    all_commands = []
-    if command_file:
-        all_commands += command_file
-
-    if command_list:
-        all_commands += command_list
-
-    all_commands = [command.strip("\n ") for command in all_commands]
-    all_commands = list(filter(bool, all_commands))
-
-    invalid_commands_exist = all(map(is_valid_command, all_commands))
+    invalid_commands_exist = all(map(is_valid_command, commands))
     if not invalid_commands_exist:
-        invalid_commands = filter(is_valid_command, all_commands)
+        invalid_commands = filter(is_valid_command, commands)
         raise Exception(f"⛔ {','.join(invalid_commands)} are not valid commands.")
 
     rich.print("commands:")
-    for command in all_commands:
+    for command in commands:
         rich.print(f"{command}")
 
     print_devices(devices)
 
-    typer.confirm(f"do you want to deploy these {len(all_commands)} commands on {len(devices)} devices?", abort=True)
-    for result, device in deploy_commands(all_commands, devices, permission_level):
+    typer.confirm(f"do you want to deploy these {len(commands)} commands on {len(devices)} devices?", abort=True)
+    for result, device in deploy_commands(commands, devices, permission_level):
         handle_results(result, device.name)
 
 
