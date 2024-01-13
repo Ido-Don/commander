@@ -34,11 +34,13 @@ def convert_device_entry_to_device(device_entry: pykeepass.Entry) -> Device:
     return device_entry
 
 
-def get_all_device_entries(kp: pykeepass.PyKeePass, tags: List[str]) -> List[Device]:
+def get_all_device_entries(kp: pykeepass.PyKeePass, tags: List[str] = None) -> List[Device]:
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
-    devices = kp.find_entries(group=device_group, tags=tags)
-
-    devices = [convert_device_entry_to_device(device) for device in device_group.entries]
+    if tags:
+        devices_entries = kp.find_entries(group=device_group, tags=tags)
+    else:
+        devices_entries = kp.find_entries(group=device_group)
+    devices = [convert_device_entry_to_device(device) for device in devices_entries.entries]
     return devices
 
 
@@ -64,7 +66,7 @@ def get_device_entries(device_name: str, kp: pykeepass.PyKeePass):
     return device_entries
 
 
-def add_device_entry(device: Device, kp: pykeepass.PyKeePass) -> None:
+def add_device_entry(device: Device, kp: pykeepass.PyKeePass, tags: List[str] = None) -> None:
     entry_title = device.name
     if does_device_exist(entry_title, kp):
         raise Exception(f"{entry_title} already exist in db")
@@ -73,7 +75,7 @@ def add_device_entry(device: Device, kp: pykeepass.PyKeePass) -> None:
 
     username = device.username
     password = device.password
-    new_entry = kp.add_entry(device_group, entry_title, username, password)
+    new_entry = kp.add_entry(device_group, entry_title, username, password, tags=tags)
 
     optional_data = {"host": device.host, "device_type": device.device_type}
 

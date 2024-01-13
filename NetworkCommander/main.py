@@ -72,9 +72,9 @@ def remove(device_tag: str, devices: List[str]):
 
 
 @device_command_group.command(help="try to connect to all the devices in your database")
-def ping():
+def ping(tags: Annotated[List[str], typer.Argument(help="ping the devices that have all of these tags")] = None):
     with KeepassDB(KEEPASS_DB_PATH) as kp:
-        devices = get_all_device_entries(kp)
+        devices = get_all_device_entries(kp, tags)
 
     if not devices:
         raise Exception("you don't have any devices in the database.")
