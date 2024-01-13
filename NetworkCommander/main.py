@@ -25,7 +25,7 @@ device_command_group = typer.Typer(pretty_exceptions_show_locals=False,
                                    help="control and manage the devices under your command")
 app.add_typer(device_command_group, name="device")
 tag_command_group = typer.Typer(pretty_exceptions_show_locals=False,
-                                help="tag operations on devices")
+                                help="tag devices to better segment them")
 device_command_group.add_typer(tag_command_group, name="tag")
 
 PIPE = "PIPE_FROM_STDIN"
@@ -53,8 +53,11 @@ def check_initialization():
         raise Exception("⛔ program is not initialized, please run commander init!")
 
 
-@tag_command_group.command(help="tag a device to better segment them")
+@tag_command_group.command()
 def add(device_tag: str, devices: List[str]):
+    """
+    add a tag to devices
+    """
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         all_devices = get_all_device_entries(kp)
         all_device_names = [device.name for device in all_devices]
@@ -67,8 +70,11 @@ def add(device_tag: str, devices: List[str]):
         rich.print(f"added {device_tag} to {len(devices)} devices")
 
 
-@tag_command_group.command(help="tag a device to better segment them")
+@tag_command_group.command()
 def remove(device_tag: str, devices: List[str]):
+    """
+    remove a tag from devices
+    """
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         all_devices = get_all_device_entries(kp)
         all_device_names = [device.name for device in all_devices]
@@ -81,13 +87,27 @@ def remove(device_tag: str, devices: List[str]):
         rich.print(f"removed {device_tag} from {len(devices)} devices")
 
 
-@device_command_group.command(help="try to connect to all the devices in your database")
-def ping(tags: Annotated[List[str], typer.Argument(help="ping the devices that have all of these tags")] = None):
+@device_command_group.command()
+def ping(
+        tags: Annotated[
+            List[str],
+            typer.Argument(
+                help="ping the devices that have all of these tags",
+                show_default=False
+            )
+        ] = None
+):
+    """
+    try to connect to the devices in your database.
+    """
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         devices = get_all_device_entries(kp, tags)
 
     if not devices:
-        raise Exception("you don't have any devices in the database.")
+        if not tags:
+            raise Exception("you don't have any devices in the database.")
+        else:
+            raise Exception(f"you don't have any devices in the database with all of these tags: {', '.join(tags)}.")
 
     print_devices(devices)
 
@@ -95,12 +115,24 @@ def ping(tags: Annotated[List[str], typer.Argument(help="ping the devices that h
     list(deploy_commands([], devices, PermissionLevel.USER))
 
 
-@device_command_group.command(help="deploy command to all the devices in your database")
+@device_command_group.command()
 def deploy(
-        tags: Annotated[List[str], typer.Argument()] = None,
-        command: str = typer.Argument(... if sys.stdin.isatty() else PIPE, show_default=False),
+        tags: Annotated[
+            List[str],
+            typer.Argument(help="deploy the commands to devices matching these tags", show_default=False)
+        ] = None,
+        command: str = typer.Argument(...
+                                      if sys.stdin.isatty() else PIPE,
+                                      help="enter the command you want to deploy to your devices, you can also pipe "
+                                           "them in.",
+                                      show_default=False
+                                      ),
         permission_level: Annotated[PermissionLevel, typer.Option()] = 'user'
 ):
+    """
+    deploy command to all the devices in your database that match the tags.
+    """
+
     # if the commands come from pipe than we need to read them from stdin and filter for empty lines
     if command == PIPE:
         command = sys.stdin.read()
@@ -132,16 +164,27 @@ def deploy(
         handle_results(result, device.name)
 
 
-@device_command_group.command(name="list", help="list all the devices in your command")
-def list_devices():
+@device_command_group.command(name="list")
+def list_devices(
+        tags: Annotated[
+            List[str],
+            typer.Argument(help="list the devices matching these tags.", show_default=False)
+        ] = None
+):
+    """
+    list all the devices under your command.
+    """
     with KeepassDB(KEEPASS_DB_PATH) as kp:
-        devices = get_all_device_entries(kp)
+        devices = get_all_device_entries(kp, tags)
 
     print_devices(devices)
 
 
-@device_command_group.command(help="add a device to the list of devices")
+@device_command_group.command()
 def recruit(file: Annotated[typer.FileText, typer.Argument()] = None):
+    """
+    add a device to the list of devices
+    """
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         devices = get_all_device_entries(kp)
         device_names = [device.name for device in devices]
@@ -154,8 +197,11 @@ def recruit(file: Annotated[typer.FileText, typer.Argument()] = None):
         typer.echo(f"added device {device.name} to database")
 
 
-@device_command_group.command(help="remove a device from list")
+@device_command_group.command()
 def remove(devices: List[str]):
+    """
+    remove a device from your database
+    """
     with KeepassDB(KEEPASS_DB_PATH) as kp:
 
         all_device_entry = get_all_device_entries(kp)
@@ -177,8 +223,11 @@ def remove(devices: List[str]):
         typer.echo(f"deleted {len(device_entries)} devices")
 
 
-@app.command(help="initialize the project")
+@app.command()
 def init():
+    """
+    initialize the project
+    """
     rich.print("Welcome to commander!")
     if is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
         rich.print("commander is already initialized")
