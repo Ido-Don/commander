@@ -1,4 +1,10 @@
-from typing import Optional, Any, Dict
+from typing import Any, Dict
+
+
+def normalize_string_input(value: Any):
+    if not value:
+        return ""
+    return str(value)
 
 
 class Device:
@@ -7,24 +13,45 @@ class Device:
     this class is here to hold the data netmiko.ConnectHandler needs to run.
     """
 
-    def __init__(self, name: str, username: str, password: str, host: str, device_type: str,
-                 port: Optional[str] = None):
+    def __init__(self, name: str, username: str, password: str, host: str, device_type: str, port: int = None):
         self.name = name
-        self.username = username
-        if not username:
-            self.username = ""
-
-        self.password = password
-        if not password:
-            self.password = ""
-
+        self.username = normalize_string_input(username)
+        self.password = normalize_string_input(password)
         self.host = host
         self.device_type = device_type
-        self.port = port
+        if port:
+            if port < 0 or port > 65535:
+                raise ValueError("port cant be below 0 or below 65535")
+            self.port = str(port)
+        else:
+            self.port = None
+
+    @staticmethod
+    def from_dict(json: Dict[str, Any]):
+        return Device(**json)
 
     def __str__(self):
-        device_string = f"{self.name}({self.device_type}) -> {self.get_ssh_string()}"
+        device_string = ''
+        if self.name:
+            device_string += self.name
+        if self.device_type:
+            device_string += f'({self.device_type})'
+        if device_string:
+            device_string += ' -> '
+        device_string += self.get_ssh_string()
         return device_string
+
+    def __eq__(self, other):
+        if not isinstance(other, Device):
+            return False
+        return (
+                self.name == other.name and
+                self.username == other.username and
+                self.password == other.password and
+                self.host == other.host and
+                self.device_type == other.device_type and
+                self.port == other.port
+        )
 
     def get_ssh_string(self):
         """
