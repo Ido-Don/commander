@@ -1,5 +1,5 @@
 from typing import Any, Dict
-
+import mimesis
 import pytest
 
 from NetworkCommander.device import Device
@@ -157,4 +157,4 @@ class TestDevice:
         ]
     )
     def test_dict_conversion(self, json: Dict[str, Any], expected_device: Device):
-        assert Device.from_dict(json) == expected_device
+        assert Device(**json) == expected_device

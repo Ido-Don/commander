@@ -22,13 +22,9 @@ class Device:
         if port:
             if port < 0 or port > 65535:
                 raise ValueError("port cant be below 0 or below 65535")
-            self.port = str(port)
+            self.port = port
         else:
             self.port = None
-
-    @staticmethod
-    def from_dict(json: Dict[str, Any]):
-        return Device(**json)
 
     def __str__(self):
         device_string = ''
@@ -75,7 +71,7 @@ class Device:
         return ssh_string
 
     @property
-    def device_options(self) -> Dict[str, Any]:
+    def device_options(self) -> Dict[str, str]:
         """
         netmiko.ConnectionHandler() accepts only arguments.
         this property convert the data in this class to arguments netmiko.ConnectionHandler() can accept.
@@ -89,7 +85,7 @@ class Device:
             "device_type": self.device_type
         }
         if self.port:
-            json_dump['port'] = self.port
+            json_dump['port'] = str(self.port)
         return json_dump
 
 
