@@ -12,7 +12,7 @@ from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
 from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, add_device_entry, tag_device, \
     untag_device
-from NetworkCommander.recruit_device import retrieve_device_from_file, retrieve_device_from_input
+from NetworkCommander.recruit_device import retrieve_device_from_input
 
 logger = logging.Logger("commander")
 logging.basicConfig(level=logging.INFO)
@@ -181,17 +181,14 @@ def list_devices(
 
 
 @device_command_group.command()
-def recruit(file: Annotated[typer.FileText, typer.Argument()] = None):
+def recruit():
     """
     add a device to the list of devices
     """
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         devices = get_all_device_entries(kp)
         device_names = [device.name for device in devices]
-        if file:
-            device = retrieve_device_from_file(device_names, file)
-        else:
-            device = retrieve_device_from_input(device_names)
+        device = retrieve_device_from_input(device_names)
 
         add_device_entry(device, kp)
         typer.echo(f"added device {device.name} to database")
