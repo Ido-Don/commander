@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Annotated, List, Optional
+from typing import Annotated, List
 
 import rich
 import typer
