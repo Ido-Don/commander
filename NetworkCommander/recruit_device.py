@@ -35,7 +35,7 @@ def retrieve_device_from_input(reserved_device_names: List[str]) -> Device:
         username=username,
         password=password,
         host=host,
-        port=port,
+        port=int(port),
         device_type=device_type
     )
     return device
