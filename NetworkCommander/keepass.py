@@ -39,8 +39,8 @@ def get_all_device_entries(kp: pykeepass.PyKeePass, tags: List[str] = None) -> L
     if tags:
         devices_entries = kp.find_entries(group=device_group, tags=tags)
     else:
-        devices_entries = kp.find_entries(group=device_group)
-    devices = [convert_device_entry_to_device(device) for device in devices_entries.entries]
+        devices_entries = device_group.entries
+    devices = [convert_device_entry_to_device(device_entry) for device_entry in devices_entries]
     return devices
 
 
@@ -82,7 +82,7 @@ def add_device_entry(device: Device, kp: pykeepass.PyKeePass, tags: List[str] = 
     if device.port:
         optional_data["port"] = device.port
     for key, val in optional_data.items():
-        new_entry.set_custom_property(key, val, True)
+        new_entry.set_custom_property(key, str(val), True)
 
 
 def convert_device_to_json(entry: pykeepass.Entry) -> dict[str, str | int]:
