@@ -61,7 +61,7 @@ def add(device_tag: str, devices: List[str]):
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         all_devices = get_all_device_entries(kp)
         all_device_names = [device.name for device in all_devices]
-        non_existent_devices = set(all_device_names) - set(devices)
+        non_existent_devices = set(devices) - set(all_device_names)
         if non_existent_devices:
             raise Exception(f"devices {', '.join(non_existent_devices)} doesn't exist")
 
@@ -78,7 +78,7 @@ def remove(device_tag: str, devices: List[str]):
     with KeepassDB(KEEPASS_DB_PATH) as kp:
         all_devices = get_all_device_entries(kp)
         all_device_names = [device.name for device in all_devices]
-        non_existent_devices = set(all_device_names) - set(devices)
+        non_existent_devices = set(devices) - set(all_device_names)
         if non_existent_devices:
             raise Exception(f"devices {', '.join(non_existent_devices)} doesn't exist")
 
