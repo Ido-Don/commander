@@ -41,7 +41,7 @@ def execute_commands(device_options: dict, commands: List[str], permission_level
         change_permission(device, permission_level)
         if permission_level in ["user", "enable"]:
             output = send_commands(device, commands)
-        elif permission_level in ["configure terminal"]:
+        elif permission_level in ["configure_terminal"]:
             output = send_config_commands(device, commands)
     return output
 
