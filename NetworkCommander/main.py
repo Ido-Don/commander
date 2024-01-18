@@ -11,7 +11,7 @@ from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
 from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, add_device_entry, tag_device, \
-    untag_device
+    untag_device, get_device_tags
 from NetworkCommander.recruit_device import retrieve_device_from_input
 
 logger = logging.Logger("commander")
@@ -62,6 +62,8 @@ def add(device_tag: str, devices: List[str]):
         # if someone entered a wrong device name, it can't be tagged so an error is raised
         all_devices = get_all_device_entries(kp)
         all_device_names = {device.name for device in all_devices}
+
+        # get every device that is not in the database
         non_existent_devices = set(devices) - all_device_names
         if non_existent_devices:
             raise Exception(f"devices [{', '.join(non_existent_devices)}] doesn't exist")
@@ -76,6 +78,17 @@ def add(device_tag: str, devices: List[str]):
         for device_name in devices:
             tag_device(kp, device_tag, device_name)
         rich.print(f"added '{device_tag}' tag to {len(devices)} devices")
+
+
+@tag_command_group.command(name="list")
+def list_tags():
+    """
+    list every tag you put on devices
+    """
+    with KeepassDB(KEEPASS_DB_PATH) as kp:
+        tags = get_device_tags(kp)
+        for tag in tags:
+            rich.print(tag)
 
 
 @tag_command_group.command()
