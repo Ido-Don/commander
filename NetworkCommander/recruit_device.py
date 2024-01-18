@@ -35,7 +35,7 @@ def retrieve_device_from_input(reserved_device_names: List[str]) -> Device:
         username=username,
         password=password,
         host=host,
-        port=port,
+        port=int(port),
         device_type=device_type
     )
     return device
@@ -45,14 +45,3 @@ def clear_device(device):
     if device:
         return True
     return False
-
-
-def retrieve_device_from_file(device_names: List[str], file: typer.FileText):
-    device_json = json.load(file)
-    device = Device.model_validate(device_json)
-    if device.name in device_names:
-        raise ValueError(f"⛔ device {device.name} is already in database.")
-
-    if device.device_type not in SUPPORTED_DEVICE_TYPES:
-        raise ValueError(f"⛔ device {device.device_type} is not supported.")
-    return device

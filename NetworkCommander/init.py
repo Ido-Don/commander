@@ -19,8 +19,8 @@ def init_program(directory, keepass_db_path):
         create_new_keepass_db(keepass_db_path)
 
 
-def create_new_keepass_db(keepass_db_path):
-    with KeepassDB(keepass_db_path) as kp:
+def create_new_keepass_db(keepass_db_path, keepass_password=None):
+    with KeepassDB(keepass_db_path, keepass_password) as kp:
         kp.add_group(kp.root_group, DEVICE_GROUP_NAME)
 
 
