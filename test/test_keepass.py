@@ -7,10 +7,10 @@ import pytest
 
 from NetworkCommander.device import Device, SUPPORTED_DEVICE_TYPES
 from NetworkCommander.init import create_new_keepass_db
-from NetworkCommander.keepass import KeepassDB, add_device_entry, get_all_device_entries
+from NetworkCommander.keepass import KeepassDB, add_device_entry, get_all_device_entries, get_device_tags
 
 KEEPASS_PASSWORD = "123"
-POSSIBLE_TAGS = ['manhã', 'vivo', 'pelo', 'tia', 'assuntos', 'mexe', 'diabos', 'correcto', 'rapariga', 'socorro',
+POSSIBLE_TAGS = {'manhã', 'vivo', 'pelo', 'tia', 'assuntos', 'mexe', 'diabos', 'correcto', 'rapariga', 'socorro',
                  'trouxe', 'raparigas', 'liga', 'momentos', 'levar', 'papai', 'eu', 'morgan', 'acreditas', 'vim',
                  'chapéu', 'passagem', 'nos', 'gostei', 'ligo', 'cerca', 'governo', 'prender', 'apareceu', 'escolha',
                  'traz', 'daqui', 'olhos', 'respirar', 'levaram', 'sensação', 'sentado', 'acontecer', 'colega',
@@ -20,7 +20,7 @@ POSSIBLE_TAGS = ['manhã', 'vivo', 'pelo', 'tia', 'assuntos', 'mexe', 'diabos', 
                  'chave', 'praia', 'giro', 'chegou', 'senhoras', 'somos', 'inocente', 'agradecer', 'inocente',
                  'excelente', 'esperava', 'está', 'dou', 'fumar', 'paris', 'poderia', 'dado', 'perdão', 'estado',
                  'limpa', 'tome', 'terem', 'mão', 'completo', 'lamento', 'posição', 'milhão', 'esqueça', 'mal', 'dra',
-                 'irá', 'pode']
+                 'irá', 'pode'}
 
 internet = mimesis.Internet()
 generic = mimesis.Generic()
@@ -132,3 +132,8 @@ class TestKeepass:
 
         devices = get_all_device_entries(kp, tags)
         assert devices == [device]
+
+    def test_get_device_tags(self, populated_db):
+        kp = pykeepass.PyKeePass(populated_db, KEEPASS_PASSWORD)
+        tags = get_device_tags(kp)
+        assert tags == POSSIBLE_TAGS

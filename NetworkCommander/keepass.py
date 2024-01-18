@@ -44,6 +44,15 @@ def get_all_device_entries(kp: pykeepass.PyKeePass, tags: List[str] = None) -> L
     return devices
 
 
+def get_device_tags(kp: pykeepass.PyKeePass):
+    tags = set()
+    for entry in kp.entries:
+        if entry.tags:
+            tags.update(entry.tags)
+
+    return tags
+
+
 def does_device_exist(device_name: str, kp: pykeepass.PyKeePass) -> bool:
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     devices = kp.find_entries(group=device_group, title=device_name)
