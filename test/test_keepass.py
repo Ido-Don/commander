@@ -56,7 +56,7 @@ def populate_db(keepass_db_path: str):
         for _ in range(300):
             device = get_test_device()
             tags = get_tag_list()
-            add_device_entry(device, kp, tags)
+            add_device_entry(kp, device, tags)
 
 
 class TestKeepass:
@@ -79,7 +79,7 @@ class TestKeepass:
 
         device = get_test_device()
         kp = pykeepass.PyKeePass(insertion_test_kdbx, KEEPASS_PASSWORD)
-        add_device_entry(device, kp)
+        add_device_entry(kp, device)
         entry = kp.find_entries(title=device.name)[0]
         assert entry.title == device.name
         assert entry.password == device.password
@@ -99,7 +99,7 @@ class TestKeepass:
         kp = pykeepass.PyKeePass(insertion_test_kdbx, KEEPASS_PASSWORD)
 
         # preform the operation
-        add_device_entry(device, kp, tags)
+        add_device_entry(kp, device, tags)
 
         # find out if it was successful
         entry = kp.find_entries(title=device.name)[0]
@@ -117,7 +117,7 @@ class TestKeepass:
         create_new_keepass_db(test_db, KEEPASS_PASSWORD)
 
         kp = pykeepass.PyKeePass(test_db, KEEPASS_PASSWORD)
-        add_device_entry(device, kp)
+        add_device_entry(kp, device)
 
         devices = get_all_device_entries(kp)
         assert devices == [device]
@@ -129,7 +129,7 @@ class TestKeepass:
         kp = pykeepass.PyKeePass(test_db, KEEPASS_PASSWORD)
         device = get_test_device()
         tags = get_tag_list()
-        add_device_entry(device, kp, tags)
+        add_device_entry(kp, device, tags)
 
         devices = get_all_device_entries(kp, tags)
         assert devices == [device]
