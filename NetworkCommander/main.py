@@ -11,7 +11,7 @@ from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
 from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, add_device_entry, tag_device, \
-    untag_device, get_device_tags
+    untag_device, get_device_tags, get_device
 from NetworkCommander.recruit_device import retrieve_device_from_input
 
 logger = logging.Logger("commander")
@@ -152,7 +152,12 @@ def deploy(
             "--permission_level",
             "-p",
             help="the permission level the commands will run at"
-        )] = 'user'
+        )] = 'user',
+        extra_devices: Annotated[List[str], typer.Option(
+            "--device",
+            "-d",
+            help="you can specify devices you wish would run these commands on."
+        )] = None,
 ):
     """
     deploy command to all the devices in your database that match the tags.
@@ -163,12 +168,22 @@ def deploy(
         command = sys.stdin.read()
         commands = command.split('\n')
         commands = list(filter(bool, commands))
+
     # if the commands come directly from the user (through the cli argument) then we need to convert them to a list
     else:
         commands = [command]
 
     with KeepassDB(KEEPASS_DB_PATH) as kp:
-        devices = get_all_device_entries(kp, tags)
+        devices = set(get_all_device_entries(kp, tags))
+        if extra_devices:
+
+            # check for devices that don't exist
+            all_devices = get_all_device_entries(kp)
+            all_device_names = {device.name for device in all_devices}
+            non_existent_devices = set(extra_devices) - all_device_names
+            if non_existent_devices:
+                raise Exception(f"devices [{', '.join(non_existent_devices)}] don't exist")
+            devices.update({get_device(kp, extra_device) for extra_device in extra_devices})
 
     if not devices:
         raise Exception("you don't have any devices in the database.")
@@ -215,7 +230,7 @@ def recruit():
         device_names = [device.name for device in devices]
         device = retrieve_device_from_input(device_names)
 
-        add_device_entry(device, kp)
+        add_device_entry(kp, device)
         typer.echo(f"added device {device.name} to database")
 
 
@@ -239,7 +254,7 @@ def remove(devices: List[str]):
         typer.confirm(f"⚠️ are you sure you want to delete {len(device_entries)} devices?", abort=True)
 
         for device_name in devices:
-            remove_device(device_name, kp)
+            remove_device(kp, device_name)
 
         typer.echo(f"deleted {len(device_entries)} devices")
 
