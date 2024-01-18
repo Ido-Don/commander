@@ -148,7 +148,11 @@ def deploy(
                                            "them in.",
                                       show_default=False
                                       ),
-        permission_level: Annotated[PermissionLevel, typer.Option()] = 'user'
+        permission_level: Annotated[PermissionLevel, typer.Option(
+            "--permission_level",
+            "-p",
+            help="the permission level the commands will run at"
+        )] = 'user'
 ):
     """
     deploy command to all the devices in your database that match the tags.
