@@ -49,6 +49,9 @@ class Device:
                 self.port == other.port
         )
 
+    def __hash__(self):
+        return hash((self.name, self.username, self.password, self.host, self.port, self.device_type))
+
     def get_ssh_string(self):
         """
         this function takes the data in the class and convert it to a valid ssh string.
