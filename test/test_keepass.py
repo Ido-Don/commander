@@ -7,7 +7,8 @@ import pytest
 
 from NetworkCommander.device import Device, SUPPORTED_DEVICE_TYPES
 from NetworkCommander.init import create_new_keepass_db
-from NetworkCommander.keepass import KeepassDB, add_device_entry, get_all_device_entries, get_device_tags
+from NetworkCommander.keepass import KeepassDB, add_device_entry, get_all_device_entries, get_device_tags, \
+    does_device_exist
 
 KEEPASS_PASSWORD = "123"
 POSSIBLE_TAGS = {'manhã', 'vivo', 'pelo', 'tia', 'assuntos', 'mexe', 'diabos', 'correcto', 'rapariga', 'socorro',
@@ -137,3 +138,29 @@ class TestKeepass:
         kp = pykeepass.PyKeePass(populated_db, KEEPASS_PASSWORD)
         tags = get_device_tags(kp)
         assert tags == POSSIBLE_TAGS
+
+    def test_does_device_exist_false(self, populated_db):
+        """
+        this test check rather does_device_exist will catch that an entry is not in the db
+        """
+        test_db = "exist_" + populated_db
+        shutil.copyfile(populated_db, test_db)
+        kp = pykeepass.PyKeePass(test_db, KEEPASS_PASSWORD)
+
+        # delete some random entry
+        entry_to_delete = generic.random.choice(kp.entries)
+        entry_to_delete_title = entry_to_delete.title
+        entries_to_delete = kp.find_entries(title=entry_to_delete_title)
+        for entry in entries_to_delete:
+            kp.delete_entry(entry)
+
+        # check if the random entry is still in the db
+        assert not does_device_exist(entry_to_delete_title, kp)
+
+    def test_does_device_exist_true(self, populated_db):
+        """
+        this test checks if the does_device_exist can find an entry that is in the database
+        """
+        kp = pykeepass.PyKeePass(populated_db, KEEPASS_PASSWORD)
+        entry = generic.random.choice(kp.entries)
+        assert does_device_exist(entry.title, kp)
