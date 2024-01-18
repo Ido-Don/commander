@@ -28,8 +28,8 @@ class KeepassDB:
             self._kp.save()
 
 
-def convert_device_entry_to_device(device_entry: pykeepass.Entry) -> Device:
-    device_json = convert_device_to_json(device_entry)
+def entry_to_device(device_entry: pykeepass.Entry) -> Device:
+    device_json = convert_entry_to_json(device_entry)
     device_entry = Device(**device_json)
     return device_entry
 
@@ -40,7 +40,7 @@ def get_all_device_entries(kp: pykeepass.PyKeePass, tags: List[str] = None) -> L
         devices_entries = kp.find_entries(group=device_group, tags=tags)
     else:
         devices_entries = device_group.entries
-    devices = [convert_device_entry_to_device(device_entry) for device_entry in devices_entries]
+    devices = [entry_to_device(device_entry) for device_entry in devices_entries]
     return devices
 
 
@@ -59,15 +59,24 @@ def does_device_exist(device_name: str, kp: pykeepass.PyKeePass) -> bool:
     return bool(devices)
 
 
-def remove_device(device_name: str, kp: pykeepass.PyKeePass) -> None:
+def get_device(kp, device_name):
+    entries = get_device_entries(kp, device_name)
+    if len(entries) > 1:
+        raise Exception(f"{device_name} has more then")
+    entry = entries[0]
+    device = entry_to_device(entry)
+    return device
+
+
+def remove_device(kp: pykeepass.PyKeePass, device_name: str) -> None:
     if not does_device_exist(device_name, kp):
         raise Exception(f"{device_name} doesn't exist in db")
-    device_entries = get_device_entries(device_name, kp)
+    device_entries = get_device_entries(kp, device_name)
     for device_entry in device_entries:
         kp.delete_entry(device_entry)
 
 
-def get_device_entries(device_name: str, kp: pykeepass.PyKeePass):
+def get_device_entries(kp: pykeepass.PyKeePass, device_name: str):
     if not does_device_exist(device_name, kp):
         raise Exception(f"{device_name} doesn't exist in db")
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
@@ -75,7 +84,7 @@ def get_device_entries(device_name: str, kp: pykeepass.PyKeePass):
     return device_entries
 
 
-def add_device_entry(device: Device, kp: pykeepass.PyKeePass, tags: List[str] = None) -> None:
+def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = None) -> None:
     entry_title = device.name
     if does_device_exist(entry_title, kp):
         raise Exception(f"{entry_title} already exist in db")
@@ -94,7 +103,7 @@ def add_device_entry(device: Device, kp: pykeepass.PyKeePass, tags: List[str] = 
         new_entry.set_custom_property(key, str(val), True)
 
 
-def convert_device_to_json(entry: pykeepass.Entry) -> dict[str, str | int]:
+def convert_entry_to_json(entry: pykeepass.Entry) -> dict[str, str | int]:
     device_options = {
         **entry.custom_properties,
         "username": entry.username,
