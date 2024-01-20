@@ -4,17 +4,22 @@ from typing import List, Union
 from pykeepass import pykeepass
 from rich.prompt import Prompt
 
+from NetworkCommander import COMMANDER_DIRECTORY
 from NetworkCommander.device import Device
 
 DEVICE_GROUP_NAME = "device"
 
 
 class KeepassDB:
+
+    KEEPASS_DB_PATH = os.path.join(COMMANDER_DIRECTORY, "db.kdbx")
+    keepass_password = None
+
     def __init__(self, keepass_db_path, keepass_password=None):
         self._keepass_db_path = keepass_db_path
         self._keepass_password = keepass_password
         if not self._keepass_password:
-            self._keepass_password = Prompt.ask("🔑 enter keepass database master password", password=True)
+            self._keepass_password = KeepassDB.prompt_for_password()
 
     def __enter__(self):
         if not os.path.isfile(self._keepass_db_path):
@@ -26,6 +31,11 @@ class KeepassDB:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if not exc_val:
             self._kp.save()
+
+    @staticmethod
+    def prompt_for_password():
+        password = Prompt.ask("🔑 enter keepass database master password", password=True)
+        return password
 
 
 def entry_to_device(device_entry: pykeepass.Entry) -> Device:
@@ -53,13 +63,13 @@ def get_device_tags(kp: pykeepass.PyKeePass):
     return tags
 
 
-def does_device_exist(device_name: str, kp: pykeepass.PyKeePass) -> bool:
+def does_device_exist(kp: pykeepass.PyKeePass, device_name: str) -> bool:
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     devices = kp.find_entries(group=device_group, title=device_name)
     return bool(devices)
 
 
-def get_device(kp, device_name):
+def get_device(kp: pykeepass.PyKeePass, device_name: str):
     entries = get_device_entries(kp, device_name)
     if len(entries) > 1:
         raise Exception(f"{device_name} has more then")
@@ -69,7 +79,7 @@ def get_device(kp, device_name):
 
 
 def remove_device(kp: pykeepass.PyKeePass, device_name: str) -> None:
-    if not does_device_exist(device_name, kp):
+    if not does_device_exist(kp, device_name):
         raise Exception(f"{device_name} doesn't exist in db")
     device_entries = get_device_entries(kp, device_name)
     for device_entry in device_entries:
@@ -77,7 +87,7 @@ def remove_device(kp: pykeepass.PyKeePass, device_name: str) -> None:
 
 
 def get_device_entries(kp: pykeepass.PyKeePass, device_name: str):
-    if not does_device_exist(device_name, kp):
+    if not does_device_exist(kp, device_name):
         raise Exception(f"{device_name} doesn't exist in db")
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     device_entries = kp.find_entries(group=device_group, title=device_name)
@@ -86,7 +96,7 @@ def get_device_entries(kp: pykeepass.PyKeePass, device_name: str):
 
 def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = None) -> None:
     entry_title = device.name
-    if does_device_exist(entry_title, kp):
+    if does_device_exist(kp, entry_title):
         raise Exception(f"{entry_title} already exist in db")
 
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
@@ -126,7 +136,7 @@ def convert_entry_to_json(entry: pykeepass.Entry) -> dict[str, Union[str, int]]:
 
 
 def tag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
-    if not does_device_exist(device_name, kp):
+    if not does_device_exist(kp, device_name):
         raise Exception(f"{device_name} doesn't exist in db")
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     device_entries = kp.find_entries(group=device_group, title=device_name)
@@ -141,7 +151,7 @@ def tag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
 
 
 def untag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
-    if not does_device_exist(device_name, kp):
+    if not does_device_exist(kp, device_name):
         raise Exception(f"{device_name} doesn't exist in db")
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     device_entries = kp.find_entries(group=device_group, title=device_name)
@@ -152,3 +162,5 @@ def untag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
             raise ValueError(f"device {device_name} is not tagged with {device_tag}")
         tags.remove(device_tag)
         device_entry.tags = tags
+
+
