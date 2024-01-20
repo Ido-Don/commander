@@ -1,18 +1,20 @@
 import logging
+import re
 import sys
 from typing import Annotated, List
 
 import rich
 import typer
+from rich.prompt import Prompt
 
-from NetworkCommander.__init__ import COMMANDER_DIRECTORY, KEEPASS_DB_PATH, __version__
+from NetworkCommander.__init__ import COMMANDER_DIRECTORY, __version__
 from NetworkCommander.deploy import deploy_commands, handle_results
+from NetworkCommander.device import supported_device, Device
 from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
 from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, add_device_entry, tag_device, \
-    untag_device, get_device_tags, get_device
-from NetworkCommander.recruit_device import retrieve_device_from_input
+    untag_device, get_device_tags, get_device, does_device_exist
 
 logger = logging.Logger("commander")
 logging.basicConfig(level=logging.INFO)
@@ -49,7 +51,7 @@ def is_valid_command(command: str):
 
 @device_command_group.callback()
 def check_initialization():
-    if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
+    if not is_initialized(COMMANDER_DIRECTORY, KeepassDB.KEEPASS_DB_PATH):
         raise Exception("⛔ program is not initialized, please run commander init!")
 
 
@@ -58,7 +60,7 @@ def add(device_tag: str, devices: List[str]):
     """
     add a tag to devices
     """
-    with KeepassDB(KEEPASS_DB_PATH) as kp:
+    with KeepassDB(KeepassDB.KEEPASS_DB_PATH, KeepassDB.keepass_password) as kp:
         # if someone entered a wrong device name, it can't be tagged so an error is raised
         all_devices = get_all_device_entries(kp)
         all_device_names = {device.name for device in all_devices}
@@ -85,7 +87,7 @@ def list_tags():
     """
     list every tag you put on devices
     """
-    with KeepassDB(KEEPASS_DB_PATH) as kp:
+    with KeepassDB(KeepassDB.KEEPASS_DB_PATH, KeepassDB.keepass_password) as kp:
         tags = get_device_tags(kp)
         for tag in tags:
             rich.print(tag)
@@ -96,7 +98,7 @@ def remove(device_tag: str, devices: List[str]):
     """
     remove a tag from devices
     """
-    with KeepassDB(KEEPASS_DB_PATH) as kp:
+    with KeepassDB(KeepassDB.KEEPASS_DB_PATH, KeepassDB.keepass_password) as kp:
         all_devices = get_all_device_entries(kp)
         all_device_names = [device.name for device in all_devices]
         non_existent_devices = set(devices) - set(all_device_names)
@@ -121,7 +123,7 @@ def ping(
     """
     try to connect to the devices in your database.
     """
-    with KeepassDB(KEEPASS_DB_PATH) as kp:
+    with KeepassDB(KeepassDB.KEEPASS_DB_PATH, KeepassDB.keepass_password) as kp:
         devices = get_all_device_entries(kp, tags)
 
     if not devices:
@@ -142,8 +144,7 @@ def deploy(
             List[str],
             typer.Argument(help="deploy the commands to devices matching these tags", show_default=False)
         ] = None,
-        command: str = typer.Argument(...
-                                      if sys.stdin.isatty() else PIPE,
+        command: str = typer.Argument(... if sys.stdin.isatty() else PIPE,
                                       help="enter the command you want to deploy to your devices, you can also pipe "
                                            "them in.",
                                       show_default=False
@@ -173,7 +174,7 @@ def deploy(
     else:
         commands = [command]
 
-    with KeepassDB(KEEPASS_DB_PATH) as kp:
+    with KeepassDB(KeepassDB.KEEPASS_DB_PATH, KeepassDB.keepass_password) as kp:
         devices = set(get_all_device_entries(kp, tags))
         if extra_devices:
 
@@ -214,24 +215,49 @@ def list_devices(
     """
     list all the devices under your command.
     """
-    with KeepassDB(KEEPASS_DB_PATH) as kp:
+    with KeepassDB(KeepassDB.KEEPASS_DB_PATH, KeepassDB.keepass_password) as kp:
         devices = get_all_device_entries(kp, tags)
 
     print_devices(devices)
 
 
 @device_command_group.command()
-def recruit():
+def add(
+        name: Annotated[str, typer.Option()],
+        password: Annotated[str, typer.Option()] = None,
+        device_type: Annotated[supported_device, typer.Option()] = "cisco_ios",
+        ssh_string: Annotated[str, typer.Argument(show_default=False)] = ... if sys.stdin.isatty() else PIPE,
+):
     """
-    add a device to the list of devices
+    add a new device to the list of devices
     """
-    with KeepassDB(KEEPASS_DB_PATH) as kp:
-        devices = get_all_device_entries(kp)
-        device_names = [device.name for device in devices]
-        device = retrieve_device_from_input(device_names)
 
+    # if the ssh string come from pipe than we need to read them from stdin
+    if ssh_string == PIPE:
+        ssh_string = sys.stdin.read()
+        ssh_string = ssh_string.strip(' \n\r')
+
+    if not password:
+        password = Prompt.ask("password", password=True)
+    matched_ssh_strings = re.match("[^@]*@[^@:]*:?[0-9]*", ssh_string)
+    if not matched_ssh_strings:
+        raise Exception(f"sorry, {ssh_string} isn't a valid ssh connection string")
+
+    match = matched_ssh_strings[0]
+    username = match[:match.find('@')]
+    host = match[match.find('@') + 1: match.find(":")]
+    if match.find(':') != -1 and match.find(':') + 1 != len(match):
+        port = int(match[match.find(":") + 1:])
+    else:
+        port = None
+
+    with KeepassDB(KeepassDB.KEEPASS_DB_PATH, KeepassDB.keepass_password) as kp:
+        if does_device_exist(kp, name):
+            raise Exception(f"device {name} already exist in keepass")
+
+        device = Device(name, username, password, host, device_type.value, port)
         add_device_entry(kp, device)
-        typer.echo(f"added device {device.name} to database")
+        typer.echo(f"added device {str(device)} to database")
 
 
 @device_command_group.command()
@@ -239,7 +265,7 @@ def remove(devices: List[str]):
     """
     remove a device from your database
     """
-    with KeepassDB(KEEPASS_DB_PATH) as kp:
+    with KeepassDB(KeepassDB.KEEPASS_DB_PATH, KeepassDB.keepass_password) as kp:
         all_device_entry = get_all_device_entries(kp)
         all_device_names = [device.name for device in all_device_entry]
         non_existing_devices = set(devices) - set(all_device_names)
@@ -265,7 +291,7 @@ def init():
     initialize the project
     """
     rich.print("Welcome to commander!")
-    if is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
+    if is_initialized(COMMANDER_DIRECTORY, KeepassDB.KEEPASS_DB_PATH):
         rich.print("commander is already initialized")
         reinitialize = typer.confirm("⚠️ do you want to delete everything and start over?")
 
@@ -273,9 +299,9 @@ def init():
             rich.print(f"deleting directory: {COMMANDER_DIRECTORY}")
             delete_project_files(COMMANDER_DIRECTORY)
 
-    if not is_initialized(COMMANDER_DIRECTORY, KEEPASS_DB_PATH):
+    if not is_initialized(COMMANDER_DIRECTORY, KeepassDB.KEEPASS_DB_PATH):
         rich.print(f"creating new database in {COMMANDER_DIRECTORY}")
-        init_program(COMMANDER_DIRECTORY, KEEPASS_DB_PATH)
+        init_program(COMMANDER_DIRECTORY, KeepassDB.KEEPASS_DB_PATH)
 
     rich.print("finished the initialization process, have a great day")
 
@@ -286,3 +312,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
