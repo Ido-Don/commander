@@ -223,7 +223,7 @@ def list_devices(
 
 @device_command_group.command()
 def add(
-        name: Annotated[str, typer.Option()],
+        name: Annotated[str, typer.Option()] = None,
         password: Annotated[str, typer.Option()] = None,
         device_type: Annotated[supported_device, typer.Option()] = "cisco_ios",
         ssh_string: Annotated[str, typer.Argument(show_default=False)] = ... if sys.stdin.isatty() else PIPE,
@@ -251,6 +251,8 @@ def add(
     else:
         port = None
 
+    if not name:
+        name = username
     with KeepassDB(KeepassDB.KEEPASS_DB_PATH, KeepassDB.keepass_password) as kp:
         if does_device_exist(kp, name):
             raise Exception(f"device {name} already exist in keepass")
