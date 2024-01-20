@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any, Dict
 
 
@@ -92,9 +93,8 @@ class Device:
         return json_dump
 
 
-SUPPORTED_DEVICE_TYPES = [
-    "cisco_ios",
-    "cisco_ios_xe",
-    "cisco_ios_telnet",
-    "cisco_ios_xe_telnet"
-]
+class supported_device(str, Enum):
+    cisco_ios = "cisco_ios",
+    cisco_ios_xe = "cisco_ios_xe",
+    cisco_ios_telnet = "cisco_ios_telnet",
+    cisco_ios_xe_telnet = "cisco_ios_xe_telnet"

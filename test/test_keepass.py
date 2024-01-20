@@ -5,7 +5,7 @@ import mimesis
 import pykeepass
 import pytest
 
-from NetworkCommander.device import Device, SUPPORTED_DEVICE_TYPES
+from NetworkCommander.device import Device, supported_device
 from NetworkCommander.init import create_new_keepass_db
 from NetworkCommander.keepass import KeepassDB, add_device_entry, get_all_device_entries, get_device_tags, \
     does_device_exist
@@ -36,7 +36,7 @@ def get_test_device():
     name = f"{internet.hostname()}.{Finance.company()}{internet.top_level_domain()}"
     host = internet.ip_v4()
     port = internet.port()
-    device_type = generic.random.choice(SUPPORTED_DEVICE_TYPES)
+    device_type = generic.random.choice(list(supported_device))
     device = Device(name, username, password, host, device_type, port)
     return device
 
@@ -155,7 +155,7 @@ class TestKeepass:
             kp.delete_entry(entry)
 
         # check if the random entry is still in the db
-        assert not does_device_exist(entry_to_delete_title, kp)
+        assert not does_device_exist(kp, entry_to_delete_title)
 
     def test_does_device_exist_true(self, populated_db):
         """
@@ -163,4 +163,4 @@ class TestKeepass:
         """
         kp = pykeepass.PyKeePass(populated_db, KEEPASS_PASSWORD)
         entry = generic.random.choice(kp.entries)
-        assert does_device_exist(entry.title, kp)
+        assert does_device_exist(kp, entry.title)
