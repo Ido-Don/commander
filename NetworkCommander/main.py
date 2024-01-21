@@ -52,7 +52,7 @@ def is_valid_command(command: str):
 @device_command_group.callback()
 def check_initialization():
     if not is_initialized(COMMANDER_DIRECTORY, KeepassDB.KEEPASS_DB_PATH):
-        raise Exception("⛔ program is not initialized, please run commander init!")
+        raise Exception("program is not initialized, please run commander init!")
 
 
 @tag_command_group.command()
@@ -192,7 +192,7 @@ def deploy(
     invalid_commands_exist = all(map(is_valid_command, commands))
     if not invalid_commands_exist:
         invalid_commands = filter(is_valid_command, commands)
-        raise Exception(f"⛔ {','.join(invalid_commands)} are not valid commands.")
+        raise Exception(f"{','.join(invalid_commands)} are not valid commands.")
 
     rich.print("commands:")
     for command in commands:
@@ -269,14 +269,14 @@ def remove(devices: List[str]):
         all_device_names = [device.name for device in all_device_entry]
         non_existing_devices = set(devices) - set(all_device_names)
         if non_existing_devices:
-            raise Exception(f"⛔ devices {', '.join(non_existing_devices)} don't exist")
+            raise Exception(f"devices {', '.join(non_existing_devices)} don't exist")
         device_entries = []
         device_name_map = dict(zip(all_device_names, all_device_entry))
         for device_name in devices:
             if device_name in device_name_map:
                 device_entries.append(device_name_map[device_name])
         print_devices(device_entries)
-        typer.confirm(f"⚠️ are you sure you want to delete {len(device_entries)} devices?", abort=True)
+        typer.confirm(f"are you sure you want to delete {len(device_entries)} devices?", abort=True)
 
         for device_name in devices:
             remove_device(kp, device_name)
@@ -292,7 +292,7 @@ def init():
     rich.print("Welcome to commander!")
     if is_initialized(COMMANDER_DIRECTORY, KeepassDB.KEEPASS_DB_PATH):
         rich.print("commander is already initialized")
-        reinitialize = typer.confirm("⚠️ do you want to delete everything and start over?")
+        reinitialize = typer.confirm("do you want to delete everything and start over?")
 
         if reinitialize:
             rich.print(f"deleting directory: {COMMANDER_DIRECTORY}")
