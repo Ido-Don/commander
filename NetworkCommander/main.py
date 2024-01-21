@@ -237,7 +237,7 @@ def add(
         ssh_string = sys.stdin.read()
         ssh_string = ssh_string.strip(' \n\r')
 
-    matched_ssh_strings = re.match("[^@]*@[^@:]*:?[0-9]*", ssh_string)
+    matched_ssh_strings = re.match("[^@]*@?[^@:]*:?[0-9]*", ssh_string)
     if not matched_ssh_strings:
         raise Exception(f"sorry, {ssh_string} isn't a valid ssh connection string")
     match = matched_ssh_strings[0]
