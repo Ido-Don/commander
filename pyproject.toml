@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "NetworkCommander"
-version = "0.2.10"
+version = "0.2.11"
 description = "cli scraping tools for network devices "
 authors = ["Ido Don <76511079+Ido-Don@users.noreply.github.com>"]
 readme = "README.md"
