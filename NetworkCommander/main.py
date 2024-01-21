@@ -50,7 +50,9 @@ def is_valid_command(command: str):
 
 
 @device_command_group.callback()
-def check_initialization():
+def check_initialization(keepass_password: Annotated[str, typer.Option()] = None):
+    if keepass_password:
+        KeepassDB.keepass_password = keepass_password
     if not is_initialized(COMMANDER_DIRECTORY, KeepassDB.KEEPASS_DB_PATH):
         raise Exception("program is not initialized, please run commander init!")
 
