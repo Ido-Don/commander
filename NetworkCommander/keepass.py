@@ -34,7 +34,7 @@ class KeepassDB:
 
     @staticmethod
     def prompt_for_password():
-        password = Prompt.ask("🔑 enter keepass database master password", password=True)
+        password = Prompt.ask("enter keepass database master password", password=True)
         return password
 
 

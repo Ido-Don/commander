@@ -9,7 +9,7 @@ from rich.prompt import Prompt
 
 from NetworkCommander.__init__ import COMMANDER_DIRECTORY, __version__
 from NetworkCommander.deploy import deploy_commands, handle_results
-from NetworkCommander.device import supported_device, Device
+from NetworkCommander.device import supported_device, Device, extract_ssh_connection_info
 from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
@@ -52,7 +52,7 @@ def is_valid_command(command: str):
 @device_command_group.callback()
 def check_initialization():
     if not is_initialized(COMMANDER_DIRECTORY, KeepassDB.KEEPASS_DB_PATH):
-        raise Exception("⛔ program is not initialized, please run commander init!")
+        raise Exception("program is not initialized, please run commander init!")
 
 
 @tag_command_group.command()
@@ -192,7 +192,7 @@ def deploy(
     invalid_commands_exist = all(map(is_valid_command, commands))
     if not invalid_commands_exist:
         invalid_commands = filter(is_valid_command, commands)
-        raise Exception(f"⛔ {','.join(invalid_commands)} are not valid commands.")
+        raise Exception(f"{','.join(invalid_commands)} are not valid commands.")
 
     rich.print("commands:")
     for command in commands:
@@ -237,25 +237,22 @@ def add(
         ssh_string = sys.stdin.read()
         ssh_string = ssh_string.strip(' \n\r')
 
-    if not password:
-        password = Prompt.ask("password", password=True)
     matched_ssh_strings = re.match("[^@]*@[^@:]*:?[0-9]*", ssh_string)
     if not matched_ssh_strings:
         raise Exception(f"sorry, {ssh_string} isn't a valid ssh connection string")
 
-    match = matched_ssh_strings[0]
-    username = match[:match.find('@')]
-    host = match[match.find('@') + 1: match.find(":")]
-    if match.find(':') != -1 and match.find(':') + 1 != len(match):
-        port = int(match[match.find(":") + 1:])
-    else:
-        port = None
-
-    if not name:
-        name = username
     with KeepassDB(KeepassDB.KEEPASS_DB_PATH, KeepassDB.keepass_password) as kp:
         if does_device_exist(kp, name):
             raise Exception(f"device {name} already exist in keepass")
+
+        if not password:
+            password = Prompt.ask("Device password", password=True)
+
+        match = matched_ssh_strings[0]
+        username, host, port = extract_ssh_connection_info(match)
+
+        if not name:
+            name = host
 
         device = Device(name, username, password, host, device_type.value, port)
         add_device_entry(kp, device)
@@ -272,14 +269,14 @@ def remove(devices: List[str]):
         all_device_names = [device.name for device in all_device_entry]
         non_existing_devices = set(devices) - set(all_device_names)
         if non_existing_devices:
-            raise Exception(f"⛔ devices {', '.join(non_existing_devices)} don't exist")
+            raise Exception(f"devices {', '.join(non_existing_devices)} don't exist")
         device_entries = []
         device_name_map = dict(zip(all_device_names, all_device_entry))
         for device_name in devices:
             if device_name in device_name_map:
                 device_entries.append(device_name_map[device_name])
         print_devices(device_entries)
-        typer.confirm(f"⚠️ are you sure you want to delete {len(device_entries)} devices?", abort=True)
+        typer.confirm(f"are you sure you want to delete {len(device_entries)} devices?", abort=True)
 
         for device_name in devices:
             remove_device(kp, device_name)
@@ -295,7 +292,7 @@ def init():
     rich.print("Welcome to commander!")
     if is_initialized(COMMANDER_DIRECTORY, KeepassDB.KEEPASS_DB_PATH):
         rich.print("commander is already initialized")
-        reinitialize = typer.confirm("⚠️ do you want to delete everything and start over?")
+        reinitialize = typer.confirm("do you want to delete everything and start over?")
 
         if reinitialize:
             rich.print(f"deleting directory: {COMMANDER_DIRECTORY}")
@@ -314,4 +311,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
