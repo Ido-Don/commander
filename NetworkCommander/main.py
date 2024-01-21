@@ -9,7 +9,7 @@ from rich.prompt import Prompt
 
 from NetworkCommander.__init__ import COMMANDER_DIRECTORY, __version__
 from NetworkCommander.deploy import deploy_commands, handle_results
-from NetworkCommander.device import supported_device, Device
+from NetworkCommander.device import supported_device, Device, extract_ssh_connection_info
 from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
@@ -249,15 +249,10 @@ def add(
             password = Prompt.ask("Device password", password=True)
 
         match = matched_ssh_strings[0]
-        username = match[:match.find('@')]
-        host = match[match.find('@') + 1: match.find(":")]
-        if match.find(':') != -1 and match.find(':') + 1 != len(match):
-            port = int(match[match.find(":") + 1:])
-        else:
-            port = None
+        username, host, port = extract_ssh_connection_info(match)
 
         if not name:
-            name = username
+            name = host
 
         device = Device(name, username, password, host, device_type.value, port)
         add_device_entry(kp, device)

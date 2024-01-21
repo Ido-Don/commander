@@ -98,3 +98,18 @@ class supported_device(str, Enum):
     cisco_ios_xe = "cisco_ios_xe",
     cisco_ios_telnet = "cisco_ios_telnet",
     cisco_ios_xe_telnet = "cisco_ios_xe_telnet"
+
+
+def extract_ssh_connection_info(ssh_connection: str):
+
+    username = ssh_connection[:ssh_connection.find('@')]
+    x = ssh_connection.find(":")
+    if x != -1:
+        host = ssh_connection[ssh_connection.find('@') + 1: x]
+    else:
+        host = ssh_connection[ssh_connection.find('@') + 1:]
+    if ssh_connection.find(':') != -1 and ssh_connection.find(':') + 1 != len(ssh_connection):
+        port = int(ssh_connection[ssh_connection.find(":") + 1:])
+    else:
+        port = None
+    return username, host, port

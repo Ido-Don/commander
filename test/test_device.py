@@ -1,8 +1,10 @@
-from typing import Any, Dict
+from typing import Any, Dict, Tuple, Optional
+from unittest import TestCase
+
 import mimesis
 import pytest
 
-from NetworkCommander.device import Device
+from NetworkCommander.device import Device, extract_ssh_connection_info
 
 
 class TestDevice:
@@ -158,3 +160,30 @@ class TestDevice:
     )
     def test_dict_conversion(self, json: Dict[str, Any], expected_device: Device):
         assert Device(**json) == expected_device
+
+
+class TestConnectionString:
+
+    @pytest.mark.parametrize(
+        ("ssh_connection", "ssh_connection_details"),
+        [
+            (
+                    "swewq1@12qwe3", ('swewq1', '12qwe3', None)
+            ),
+            (
+                    '1qwe@1213ds3:', ('1qwe', '1213ds3', None)
+            ),
+            (
+                    '1qwe@1:', ('1qwe', '1', None)
+            ),
+            (
+                    '1qwe@1:123', ('1qwe', '1', 123)
+            ),
+            (
+                    '1qwe@1:1213', ('1qwe', '1', 1213)
+            )
+        ]
+    )
+    def test_extract_ssh_connection_info(self, ssh_connection: str,
+                                         ssh_connection_details: Tuple[str, str, Optional[int]]):
+        assert extract_ssh_connection_info(ssh_connection) == ssh_connection_details
