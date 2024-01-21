@@ -240,6 +240,11 @@ def add(
     matched_ssh_strings = re.match("[^@]*@[^@:]*:?[0-9]*", ssh_string)
     if not matched_ssh_strings:
         raise Exception(f"sorry, {ssh_string} isn't a valid ssh connection string")
+    match = matched_ssh_strings[0]
+    username, host, port = extract_ssh_connection_info(match)
+
+    if not name:
+        name = host
 
     with KeepassDB(KeepassDB.KEEPASS_DB_PATH, KeepassDB.keepass_password) as kp:
         if does_device_exist(kp, name):
@@ -247,12 +252,6 @@ def add(
 
         if not password:
             password = Prompt.ask("Device password", password=True)
-
-        match = matched_ssh_strings[0]
-        username, host, port = extract_ssh_connection_info(match)
-
-        if not name:
-            name = host
 
         device = Device(name, username, password, host, device_type.value, port)
         add_device_entry(kp, device)
