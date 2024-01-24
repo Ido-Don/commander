@@ -1,4 +1,3 @@
-import logging
 import re
 import sys
 from typing import Annotated, List
@@ -15,12 +14,6 @@ from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
 from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, add_device_entry, tag_device, \
     untag_device, get_device_tags, get_device, does_device_exist
-
-logger = logging.Logger("commander")
-logging.basicConfig(level=logging.INFO)
-handler = logging.StreamHandler(sys.stdout)
-handler.setLevel("INFO")
-logger.addHandler(handler)
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 device_command_group = typer.Typer(pretty_exceptions_show_locals=False,
