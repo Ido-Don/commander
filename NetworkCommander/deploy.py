@@ -24,15 +24,15 @@ def deploy_commands(commands: List[str], devices: Iterable[Device], permission_l
             device = future_to_device[future]
             try:
                 result = future.result()
-                typer.echo(f"✅  connected successfully to {device}")
+                typer.echo(f"connected successfully to {device}")
                 yield result, device
             except netmiko.NetmikoAuthenticationException as e:
-                typer.echo(f"⛔  wasn't able to authenticate to {str(device)}", err=True)
+                typer.echo(f"wasn't able to authenticate to {str(device)}", err=True)
             except netmiko.NetmikoTimeoutException as e:
-                typer.echo(f"⛔  wasn't able to connect to {str(device)}", err=True)
+                typer.echo(f"wasn't able to connect to {str(device)}", err=True)
             except Exception as e:
                 # Handle exceptions raised during the task execution
-                typer.echo(f"⛔  device {str(device)} encountered an exception: {e}", err=True)
+                typer.echo(f"device {str(device)} encountered an exception: {e}", err=True)
 
 
 def handle_results(results: str, device_name: str):
@@ -42,4 +42,4 @@ def handle_results(results: str, device_name: str):
     device_output_txt_file = os.path.join(outputs_folder, device_name + ".txt")
     with open(device_output_txt_file, 'w+') as f:
         f.write(results)
-    typer.echo(f'✅  saved results in "{device_output_txt_file}"')
+    typer.echo(f'saved results in "{device_output_txt_file}"')

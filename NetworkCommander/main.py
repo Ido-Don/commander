@@ -1,4 +1,3 @@
-import logging
 import re
 import sys
 from typing import Annotated, List
@@ -15,12 +14,6 @@ from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
 from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, add_device_entry, tag_device, \
     untag_device, get_device_tags, get_device, does_device_exist
-
-logger = logging.Logger("commander")
-logging.basicConfig(level=logging.INFO)
-handler = logging.StreamHandler(sys.stdout)
-handler.setLevel("INFO")
-logger.addHandler(handler)
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 device_command_group = typer.Typer(pretty_exceptions_show_locals=False,
@@ -50,7 +43,9 @@ def is_valid_command(command: str):
 
 
 @device_command_group.callback()
-def check_initialization():
+def check_initialization(keepass_password: Annotated[str, typer.Option()] = None):
+    if keepass_password:
+        KeepassDB.keepass_password = keepass_password
     if not is_initialized(COMMANDER_DIRECTORY, KeepassDB.KEEPASS_DB_PATH):
         raise Exception("program is not initialized, please run commander init!")
 
@@ -237,9 +232,14 @@ def add(
         ssh_string = sys.stdin.read()
         ssh_string = ssh_string.strip(' \n\r')
 
-    matched_ssh_strings = re.match("[^@]*@[^@:]*:?[0-9]*", ssh_string)
+    matched_ssh_strings = re.match("[^@]*@?[^@:]*:?[0-9]*", ssh_string)
     if not matched_ssh_strings:
         raise Exception(f"sorry, {ssh_string} isn't a valid ssh connection string")
+    match = matched_ssh_strings[0]
+    username, host, port = extract_ssh_connection_info(match)
+
+    if not name:
+        name = host
 
     with KeepassDB(KeepassDB.KEEPASS_DB_PATH, KeepassDB.keepass_password) as kp:
         if does_device_exist(kp, name):
@@ -247,12 +247,6 @@ def add(
 
         if not password:
             password = Prompt.ask("Device password", password=True)
-
-        match = matched_ssh_strings[0]
-        username, host, port = extract_ssh_connection_info(match)
-
-        if not name:
-            name = host
 
         device = Device(name, username, password, host, device_type.value, port)
         add_device_entry(kp, device)

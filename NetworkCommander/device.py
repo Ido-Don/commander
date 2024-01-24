@@ -101,15 +101,18 @@ class supported_device(str, Enum):
 
 
 def extract_ssh_connection_info(ssh_connection: str):
-
-    username = ssh_connection[:ssh_connection.find('@')]
-    x = ssh_connection.find(":")
-    if x != -1:
-        host = ssh_connection[ssh_connection.find('@') + 1: x]
+    username_end_index = ssh_connection.find('@')
+    if username_end_index != -1:
+        username = ssh_connection[:username_end_index]
     else:
-        host = ssh_connection[ssh_connection.find('@') + 1:]
-    if ssh_connection.find(':') != -1 and ssh_connection.find(':') + 1 != len(ssh_connection):
-        port = int(ssh_connection[ssh_connection.find(":") + 1:])
+        username = ""
+    port_start_index = ssh_connection.find(":")
+    if port_start_index != -1:
+        host = ssh_connection[username_end_index + 1: port_start_index]
+    else:
+        host = ssh_connection[username_end_index + 1:]
+    if port_start_index != -1 and port_start_index + 1 != len(ssh_connection):
+        port = int(ssh_connection[port_start_index + 1:])
     else:
         port = None
     return username, host, port
