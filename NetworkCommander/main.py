@@ -13,7 +13,7 @@ from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
 from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, add_device_entry, tag_device, \
-    untag_device, get_device_tags, get_device, does_device_exist
+    untag_device, get_device_tags, get_device, does_device_exist, get_existing_devices
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 device_command_group = typer.Typer(pretty_exceptions_show_locals=False,
@@ -217,8 +217,22 @@ def list_devices(
 
 
 @device_command_group.command(name="import")
-def import_devices(devices_file: Annotated[typer.FileText, typer.Argument()] = sys.stdin):
+def import_devices(
+        devices_file: Annotated[typer.FileText, typer.Argument()] = sys.stdin,
+        device_password: Annotated[str, typer.Option(prompt="Devices password", hide_input=True)] = ""
+):
     devices = [Device.from_string(device_string) for device_string in devices_file.readlines()]
+    for device in devices:
+        device.password = device_password
+    with KeepassDB(KeepassDB.KEEPASS_DB_PATH, KeepassDB.keepass_password) as kp:
+        existing_devices = get_existing_devices(kp, devices)
+        if existing_devices:
+            raise Exception(f"[{', '.join(device.name for device in existing_devices)}] already exist in database, "
+                            f"you can't add them again")
+        for device in devices:
+            typer.echo(f"adding {device} to database")
+            add_device_entry(kp, device)
+        typer.echo(f"added {len(devices)} to database")
 
 
 @device_command_group.command()

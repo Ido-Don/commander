@@ -1,6 +1,7 @@
 import os
 from typing import List, Union
 
+import pykeepass
 from pykeepass import pykeepass
 from rich.prompt import Prompt
 
@@ -164,3 +165,9 @@ def untag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
         device_entry.tags = tags
 
 
+def get_existing_devices(kp: pykeepass.PyKeePass, devices: List[Device]):
+    existing_devices = []
+    for device in devices:
+        if does_device_exist(kp, device.name):
+            existing_devices.append(device)
+    return existing_devices
