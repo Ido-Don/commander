@@ -8,7 +8,7 @@ from rich.prompt import Prompt
 
 from NetworkCommander.__init__ import COMMANDER_DIRECTORY, __version__
 from NetworkCommander.deploy import deploy_commands, handle_results
-from NetworkCommander.device import supported_device, Device, extract_ssh_connection_info
+from NetworkCommander.device import supported_device_type, Device, deconstruct_connection_string
 from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
@@ -216,11 +216,16 @@ def list_devices(
     print_devices(devices)
 
 
+@device_command_group.command(name="import")
+def import_devices(devices_file: Annotated[typer.FileText, typer.Argument()] = sys.stdin):
+    devices = [Device.from_string(device_string) for device_string in devices_file.readlines()]
+
+
 @device_command_group.command()
 def add(
         name: Annotated[str, typer.Option()] = None,
         password: Annotated[str, typer.Option()] = None,
-        device_type: Annotated[supported_device, typer.Option()] = "cisco_ios",
+        device_type: Annotated[supported_device_type, typer.Option()] = "cisco_ios",
         ssh_string: Annotated[str, typer.Argument(show_default=False)] = ... if sys.stdin.isatty() else PIPE,
 ):
     """
@@ -236,7 +241,7 @@ def add(
     if not matched_ssh_strings:
         raise Exception(f"sorry, {ssh_string} isn't a valid ssh connection string")
     match = matched_ssh_strings[0]
-    username, host, port = extract_ssh_connection_info(match)
+    username, host, port = deconstruct_connection_string(match)
 
     if not name:
         name = host

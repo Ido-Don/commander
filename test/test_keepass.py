@@ -5,7 +5,7 @@ import mimesis
 import pykeepass
 import pytest
 
-from NetworkCommander.device import Device, supported_device
+from NetworkCommander.device import Device, supported_device_type
 from NetworkCommander.init import create_new_keepass_db
 from NetworkCommander.keepass import KeepassDB, add_device_entry, get_all_device_entries, get_device_tags, \
     does_device_exist
@@ -36,7 +36,7 @@ def get_test_device():
     name = f"{internet.hostname()}.{Finance.company()}{internet.top_level_domain()}"
     host = internet.ip_v4()
     port = internet.port()
-    device_type = generic.random.choice(list(supported_device))
+    device_type = generic.random.choice(list(supported_device_type))
     device = Device(name, username, password, host, device_type, port)
     return device
 
