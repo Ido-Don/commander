@@ -3,20 +3,20 @@ import os.path
 import sys
 from itertools import filterfalse
 from pathlib import Path
-from typing import Annotated, List, TextIO, Optional
+from typing import Annotated, List, TextIO
 
 import rich
 import typer
 
 from NetworkCommander.__init__ import __version__
-from NetworkCommander.config import config, USER_CONFIG_FILE
+from NetworkCommander.config import config, USER_CONFIG_FILE, HOME_FOLDER
 from NetworkCommander.deploy import deploy_commands
 from NetworkCommander.device import Device
 from NetworkCommander.device_executer import PermissionLevel
-from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
 from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, add_device_entry, tag_device, \
-    untag_device, get_device_tags, get_device, does_device_exist, filter_non_existing_device_names, get_existing_devices
+    untag_device, get_device_tags, get_device, filter_non_existing_device_names, get_existing_devices
+from NetworkCommander.printing import print_objects
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 device_command_group = typer.Typer(pretty_exceptions_show_locals=False,
@@ -51,8 +51,7 @@ def load_config():
         with open(USER_CONFIG_FILE) as json_file:
             config.update(json.load(json_file))
     if 'commander_directory' not in config:
-        HOME_DIRECTORY = os.path.expanduser('~')
-        config['commander_directory'] = os.path.join(HOME_DIRECTORY, '.commander')
+        config['commander_directory'] = os.path.join(HOME_FOLDER, '.commander')
     if 'commander_directory' in config:
         config['keepass_db_path'] = os.path.join(config['commander_directory'], "db.kdbx")
     if 'default_device_type' not in config:
@@ -101,18 +100,18 @@ def list_tags():
 
 
 @tag_command_group.command()
-def remove(device_tag: str, devices: List[str]):
+def remove(device_tag: str, device_names: List[str]):
     """
     remove a tag from devices
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        non_existent_devices = filter_non_existing_device_names(kp, devices)
+        non_existent_devices = filter_non_existing_device_names(kp, device_names)
         if non_existent_devices:
             raise Exception(f"devices {', '.join(non_existent_devices)} doesn't exist")
 
-        for device_name in devices:
+        for device_name in device_names:
             untag_device(kp, device_tag, device_name)
-        rich.print(f"removed {device_tag} from {len(devices)} devices")
+        rich.print(f"removed {device_tag} from {len(device_names)} devices")
 
 
 @device_command_group.command()
@@ -137,7 +136,7 @@ def ping(
         else:
             raise Exception(f"you don't have any devices in the database with all of these tags: {', '.join(tags)}.")
 
-    print_devices(devices)
+    print_objects(devices, "devices")
 
     # deploy no commands just to test connectivity
     list(deploy_commands([], devices, PermissionLevel.USER))
@@ -200,8 +199,8 @@ def deploy(
     if not devices:
         raise Exception("you don't have any devices in the database.")
 
-    print_devices(devices)
-    print_commands(commands)
+    print_objects(devices, "devices")
+    print_objects(commands, "objects")
 
     typer.confirm(f"do you want to deploy these {len(commands)} commands on {len(devices)} devices?", abort=True)
     for result, device in deploy_commands(commands, devices, permission_level):
@@ -212,12 +211,6 @@ def deploy(
             with open(output_file_path, "w") as output_file:
                 output_file.write(result)
                 typer.echo(f"'saved output to {str(output_file_path.absolute().resolve())}'")
-
-
-def print_commands(commands):
-    rich.print("commands:")
-    for commands in commands:
-        rich.print(f"{commands}")
 
 
 @device_command_group.command(name="list")
@@ -233,7 +226,7 @@ def list_devices(
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         devices = get_all_device_entries(kp, tags)
 
-    print_devices(devices)
+    print_objects(devices, "devices")
 
 
 @device_command_group.command()
@@ -279,7 +272,7 @@ def read_file(file: TextIO):
 
 
 @device_command_group.command()
-def remove(device_names: Annotated[List[str], typer.Argument("devices")]):
+def remove(device_names: List[str]):
     """
     remove a device from your database
     """
@@ -294,7 +287,7 @@ def remove(device_names: Annotated[List[str], typer.Argument("devices")]):
         for device_name in device_names:
             if device_name in device_name_map:
                 device_entries.append(device_name_map[device_name])
-        print_devices(device_entries)
+        print_objects(device_entries, "devices")
         typer.confirm(f"are you sure you want to delete {len(device_entries)} devices?", abort=True)
 
         for device_name in device_names:
