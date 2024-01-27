@@ -310,7 +310,7 @@ def init():
             rich.print(f"deleting directory: {config['commander_directory']}")
             delete_project_files(config['commander_directory'])
     if not is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE):
-        rich.print(f"creating new database in {config['commander_directory']}")
+        rich.print(f"creating a new database in {config['commander_directory']}")
         init_program(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE)
 
     rich.print("finished the initialization process, have a great day")
