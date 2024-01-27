@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import Any, Dict, Tuple, Optional
 
+from NetworkCommander.config import config
+
 
 def normalize_string_input(value: Any):
     if not value:
@@ -105,7 +107,7 @@ class Device:
         else:
             name = hostname
         if not device_type:
-            device_type = supported_device_type.default
+            device_type = config["default_device_type"]
         return Device(name, username, "", hostname, device_type, port)
 
 
@@ -160,7 +162,6 @@ def deconstruct_socket_id(socket_id: str) -> Tuple[str, int]:
 
 
 class supported_device_type(str, Enum):
-    default = "cisco_ios"
     cisco_ios = "cisco_ios",
     cisco_ios_xe = "cisco_ios_xe",
     cisco_ios_telnet = "cisco_ios_telnet",

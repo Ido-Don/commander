@@ -55,6 +55,8 @@ def load_config():
         config['commander_directory'] = os.path.join(HOME_DIRECTORY, '.commander')
     if 'commander_directory' in config:
         config['keepass_db_path'] = os.path.join(config['commander_directory'], "db.kdbx")
+    if 'default_device_type' not in config:
+        config['default_device_type'] = "cisco_ios"
 
 
 @device_command_group.callback(no_args_is_help=True)
@@ -117,7 +119,7 @@ def remove(device_tag: str, devices: List[str]):
 def ping(
         tags: Annotated[
             List[str],
-            typer.Argument(
+            typer.Option(
                 help="ping the devices that have all of these tags",
                 show_default=False
             )
