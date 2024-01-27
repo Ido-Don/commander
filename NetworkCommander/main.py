@@ -173,10 +173,11 @@ def deploy(
     """
     deploy command to all the devices in your database that match the tags.
     """
-    if output_folder.exists() and not output_folder.is_dir():
-        raise FileExistsError(f"{str(output_folder)} is a file not a directory")
-    if not output_folder.exists():
-        os.mkdir(output_folder)
+    if output_folder:
+        if output_folder.exists() and not output_folder.is_dir():
+            raise FileExistsError(f"{str(output_folder)} is a file not a directory")
+        if not output_folder.exists():
+            os.mkdir(output_folder)
 
     invalid_commands = list(filterfalse(is_valid_command, commands))
     if invalid_commands:
