@@ -311,17 +311,16 @@ def init():
     initialize the project
     """
     rich.print("Welcome to commander!")
-    if is_initialized(config['commander_directory'], config['keepass_db_path']):
+    if is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE):
         rich.print("commander is already initialized")
         reinitialize = typer.confirm("do you want to delete everything and start over?")
 
         if reinitialize:
             rich.print(f"deleting directory: {config['commander_directory']}")
             delete_project_files(config['commander_directory'])
-
-    if not is_initialized(config['commander_directory'], config['keepass_db_path']):
+    if not is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE):
         rich.print(f"creating new database in {config['commander_directory']}")
-        init_program(config['commander_directory'], config['keepass_db_path'])
+        init_program(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE)
 
     rich.print("finished the initialization process, have a great day")
 
