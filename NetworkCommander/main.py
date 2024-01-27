@@ -148,8 +148,8 @@ def deploy(
         commands: Annotated[
             List[str],
             typer.Argument(help="enter the commands you want to deploy to your devices", show_default=False)
-        ],
-        output_folder: Annotated[Path, typer.Option()] = None,
+        ] = None,
+        output_folder: Annotated[Path, typer.Option("--output_folder", "-o")] = None,
         tags: Annotated[
             List[str],
             typer.Option(
@@ -178,6 +178,11 @@ def deploy(
             raise FileExistsError(f"{str(output_folder)} is a file not a directory")
         if not output_folder.exists():
             os.mkdir(output_folder)
+    if not commands:
+        typer.echo("enter the commands you want to deploy and then press Control-d or Control-Z")
+        commands = sys.stdin.readlines()
+        commands = [command.strip(' \n').replace('\4', '').replace('\26', '') for command in commands]
+        commands = list(filter(bool, commands))
 
     invalid_commands = list(filterfalse(is_valid_command, commands))
     if invalid_commands:
@@ -202,11 +207,12 @@ def deploy(
     typer.confirm(f"do you want to deploy these {len(commands)} commands on {len(devices)} devices?", abort=True)
     for result, device in deploy_commands(commands, devices, permission_level):
         if not output_folder:
-            typer.echo(device.name)
             typer.echo(result)
         else:
-            with open(output_folder.joinpath(f"{result}.txt"), "w") as output_file:
+            output_file_path = output_folder.joinpath(f"{device.name}.txt")
+            with open(output_file_path, "w") as output_file:
                 output_file.write(result)
+                typer.echo(f"'saved output to {str(output_file_path.absolute().resolve())}'")
 
 
 def print_commands(commands):
