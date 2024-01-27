@@ -3,7 +3,7 @@ import os.path
 import sys
 from itertools import filterfalse
 from pathlib import Path
-from typing import Annotated, List
+from typing import Annotated, List, TextIO
 
 import rich
 import typer
@@ -62,7 +62,7 @@ def load_config():
 @device_command_group.callback(no_args_is_help=True)
 def initialization_check(keepass_password: Annotated[str, typer.Option()] = None):
     config['keepass_password'] = keepass_password
-    if not is_initialized(config['commander_directory'], config['keepass_db_path']):
+    if not is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE):
         raise Exception("program is not initialized, please run commander init!")
 
 
@@ -179,10 +179,9 @@ def deploy(
         if not output_folder.exists():
             os.mkdir(output_folder)
     if not commands:
-        typer.echo("enter the commands you want to deploy and then press Control-d or Control-Z")
-        commands = sys.stdin.readlines()
-        commands = [command.strip(' \n').replace('\4', '').replace('\26', '') for command in commands]
-        commands = list(filter(bool, commands))
+        typer.echo("enter the commands you want to deploy")
+        typer.echo("hit control-Z or control-D to continue")
+        commands = read_file(sys.stdin)
 
     invalid_commands = list(filterfalse(is_valid_command, commands))
     if invalid_commands:
@@ -262,22 +261,35 @@ def import_devices(
 
 @device_command_group.command()
 def add(
-        device_string: Annotated[str, typer.Argument(show_default=False)],
-        password: Annotated[str, typer.Option(prompt="Device's password", hide_input=True)] = "",
+        device_strings: Annotated[List[str], typer.Argument(show_default=False)] = None,
+        password: Annotated[str, typer.Option(prompt="Device's password", hide_input=True, show_default=False)] = None,
 ):
     """
     add a new device to the list of devices
     """
-    if not device_string:
-        raise Exception("sorry you can't upload an empty connection string")
-    device = Device.from_string(device_string)
-    device.password = password
+    if not device_strings:
+        typer.echo("enter the devices you want to add to database")
+        typer.echo("hit control-Z or control-D to continue")
+        device_strings = read_file(sys.stdin)
+
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
+        for device_string in device_strings:
+            device = Device.from_string(device_string)
+            device.password = password
         if does_device_exist(kp, device.name):
             raise Exception(f"device {device.name} already exist in keepass")
 
         add_device_entry(kp, device)
         typer.echo(f"added device {device} to database")
+
+
+def read_file(file: TextIO):
+    user_inputs = file.readlines()
+    user_inputs = [string.strip('\r\n ') for string in user_inputs]
+    user_inputs = [string.replace('\4', '') for string in user_inputs]
+    user_inputs = [string.replace("\26", '') for string in user_inputs]
+    user_inputs = list(filter(bool, user_inputs))
+    return user_inputs
 
 
 @device_command_group.command()
