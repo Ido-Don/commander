@@ -16,7 +16,7 @@ from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
 from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, add_device_entry, tag_device, \
-    untag_device, get_device_tags, get_device, does_device_exist, get_existing_devices, filter_non_existing_device_names
+    untag_device, get_device_tags, get_device, does_device_exist, filter_non_existing_device_names
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 device_command_group = typer.Typer(pretty_exceptions_show_locals=False,
@@ -236,51 +236,33 @@ def list_devices(
     print_devices(devices)
 
 
-@device_command_group.command(name="import")
-def import_devices(
-        devices_file: Annotated[typer.FileText, typer.Argument(show_default=False)] = sys.stdin,
-        device_password: Annotated[
-            str,
-            typer.Option(prompt="Devices password", hide_input=True)
-        ] = ""
-):
-    device_strings = [device_string.strip(' \n\r') for device_string in devices_file.readlines()]
-    devices = [Device.from_string(device_string) for device_string in device_strings]
-    for device in devices:
-        device.password = device_password
-    with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        existing_devices = get_existing_devices(kp, devices)
-        if existing_devices:
-            raise Exception(f"[{', '.join(device.name for device in existing_devices)}] already exist in database, "
-                            f"you can't add them again")
-        for device in devices:
-            typer.echo(f"adding {device} to database")
-            add_device_entry(kp, device)
-        typer.echo(f"added {len(devices)} to database")
-
-
 @device_command_group.command()
 def add(
         device_strings: Annotated[List[str], typer.Argument(show_default=False)] = None,
+        devices_file: Annotated[typer.FileText, typer.Argument(show_default=False)] = sys.stdin,
         password: Annotated[str, typer.Option(prompt="Device's password", hide_input=True, show_default=False)] = None,
 ):
     """
     add a new device to the list of devices
     """
     if not device_strings:
-        typer.echo("enter the devices you want to add to database")
-        typer.echo("hit control-Z or control-D to continue")
+        if devices_file == sys.stdin:
+            typer.echo("enter the devices you want to add to database")
+            typer.echo("hit control-Z or control-D to continue")
         device_strings = read_file(sys.stdin)
 
+    if not device_strings:
+        raise ValueError("no devices supplied... not adding anything")
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         for device_string in device_strings:
             device = Device.from_string(device_string)
             device.password = password
-        if does_device_exist(kp, device.name):
-            raise Exception(f"device {device.name} already exist in keepass")
+            if does_device_exist(kp, device.name):
+                raise Exception(f"device {device.name} already exist in keepass")
 
-        add_device_entry(kp, device)
-        typer.echo(f"added device {device} to database")
+            add_device_entry(kp, device)
+            typer.echo(f"added device {device} to database")
+    typer.echo(f"added {len(device_strings)} to database")
 
 
 def read_file(file: TextIO):
