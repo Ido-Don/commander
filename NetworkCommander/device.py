@@ -94,6 +94,8 @@ class Device:
 
     @staticmethod
     def from_string(device: str):
+        if not device:
+            raise ValueError(f"you can't have an empty device")
         device = device.strip(' \n')
         device_descriptor, connection_string = deconstruct_device(device)
         username, hostname, port = deconstruct_connection_string(connection_string)
@@ -116,8 +118,8 @@ def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional
         return name, device_type
 
     elif perianthes_appear:
-        raise Exception(f"sorry we don't support '{device_descriptor}' software type.\n"
-                        f"the supported types are {', '.join(supported_device_type)}")
+        raise NotImplemented(f"sorry we don't support '{device_descriptor}' software type.\n"
+                             f"the supported types are {', '.join(supported_device_type)}")
 
     return device_descriptor, None
 
