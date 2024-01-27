@@ -3,7 +3,7 @@ import os.path
 import sys
 from itertools import filterfalse
 from pathlib import Path
-from typing import Annotated, List, TextIO
+from typing import Annotated, List, TextIO, Optional
 
 import rich
 import typer
@@ -16,7 +16,7 @@ from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.device_list import print_devices
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
 from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, add_device_entry, tag_device, \
-    untag_device, get_device_tags, get_device, does_device_exist, filter_non_existing_device_names
+    untag_device, get_device_tags, get_device, does_device_exist, filter_non_existing_device_names, get_existing_devices
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 device_command_group = typer.Typer(pretty_exceptions_show_locals=False,
@@ -238,9 +238,9 @@ def list_devices(
 
 @device_command_group.command()
 def add(
+        password: Annotated[str, typer.Option(prompt="Device's password", hide_input=True, show_default=False)] = "",
         device_strings: Annotated[List[str], typer.Argument(show_default=False)] = None,
-        devices_file: Annotated[typer.FileText, typer.Argument(show_default=False)] = sys.stdin,
-        password: Annotated[str, typer.Option(prompt="Device's password", hide_input=True, show_default=False)] = None,
+        devices_file: Annotated[typer.FileText, typer.Option(show_default=False)] = sys.stdin,
 ):
     """
     add a new device to the list of devices
@@ -253,13 +253,17 @@ def add(
 
     if not device_strings:
         raise ValueError("no devices supplied... not adding anything")
+    devices = []
+    for device_string in device_strings:
+        device = Device.from_string(device_string)
+        device.password = password
+        devices.append(device)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        for device_string in device_strings:
-            device = Device.from_string(device_string)
-            device.password = password
-            if does_device_exist(kp, device.name):
-                raise Exception(f"device {device.name} already exist in keepass")
-
+        existing_devices = get_existing_devices(kp, devices)
+        existing_device_names = [device.name for device in existing_devices]
+        if existing_devices:
+            raise Exception(f"devices [{', '.join(existing_device_names)}] already exist in keepass")
+        for device in devices:
             add_device_entry(kp, device)
             typer.echo(f"added device {device} to database")
     typer.echo(f"added {len(device_strings)} to database")
@@ -275,25 +279,25 @@ def read_file(file: TextIO):
 
 
 @device_command_group.command()
-def remove(devices: List[str]):
+def remove(device_names: Annotated[List[str], typer.Argument("devices")]):
     """
     remove a device from your database
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_device_entry = get_all_device_entries(kp)
         all_device_names = [device.name for device in all_device_entry]
-        non_existing_devices = set(devices) - set(all_device_names)
+        non_existing_devices = set(device_names) - set(all_device_names)
         if non_existing_devices:
             raise Exception(f"devices {', '.join(non_existing_devices)} don't exist")
         device_entries = []
         device_name_map = dict(zip(all_device_names, all_device_entry))
-        for device_name in devices:
+        for device_name in device_names:
             if device_name in device_name_map:
                 device_entries.append(device_name_map[device_name])
         print_devices(device_entries)
         typer.confirm(f"are you sure you want to delete {len(device_entries)} devices?", abort=True)
 
-        for device_name in devices:
+        for device_name in device_names:
             remove_device(kp, device_name)
 
         typer.echo(f"deleted {len(device_entries)} devices")
