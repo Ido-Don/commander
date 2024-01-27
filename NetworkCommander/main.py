@@ -71,20 +71,16 @@ def add(device_tag: str, devices: List[str]):
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         # if someone entered a wrong device name, it can't be tagged so an error is raised
-        all_devices = get_all_device_entries(kp)
-        all_device_names = {device.name for device in all_devices}
-
-        # get every device that is not in the database
-        non_existent_devices = set(devices) - all_device_names
+        non_existent_devices = filter_non_existing_device_names(kp, devices)
         if non_existent_devices:
             raise Exception(f"devices [{', '.join(non_existent_devices)}] doesn't exist")
 
         # if someone entered a device that was already tagged it can't be tagged again with the same device
         all_tagged_devices = get_all_device_entries(kp, [device_tag])
         all_tagged_devices_names = {device.name for device in all_tagged_devices}
-        tagged_devices = list(filter(lambda device: device in all_tagged_devices_names, devices))
-        if any(tagged_devices):
-            raise Exception(f"devices [{', '.join(tagged_devices)}] are already tagged")
+        tagged_existing_devices = list(filter(lambda device: device in all_tagged_devices_names, devices))
+        if any(tagged_existing_devices):
+            raise Exception(f"devices [{', '.join(tagged_existing_devices)}] are already tagged")
 
         for device_name in devices:
             tag_device(kp, device_tag, device_name)
