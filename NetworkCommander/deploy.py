@@ -1,11 +1,9 @@
 import concurrent.futures
-import os
 from typing import List, Iterable
 
 import netmiko
 import typer
 
-from NetworkCommander.__init__ import COMMANDER_DIRECTORY
 from NetworkCommander.device import Device
 from NetworkCommander.device_executer import execute_commands, PermissionLevel
 
@@ -33,13 +31,3 @@ def deploy_commands(commands: List[str], devices: Iterable[Device], permission_l
             except Exception as e:
                 # Handle exceptions raised during the task execution
                 typer.echo(f"device {str(device)} encountered an exception: {e}", err=True)
-
-
-def handle_results(results: str, device_name: str):
-    outputs_folder = os.path.join(COMMANDER_DIRECTORY, 'outputs')
-    if not os.path.isdir(outputs_folder):
-        os.mkdir(outputs_folder)
-    device_output_txt_file = os.path.join(outputs_folder, device_name + ".txt")
-    with open(device_output_txt_file, 'w+') as f:
-        f.write(results)
-    typer.echo(f'saved results in "{device_output_txt_file}"')

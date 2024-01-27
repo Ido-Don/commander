@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 
@@ -10,9 +11,12 @@ def delete_project_files(directory):
     shutil.rmtree(directory)
 
 
-def init_program(directory, keepass_db_path):
-    if is_initialized(directory, keepass_db_path):
+def init_program(directory, keepass_db_path, config_file_path):
+    if is_initialized(directory, keepass_db_path, config_file_path):
         return
+    if not os.path.isfile(config_file_path):
+        with open(config_file_path, 'w') as config_file:
+            json.dump({}, config_file)
     if not os.path.isdir(directory):
         os.mkdir(directory)
     if not os.path.isfile(keepass_db_path):
@@ -24,7 +28,7 @@ def create_new_keepass_db(keepass_db_path, keepass_password=None):
         kp.add_group(kp.root_group, DEVICE_GROUP_NAME)
 
 
-def is_initialized(directory, keepass_db_path):
+def is_initialized(directory, keepass_db_path, config_file_path):
     if os.path.isdir(directory):
-        return os.path.isfile(keepass_db_path)
+        return os.path.isfile(keepass_db_path) and os.path.isfile(config_file_path)
     return False

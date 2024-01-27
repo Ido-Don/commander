@@ -1,5 +1,7 @@
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, Tuple, Optional
+
+from NetworkCommander.config import config
 
 
 def normalize_string_input(value: Any):
@@ -92,27 +94,114 @@ class Device:
             json_dump['port'] = str(self.port)
         return json_dump
 
+    @staticmethod
+    def from_string(device: str):
+        if not device:
+            raise ValueError(f"you can't have an empty device")
+        device = device.strip(' \n')
+        device_descriptor, connection_string = deconstruct_device(device)
+        username, hostname, port = deconstruct_connection_string(connection_string)
+        device_type = None
+        if device_descriptor:
+            name, device_type = deconstruct_device_descriptor(device_descriptor)
+        else:
+            name = hostname
+        if not device_type:
+            device_type = config["default_device_type"]
+        return Device(name, username, "", hostname, device_type, port)
 
-class supported_device(str, Enum):
+
+def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional[str]]:
+    device_type_appear = any(f'({device_type})' in device_descriptor for device_type in supported_device_type)
+    perianthes_appear = '(' in device_descriptor or ')' in device_descriptor
+    if device_type_appear:
+        name, device_type = device_descriptor.split('(')
+        device_type = device_type.rstrip(')')
+        return name, device_type
+
+    elif perianthes_appear:
+        raise NotImplemented(f"sorry we don't support '{device_descriptor}' software type.\n"
+                             f"the supported types are {', '.join(supported_device_type)}")
+
+    return device_descriptor, None
+
+
+def deconstruct_device(device: str):
+    if device.count('->') > 1:
+        raise Exception(f"{device} has more then 1 '->'")
+    if device.count('\n') > 1:
+        raise Exception(f"device {device} shouldn't have a line break.")
+    if '->' in device:
+        device_descriptor, connection_string = device.split('->')
+        device_descriptor = device_descriptor.strip()
+        connection_string = connection_string.strip()
+        return device_descriptor, connection_string
+    else:
+        connection_string: str = device
+        return None, connection_string
+
+
+def deconstruct_socket_id(socket_id: str) -> Tuple[str, int]:
+    """
+    this function returns the variables contained inside an IPv4 socket_id
+    :param socket_id: a hostname or ip (IPv4) with a port, like: 1.1.1.1:234, 12312:22, google.com:5000
+    :raise: ValueError if the socket_id is not a real one or doesn't contain a port
+     (for example, kjnjsl::: is not a valid socket id)
+    :return: the hostname or ip address and port number
+    """
+    if socket_id.count(':') != 1:
+        raise ValueError(f"{socket_id} is not a valid IPv4 socket id, it has more then 1 ':'.")
+    hostname, port = socket_id.split(':')
+    if not port or not port.isnumeric():
+        raise ValueError(f"{socket_id} doesn't contain a valid port number")
+    port = int(port)
+    if 0 > port or port > 65535:
+        raise ValueError(f"{port} is not in the valid port range")
+
+    return hostname, port
+
+
+class supported_device_type(str, Enum):
     cisco_ios = "cisco_ios",
     cisco_ios_xe = "cisco_ios_xe",
     cisco_ios_telnet = "cisco_ios_telnet",
     cisco_ios_xe_telnet = "cisco_ios_xe_telnet"
 
 
-def extract_ssh_connection_info(ssh_connection: str):
-    username_end_index = ssh_connection.find('@')
-    if username_end_index != -1:
-        username = ssh_connection[:username_end_index]
+def deconstruct_connection_string(connection: str) -> Tuple[Optional[str], str, Optional[int]]:
+    """
+    this function extracts the variables of an ssh connection string from the string.
+    :param connection: a string representing a session with a remote device
+    (example: root@google.com:22, alice@exemple.com, YouTube.com:5000, 1.1.1.1)
+    :return: username, hostname, port
+    :raises: ValueError if the connection string is invalid
+    """
+    if connection.count('@') > 1:
+        raise ValueError(f"{connection} is not a valid ssh connection string, it has more then 1 '@'.")
+
+    # extract username and socket_id from connection
+    if '@' in connection:
+        username, socket_id = connection.split('@')
+
+        if not username:
+            username = None
+
     else:
-        username = ""
-    port_start_index = ssh_connection.find(":")
-    if port_start_index != -1:
-        host = ssh_connection[username_end_index + 1: port_start_index]
+        socket_id = connection
+        username = None
+
+    # extract hostname and port from socket_id
+    port = None
+
+    does_socket_id_ends_with_colon = socket_id[-1] == ':'
+    if does_socket_id_ends_with_colon:
+        hostname = socket_id[:-2]
+
+    elif ':' in socket_id and not does_socket_id_ends_with_colon:
+        hostname, port = deconstruct_socket_id(socket_id)
+
     else:
-        host = ssh_connection[username_end_index + 1:]
-    if port_start_index != -1 and port_start_index + 1 != len(ssh_connection):
-        port = int(ssh_connection[port_start_index + 1:])
-    else:
-        port = None
-    return username, host, port
+        hostname = socket_id
+
+    # return the connection variables
+    return username, hostname, port

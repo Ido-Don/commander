@@ -1,10 +1,10 @@
 import os
 from typing import List, Union
 
+import pykeepass
 from pykeepass import pykeepass
 from rich.prompt import Prompt
 
-from NetworkCommander import COMMANDER_DIRECTORY
 from NetworkCommander.device import Device
 
 DEVICE_GROUP_NAME = "device"
@@ -12,10 +12,7 @@ DEVICE_GROUP_NAME = "device"
 
 class KeepassDB:
 
-    KEEPASS_DB_PATH = os.path.join(COMMANDER_DIRECTORY, "db.kdbx")
-    keepass_password = None
-
-    def __init__(self, keepass_db_path, keepass_password=None):
+    def __init__(self, keepass_db_path, keepass_password):
         self._keepass_db_path = keepass_db_path
         self._keepass_password = keepass_password
         if not self._keepass_password:
@@ -164,3 +161,14 @@ def untag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
         device_entry.tags = tags
 
 
+def get_existing_devices(kp: pykeepass.PyKeePass, devices: List[Device]):
+    existing_devices = []
+    for device in devices:
+        if does_device_exist(kp, device.name):
+            existing_devices.append(device)
+    return existing_devices
+
+
+def filter_non_existing_device_names(kp: pykeepass.PyKeePass, devices_names: List[str]):
+    non_existing_devices = list(filter(lambda device_name: not does_device_exist(kp, device_name), devices_names))
+    return non_existing_devices

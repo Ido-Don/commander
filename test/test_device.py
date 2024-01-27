@@ -1,10 +1,8 @@
 from typing import Any, Dict, Tuple, Optional
-from unittest import TestCase
 
-import mimesis
 import pytest
 
-from NetworkCommander.device import Device, extract_ssh_connection_info
+from NetworkCommander.device import Device, deconstruct_connection_string, deconstruct_socket_id
 
 
 class TestDevice:
@@ -162,28 +160,22 @@ class TestDevice:
         assert Device(**json) == expected_device
 
 
-class TestConnectionString:
+@pytest.mark.parametrize(("socket_id", "expected_parameters"), [
+    ("google.com:123", ("google.com", 123)),
+    ("1.1.1.1:22", ("1.1.1.1", 22)),
+    ("1:2", ("1", 2)),
+    ("a1:23123", ("a1", 23123))
+])
+def test_deconstruct_socket_id(socket_id: str, expected_parameters: Tuple[str, int]):
+    assert deconstruct_socket_id(socket_id) == expected_parameters
 
-    @pytest.mark.parametrize(
-        ("ssh_connection", "ssh_connection_details"),
-        [
-            (
-                    "swewq1@12qwe3", ('swewq1', '12qwe3', None)
-            ),
-            (
-                    '1qwe@1213ds3:', ('1qwe', '1213ds3', None)
-            ),
-            (
-                    '1qwe@1:', ('1qwe', '1', None)
-            ),
-            (
-                    '1qwe@1:123', ('1qwe', '1', 123)
-            ),
-            (
-                    '1qwe@1:1213', ('1qwe', '1', 1213)
-            )
-        ]
-    )
-    def test_extract_ssh_connection_info(self, ssh_connection: str,
-                                         ssh_connection_details: Tuple[str, str, Optional[int]]):
-        assert extract_ssh_connection_info(ssh_connection) == ssh_connection_details
+
+@pytest.mark.parametrize(("connection", "connection_params"), [
+    ("root@google.com:22:", ("root", "google.com", 22)),
+    ("root@google.com:", ("root", "google.com", None)),
+    ("root@google.com", ("root", "google.com", None)),
+    ("@google.com", (None, "google.com", None)),
+    ("google.com", (None, "google.com", None)),
+])
+def test_deconstruct_connection_string(connection: str, connection_params: Tuple[Optional[str], str, Optional[int]]):
+    assert deconstruct_connection_string(connection) == connection_params
