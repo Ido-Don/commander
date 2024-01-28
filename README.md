@@ -15,7 +15,7 @@ pip install NetworkCommander
 
 Every network device is also a computer that needs to be managed. 
 networking and IT teams work hard to maintain a level of standardization in the network but with large scale networks it becomes almost impossible.
-Instead of counting on humans to mannualy check the software version in 200 devices, have the commander check all of them at once!
+Instead of counting on humans to manually check the software version in 200 devices, have the commander check all of them at once!
 
 ## High level functionality
 
