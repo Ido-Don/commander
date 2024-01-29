@@ -5,6 +5,11 @@ from NetworkCommander.config import config
 
 
 def normalize_string_input(value: Any):
+    """
+    this convert a truthy value to a string and a falsy value to an empty string.
+    :param value: any value that can be converted to string
+    :return: the string if that value is truthy
+    """
     if not value:
         return ""
     return str(value)
@@ -16,7 +21,15 @@ class Device:
     this class is here to hold the data netmiko.ConnectHandler needs to run.
     """
 
-    def __init__(self, name: str, username: str, password: str, host: str, device_type: str, port: int = None):
+    def __init__(
+            self,
+            name: str,
+            username: str,
+            password: str,
+            host: str,
+            device_type: str,
+            port: int = None
+    ):
         self.name = name
         self.username = normalize_string_input(username)
         self.password = normalize_string_input(password)
@@ -96,6 +109,12 @@ class Device:
 
     @staticmethod
     def from_string(device: str):
+        """
+        this function convert a string in the format {name}({device_type}) -> {username}@{hostname}:{port} to a Device
+        :param device: a string representing a device in this format
+        {name}({device_type}) -> {username}@{hostname}:{port}
+        :return: a device
+        """
         if not device:
             raise ValueError(f"you can't have an empty device")
         device = device.strip(' \n')
@@ -119,7 +138,7 @@ def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional
         device_type = device_type.rstrip(')')
         return name, device_type
 
-    elif perianthes_appear:
+    if perianthes_appear:
         raise NotImplemented(f"sorry we don't support '{device_descriptor}' software type.\n"
                              f"the supported types are {', '.join(supported_device_type)}")
 
