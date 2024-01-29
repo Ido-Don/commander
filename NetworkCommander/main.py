@@ -75,7 +75,7 @@ def add(device_tag: str, devices: List[str]):
         all_tagged_devices_names = {device.name for device in all_tagged_devices}
         tagged_existing_devices = list(filter(lambda device: device in all_tagged_devices_names, devices))
         if any(tagged_existing_devices):
-            raise Exception(f"devices [{', '.join(tagged_existing_devices)}] are already tagged")
+            raise LookupError(f"devices [{', '.join(tagged_existing_devices)}] are already tagged")
 
         for device_name in devices:
             tag_device(kp, device_tag, device_name)
@@ -124,9 +124,8 @@ def ping(
 
     if not devices:
         if not tags:
-            raise Exception("you don't have any devices in the database.")
-        else:
-            raise Exception(f"you don't have any devices in the database with all of these tags: {', '.join(tags)}.")
+            raise ValueError("you don't have any devices in the database.")
+        raise ValueError(f"you don't have any devices in the database with all of these tags: {', '.join(tags)}.")
 
     print_objects(devices, "devices")
 
@@ -177,7 +176,7 @@ def deploy(
 
     invalid_commands = list(filterfalse(is_valid_command, commands))
     if invalid_commands:
-        raise Exception(f"{','.join(invalid_commands)} are not valid commands.")
+        raise ValueError(f"{','.join(invalid_commands)} are not valid commands.")
 
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         devices = set(get_all_device_entries(kp, tags))
@@ -185,12 +184,12 @@ def deploy(
 
             non_existent_devices = filter_non_existing_device_names(kp, extra_devices)
             if non_existent_devices:
-                raise Exception(f"devices [{', '.join(non_existent_devices)}] don't exist")
+                raise ValueError(f"devices [{', '.join(non_existent_devices)}] don't exist")
 
             devices.update({get_device(kp, extra_device) for extra_device in extra_devices})
 
     if not devices:
-        raise Exception("you don't have any devices in the database.")
+        raise ValueError("you don't have any devices in the database.")
 
     print_objects(devices, "devices")
     print_objects(commands, "objects")
