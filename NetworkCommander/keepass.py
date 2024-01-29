@@ -11,14 +11,23 @@ DEVICE_GROUP_NAME = "device"
 
 
 class KeepassDB:
+    """
+    this class is made to create connections to keepass database.
+    it should be used with "with" (with KeepassDB(...) as kp)
+    """
 
     def __init__(self, keepass_db_path, keepass_password):
         self._keepass_db_path = keepass_db_path
         self._keepass_password = keepass_password
         if not self._keepass_password:
             self._keepass_password = KeepassDB.prompt_for_password()
+        self._kp = None
 
     def __enter__(self):
+        """
+        it returns the original keepass database object.
+        :return: the keepass connection object
+        """
         if not os.path.isfile(self._keepass_db_path):
             self._kp = pykeepass.create_database(
                 self._keepass_db_path,
@@ -34,6 +43,10 @@ class KeepassDB:
 
     @staticmethod
     def prompt_for_password():
+        """
+        ask the user for a keepass password
+        :return: the password
+        """
         password = Prompt.ask("enter keepass database master password", password=True)
         return password
 

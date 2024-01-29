@@ -14,8 +14,9 @@ from NetworkCommander.deploy import deploy_commands
 from NetworkCommander.device import Device
 from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
-from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, add_device_entry, tag_device, \
-    untag_device, get_device_tags, get_device, filter_non_existing_device_names, get_existing_devices
+from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
+    add_device_entry, tag_device, untag_device, get_device_tags, get_device, \
+    filter_non_existing_device_names, get_existing_devices
 from NetworkCommander.printing import print_objects
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
@@ -37,7 +38,10 @@ def version():
     typer.echo(f"Commander version: {__version__}")
 
 
-def is_valid_command(command: str):
+def is_valid_command(command: str) -> bool:
+    """
+    checks if a string is a valid command or not
+    """
     if not command:
         return False
     if command[0] == '#':
@@ -48,19 +52,23 @@ def is_valid_command(command: str):
 @app.callback(no_args_is_help=True)
 def load_config():
     if os.path.isfile(USER_CONFIG_FILE):
-        with open(USER_CONFIG_FILE) as json_file:
+        with open(USER_CONFIG_FILE, encoding="UTF-8") as json_file:
             config.update(json.load(json_file))
 
 
 @device_command_group.callback(no_args_is_help=True)
 def initialization_check(keepass_password: Optional[str] = typer.Option(None)):
+    """
+    check rather commander has the directory and userconfig.
+    :param keepass_password: the password to the keepass database
+    """
     config['keepass_password'] = keepass_password
     if not is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE):
-        raise Exception("program is not initialized, please run commander init!")
+        raise EnvironmentError("program is not initialized, please run commander init!")
 
 
-@tag_command_group.command()
-def add(device_tag: str, devices: List[str]):
+@tag_command_group.command(name="add")
+def tag_add(device_tag: str, devices: List[str]):
     """
     add a tag to devices
     """
@@ -68,14 +76,14 @@ def add(device_tag: str, devices: List[str]):
         # if someone entered a wrong device name, it can't be tagged so an error is raised
         non_existent_devices = filter_non_existing_device_names(kp, devices)
         if non_existent_devices:
-            raise Exception(f"devices [{', '.join(non_existent_devices)}] doesn't exist")
+            raise LookupError(f"devices [{', '.join(non_existent_devices)}] doesn't exist")
 
         # if someone entered a device that was already tagged it can't be tagged again with the same device
         all_tagged_devices = get_all_device_entries(kp, [device_tag])
         all_tagged_devices_names = {device.name for device in all_tagged_devices}
         tagged_existing_devices = list(filter(lambda device: device in all_tagged_devices_names, devices))
         if any(tagged_existing_devices):
-            raise LookupError(f"devices [{', '.join(tagged_existing_devices)}] are already tagged")
+            raise ValueError(f"devices [{', '.join(tagged_existing_devices)}] are already tagged")
 
         for device_name in devices:
             tag_device(kp, device_tag, device_name)
@@ -93,15 +101,15 @@ def list_tags():
             rich.print(tag)
 
 
-@tag_command_group.command()
-def remove(device_tag: str, device_names: List[str]):
+@tag_command_group.command(name="remove")
+def tag_remove(device_tag: str, device_names: List[str]):
     """
     remove a tag from devices
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         non_existent_devices = filter_non_existing_device_names(kp, device_names)
         if non_existent_devices:
-            raise Exception(f"devices {', '.join(non_existent_devices)} doesn't exist")
+            raise LookupError(f"devices {', '.join(non_existent_devices)} doesn't exist")
 
         for device_name in device_names:
             untag_device(kp, device_tag, device_name)
@@ -200,7 +208,7 @@ def deploy(
             typer.echo(result)
         else:
             output_file_path = output_folder.joinpath(f"{device.name}.txt")
-            with open(output_file_path, "w") as output_file:
+            with open(output_file_path, "w", encoding="utf-8") as output_file:
                 output_file.write(result)
                 typer.echo(f"'saved output to {str(output_file_path.absolute().resolve())}'")
 
@@ -248,14 +256,19 @@ def add(
         existing_devices = get_existing_devices(kp, devices)
         existing_device_names = [device.name for device in existing_devices]
         if existing_devices:
-            raise Exception(f"devices [{', '.join(existing_device_names)}] already exist in keepass")
+            raise LookupError(f"devices [{', '.join(existing_device_names)}] already exist in keepass")
         for device in devices:
             add_device_entry(kp, device)
             typer.echo(f"added device {device} to database")
     typer.echo(f"added {len(device_strings)} to database")
 
 
-def read_file(file: TextIO):
+def read_file(file: TextIO) -> List[str]:
+    """
+    this function reads the content of a file, cleans it and return the content of it.
+    :param file: any file (for example: sys.stdin).
+    :return: the lines this file contain.
+    """
     user_inputs = file.readlines()
     user_inputs = [string.strip('\r\n ') for string in user_inputs]
     user_inputs = [string.replace('\4', '') for string in user_inputs]
@@ -274,7 +287,7 @@ def remove(device_names: List[str]):
         all_device_names = [device.name for device in all_device_entry]
         non_existing_devices = set(device_names) - set(all_device_names)
         if non_existing_devices:
-            raise Exception(f"devices {', '.join(non_existing_devices)} don't exist")
+            raise LookupError(f"devices {', '.join(non_existing_devices)} don't exist")
         device_entries = []
         device_name_map = dict(zip(all_device_names, all_device_entry))
         for device_name in device_names:
