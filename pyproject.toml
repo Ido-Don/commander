@@ -17,6 +17,7 @@ commander = "NetworkCommander.main:app"
 
 [tool.poetry.group.dev.dependencies]
 pyinstaller = "^6.3.0"
+pylint = "^3.0.3"
 
 [build-system]
 requires = ["poetry-core"]
