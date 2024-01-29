@@ -50,12 +50,6 @@ def load_config():
     if os.path.isfile(USER_CONFIG_FILE):
         with open(USER_CONFIG_FILE) as json_file:
             config.update(json.load(json_file))
-    if 'commander_directory' not in config:
-        config['commander_directory'] = os.path.join(HOME_FOLDER, '.commander')
-    if 'commander_directory' in config:
-        config['keepass_db_path'] = os.path.join(config['commander_directory'], "db.kdbx")
-    if 'default_device_type' not in config:
-        config['default_device_type'] = "cisco_ios"
 
 
 @device_command_group.callback(no_args_is_help=True)
