@@ -24,9 +24,9 @@ def deploy_commands(commands: List[str], devices: Iterable[Device], permission_l
                 result = future.result()
                 typer.echo(f"connected successfully to {device}")
                 yield result, device
-            except netmiko.NetmikoAuthenticationException as e:
+            except netmiko.NetmikoAuthenticationException:
                 typer.echo(f"wasn't able to authenticate to {str(device)}", err=True)
-            except netmiko.NetmikoTimeoutException as e:
+            except netmiko.NetmikoTimeoutException:
                 typer.echo(f"wasn't able to connect to {str(device)}", err=True)
             except Exception as e:
                 # Handle exceptions raised during the task execution
