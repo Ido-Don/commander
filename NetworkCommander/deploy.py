@@ -4,14 +4,17 @@ from typing import List, Iterable
 import netmiko
 import typer
 
+from NetworkCommander.config import config
 from NetworkCommander.device import Device
 from NetworkCommander.device_executer import execute_commands, PermissionLevel
 
-MAX_WORKERS = 10
 
-
-def deploy_commands(commands: List[str], devices: Iterable[Device], permission_level: PermissionLevel):
-    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as execute_pool:
+def deploy_commands(
+        commands: List[str],
+        devices: Iterable[Device],
+        permission_level: PermissionLevel
+):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=config["max_worker"]) as execute_pool:
         future_to_device = {}
         for device in devices:
             device_options = device.device_options
