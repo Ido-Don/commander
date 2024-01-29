@@ -207,7 +207,11 @@ def deploy(
 
 @device_command_group.command(name="list")
 def list_devices(
-        tags: List[str] = typer.Argument(None, help="list the devices matching these tags.", show_default=False)
+        tags: List[str] = typer.Argument(
+            None,
+            help="list the devices matching these tags.",
+            show_default=False
+        )
 ):
     """
     list all the devices under your command.

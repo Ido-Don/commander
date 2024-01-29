@@ -20,7 +20,10 @@ class KeepassDB:
 
     def __enter__(self):
         if not os.path.isfile(self._keepass_db_path):
-            self._kp = pykeepass.create_database(self._keepass_db_path, password=self._keepass_password)
+            self._kp = pykeepass.create_database(
+                self._keepass_db_path,
+                password=self._keepass_password
+            )
         else:
             self._kp = pykeepass.PyKeePass(self._keepass_db_path, password=self._keepass_password)
         return self._kp
@@ -170,5 +173,8 @@ def get_existing_devices(kp: pykeepass.PyKeePass, devices: List[Device]):
 
 
 def filter_non_existing_device_names(kp: pykeepass.PyKeePass, devices_names: List[str]):
-    non_existing_devices = list(filter(lambda device_name: not does_device_exist(kp, device_name), devices_names))
+    non_existing_devices = list(filter(
+        lambda device_name: not does_device_exist(kp, device_name),
+        devices_names
+    ))
     return non_existing_devices
