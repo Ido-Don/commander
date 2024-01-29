@@ -3,7 +3,7 @@ import os.path
 import sys
 from itertools import filterfalse
 from pathlib import Path
-from typing import Annotated, List, TextIO
+from typing import List, TextIO, Optional
 
 import rich
 import typer
@@ -59,7 +59,7 @@ def load_config():
 
 
 @device_command_group.callback(no_args_is_help=True)
-def initialization_check(keepass_password: Annotated[str, typer.Option()] = None):
+def initialization_check(keepass_password: Optional[str] = typer.Option(None)):
     config['keepass_password'] = keepass_password
     if not is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE):
         raise Exception("program is not initialized, please run commander init!")
@@ -116,13 +116,11 @@ def remove(device_tag: str, device_names: List[str]):
 
 @device_command_group.command()
 def ping(
-        tags: Annotated[
-            List[str],
-            typer.Option(
-                help="ping the devices that have all of these tags",
-                show_default=False
-            )
-        ] = None
+        tags: List[str] = typer.Option(
+            None,
+            help="ping the devices that have all of these tags",
+            show_default=False
+        )
 ):
     """
     try to connect to the devices in your database.
@@ -144,30 +142,31 @@ def ping(
 
 @device_command_group.command()
 def deploy(
-        commands: Annotated[
-            List[str],
-            typer.Argument(help="enter the commands you want to deploy to your devices", show_default=False)
-        ] = None,
-        output_folder: Annotated[Path, typer.Option("--output_folder", "-o")] = None,
-        tags: Annotated[
-            List[str],
-            typer.Option(
-                "--tag",
-                "-t",
-                help="deploy the commands to devices matching these tags",
-                show_default=False
-            )
-        ] = None,
-        permission_level: Annotated[PermissionLevel, typer.Option(
+        commands: List[str] = typer.Argument(
+            None,
+            help="enter the commands you want to deploy to your devices",
+            show_default=False
+        ),
+        output_folder: Path = typer.Option(None, "--output_folder", "-o"),
+        tags: List[str] = typer.Option(
+            None,
+            "--tag",
+            "-t",
+            help="deploy the commands to devices matching these tags",
+            show_default=False
+        ),
+        permission_level: PermissionLevel = typer.Option(
+            'user',
             "--permission_level",
             "-p",
             help="the permission level the commands will run at"
-        )] = 'user',
-        extra_devices: Annotated[List[str], typer.Option(
+        ),
+        extra_devices: List[str] = typer.Option(
+            None,
             "--device",
             "-d",
             help="you can specify devices you wish would run these commands on."
-        )] = None,
+        ),
 ):
     """
     deploy command to all the devices in your database that match the tags.
@@ -215,10 +214,7 @@ def deploy(
 
 @device_command_group.command(name="list")
 def list_devices(
-        tags: Annotated[
-            List[str],
-            typer.Argument(help="list the devices matching these tags.", show_default=False)
-        ] = None
+        tags: List[str] = typer.Argument(None, help="list the devices matching these tags.", show_default=False)
 ):
     """
     list all the devices under your command.
@@ -231,9 +227,9 @@ def list_devices(
 
 @device_command_group.command()
 def add(
-        password: Annotated[str, typer.Option(prompt="Device's password", hide_input=True, show_default=False)] = "",
-        device_strings: Annotated[List[str], typer.Argument(show_default=False)] = None,
-        devices_file: Annotated[typer.FileText, typer.Option(show_default=False)] = sys.stdin,
+        password: str = typer.Option("", prompt="Device's password", hide_input=True, show_default=False),
+        device_strings: List[str] = typer.Argument(None, show_default=False),
+        devices_file: typer.FileText = typer.Option(sys.stdin, show_default=False),
 ):
     """
     add a new device to the list of devices
