@@ -9,7 +9,7 @@ import rich
 import typer
 
 from NetworkCommander.__init__ import __version__
-from NetworkCommander.config import config, USER_CONFIG_FILE, HOME_FOLDER
+from NetworkCommander.config import config, USER_CONFIG_FILE
 from NetworkCommander.deploy import deploy_commands
 from NetworkCommander.device import Device
 from NetworkCommander.device_executer import PermissionLevel
@@ -306,9 +306,5 @@ def init():
     rich.print("finished the initialization process, have a great day")
 
 
-def main():
-    app()
-
-
 if __name__ == '__main__':
-    main()
+    app()
