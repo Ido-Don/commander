@@ -63,7 +63,11 @@ def initialization_check(keepass_password: Optional[str] = typer.Option(None)):
     :param keepass_password: the password to the keepass database
     """
     config['keepass_password'] = keepass_password
-    if not is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE):
+    if not is_initialized(
+            config['commander_directory'],
+            config['keepass_db_path'],
+            USER_CONFIG_FILE
+    ):
         raise EnvironmentError("program is not initialized, please run commander init!")
 
 
@@ -200,7 +204,7 @@ def deploy(
         raise ValueError("you don't have any devices in the database.")
 
     print_objects(devices, "devices")
-    print_objects(commands, "objects")
+    print_objects(commands, "commands")
 
     typer.confirm(f"do you want to deploy these {len(commands)} commands on {len(devices)} devices?", abort=True)
     for result, device in deploy_commands(commands, devices, permission_level):
