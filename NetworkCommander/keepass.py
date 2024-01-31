@@ -11,16 +11,28 @@ DEVICE_GROUP_NAME = "device"
 
 
 class KeepassDB:
+    """
+    this class is made to create connections to keepass database.
+    it should be used with "with" (with KeepassDB(...) as kp)
+    """
 
     def __init__(self, keepass_db_path, keepass_password):
         self._keepass_db_path = keepass_db_path
         self._keepass_password = keepass_password
         if not self._keepass_password:
             self._keepass_password = KeepassDB.prompt_for_password()
+        self._kp = None
 
     def __enter__(self):
+        """
+        it returns the original keepass database object.
+        :return: the keepass connection object
+        """
         if not os.path.isfile(self._keepass_db_path):
-            self._kp = pykeepass.create_database(self._keepass_db_path, password=self._keepass_password)
+            self._kp = pykeepass.create_database(
+                self._keepass_db_path,
+                password=self._keepass_password
+            )
         else:
             self._kp = pykeepass.PyKeePass(self._keepass_db_path, password=self._keepass_password)
         return self._kp
@@ -31,6 +43,10 @@ class KeepassDB:
 
     @staticmethod
     def prompt_for_password():
+        """
+        ask the user for a keepass password
+        :return: the password
+        """
         password = Prompt.ask("enter keepass database master password", password=True)
         return password
 
@@ -69,7 +85,7 @@ def does_device_exist(kp: pykeepass.PyKeePass, device_name: str) -> bool:
 def get_device(kp: pykeepass.PyKeePass, device_name: str):
     entries = get_device_entries(kp, device_name)
     if len(entries) > 1:
-        raise Exception(f"{device_name} has more then")
+        raise LookupError(f"{device_name} has more then 1 entry associated with it")
     entry = entries[0]
     device = entry_to_device(entry)
     return device
@@ -77,7 +93,7 @@ def get_device(kp: pykeepass.PyKeePass, device_name: str):
 
 def remove_device(kp: pykeepass.PyKeePass, device_name: str) -> None:
     if not does_device_exist(kp, device_name):
-        raise Exception(f"{device_name} doesn't exist in db")
+        raise LookupError(f"{device_name} doesn't exist in db")
     device_entries = get_device_entries(kp, device_name)
     for device_entry in device_entries:
         kp.delete_entry(device_entry)
@@ -85,7 +101,7 @@ def remove_device(kp: pykeepass.PyKeePass, device_name: str) -> None:
 
 def get_device_entries(kp: pykeepass.PyKeePass, device_name: str):
     if not does_device_exist(kp, device_name):
-        raise Exception(f"{device_name} doesn't exist in db")
+        raise LookupError(f"{device_name} doesn't exist in db")
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     device_entries = kp.find_entries(group=device_group, title=device_name)
     return device_entries
@@ -94,7 +110,7 @@ def get_device_entries(kp: pykeepass.PyKeePass, device_name: str):
 def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = None) -> None:
     entry_title = device.name
     if does_device_exist(kp, entry_title):
-        raise Exception(f"{entry_title} already exist in db")
+        raise LookupError(f"{entry_title} already exist in db")
 
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
 
@@ -134,7 +150,7 @@ def convert_entry_to_json(entry: pykeepass.Entry) -> dict[str, Union[str, int]]:
 
 def tag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
     if not does_device_exist(kp, device_name):
-        raise Exception(f"{device_name} doesn't exist in db")
+        raise LookupError(f"{device_name} doesn't exist in db")
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     device_entries = kp.find_entries(group=device_group, title=device_name)
 
@@ -149,7 +165,7 @@ def tag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
 
 def untag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
     if not does_device_exist(kp, device_name):
-        raise Exception(f"{device_name} doesn't exist in db")
+        raise LookupError(f"{device_name} doesn't exist in db")
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     device_entries = kp.find_entries(group=device_group, title=device_name)
 
@@ -170,5 +186,8 @@ def get_existing_devices(kp: pykeepass.PyKeePass, devices: List[Device]):
 
 
 def filter_non_existing_device_names(kp: pykeepass.PyKeePass, devices_names: List[str]):
-    non_existing_devices = list(filter(lambda device_name: not does_device_exist(kp, device_name), devices_names))
+    non_existing_devices = list(filter(
+        lambda device_name: not does_device_exist(kp, device_name),
+        devices_names
+    ))
     return non_existing_devices

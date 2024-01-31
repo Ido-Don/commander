@@ -3,7 +3,12 @@ from typing import Iterable
 import typer
 
 
-def print_objects(objects: Iterable, object_name: str):
+def print_objects(objects: Iterable, object_name: str) -> None:
+    """
+    print objects in a specific format
+    :param objects: the collection of the objects.
+    :param object_name: the name of the objects
+    """
     if not objects:
         typer.echo(f"there are 0 {object_name}")
         return

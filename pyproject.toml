@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "NetworkCommander"
-version = "0.3.4"
+version = "0.3.5"
 description = "cli scraping tools for network devices "
 authors = ["Ido Don <76511079+Ido-Don@users.noreply.github.com>"]
 readme = "README.md"
@@ -17,6 +17,7 @@ commander = "NetworkCommander.main:app"
 
 [tool.poetry.group.dev.dependencies]
 pyinstaller = "^6.3.0"
+pylint = "^3.0.3"
 
 [build-system]
 requires = ["poetry-core"]

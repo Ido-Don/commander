@@ -3,19 +3,20 @@ import os.path
 import sys
 from itertools import filterfalse
 from pathlib import Path
-from typing import Annotated, List, TextIO
+from typing import List, TextIO, Optional
 
 import rich
 import typer
 
 from NetworkCommander.__init__ import __version__
-from NetworkCommander.config import config, USER_CONFIG_FILE, HOME_FOLDER
+from NetworkCommander.config import config, USER_CONFIG_FILE
 from NetworkCommander.deploy import deploy_commands
 from NetworkCommander.device import Device
 from NetworkCommander.device_executer import PermissionLevel
 from NetworkCommander.init import is_initialized, init_program, delete_project_files
-from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, add_device_entry, tag_device, \
-    untag_device, get_device_tags, get_device, filter_non_existing_device_names, get_existing_devices
+from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
+    add_device_entry, tag_device, untag_device, get_device_tags, get_device, \
+    filter_non_existing_device_names, get_existing_devices
 from NetworkCommander.printing import print_objects
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
@@ -37,7 +38,10 @@ def version():
     typer.echo(f"Commander version: {__version__}")
 
 
-def is_valid_command(command: str):
+def is_valid_command(command: str) -> bool:
+    """
+    checks if a string is a valid command or not
+    """
     if not command:
         return False
     if command[0] == '#':
@@ -47,26 +51,36 @@ def is_valid_command(command: str):
 
 @app.callback(no_args_is_help=True)
 def load_config():
+    """
+    Load configuration settings from the user-specific configuration file.
+    and update the application's configuration accordingly that lives in the config variable.
+
+    Note: The configuration file is expected to be in JSON format.
+    """
     if os.path.isfile(USER_CONFIG_FILE):
-        with open(USER_CONFIG_FILE) as json_file:
+        with open(USER_CONFIG_FILE, encoding="UTF-8") as json_file:
             config.update(json.load(json_file))
-    if 'commander_directory' not in config:
-        config['commander_directory'] = os.path.join(HOME_FOLDER, '.commander')
-    if 'commander_directory' in config:
-        config['keepass_db_path'] = os.path.join(config['commander_directory'], "db.kdbx")
-    if 'default_device_type' not in config:
-        config['default_device_type'] = "cisco_ios"
 
 
 @device_command_group.callback(no_args_is_help=True)
-def initialization_check(keepass_password: Annotated[str, typer.Option()] = None):
+def initialization_check(keepass_password: Optional[str] = typer.Option(None)):
+    """
+    Check if Commander has been initialized with the necessary directory and user configuration.
+
+    :param keepass_password: The password to access the Keepass database.
+    :raises: an `EnvironmentError` with a message prompting the user to run `commander init`.
+    """
     config['keepass_password'] = keepass_password
-    if not is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE):
-        raise Exception("program is not initialized, please run commander init!")
+    if not is_initialized(
+            config['commander_directory'],
+            config['keepass_db_path'],
+            USER_CONFIG_FILE
+    ):
+        raise EnvironmentError("program is not initialized, please run commander init!")
 
 
-@tag_command_group.command()
-def add(device_tag: str, devices: List[str]):
+@tag_command_group.command(name="add")
+def tag_add(device_tag: str, devices: List[str]):
     """
     add a tag to devices
     """
@@ -74,14 +88,14 @@ def add(device_tag: str, devices: List[str]):
         # if someone entered a wrong device name, it can't be tagged so an error is raised
         non_existent_devices = filter_non_existing_device_names(kp, devices)
         if non_existent_devices:
-            raise Exception(f"devices [{', '.join(non_existent_devices)}] doesn't exist")
+            raise LookupError(f"devices [{', '.join(non_existent_devices)}] doesn't exist")
 
         # if someone entered a device that was already tagged it can't be tagged again with the same device
         all_tagged_devices = get_all_device_entries(kp, [device_tag])
         all_tagged_devices_names = {device.name for device in all_tagged_devices}
         tagged_existing_devices = list(filter(lambda device: device in all_tagged_devices_names, devices))
         if any(tagged_existing_devices):
-            raise Exception(f"devices [{', '.join(tagged_existing_devices)}] are already tagged")
+            raise ValueError(f"devices [{', '.join(tagged_existing_devices)}] are already tagged")
 
         for device_name in devices:
             tag_device(kp, device_tag, device_name)
@@ -99,15 +113,15 @@ def list_tags():
             rich.print(tag)
 
 
-@tag_command_group.command()
-def remove(device_tag: str, device_names: List[str]):
+@tag_command_group.command(name="remove")
+def tag_remove(device_tag: str, device_names: List[str]):
     """
     remove a tag from devices
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         non_existent_devices = filter_non_existing_device_names(kp, device_names)
         if non_existent_devices:
-            raise Exception(f"devices {', '.join(non_existent_devices)} doesn't exist")
+            raise LookupError(f"devices {', '.join(non_existent_devices)} doesn't exist")
 
         for device_name in device_names:
             untag_device(kp, device_tag, device_name)
@@ -116,13 +130,13 @@ def remove(device_tag: str, device_names: List[str]):
 
 @device_command_group.command()
 def ping(
-        tags: Annotated[
-            List[str],
-            typer.Option(
-                help="ping the devices that have all of these tags",
-                show_default=False
-            )
-        ] = None
+        tags: List[str] = typer.Option(
+            None,
+            "--tag",
+            "-t",
+            help="ping the devices matching these tags",
+            show_default=False
+        ),
 ):
     """
     try to connect to the devices in your database.
@@ -132,9 +146,8 @@ def ping(
 
     if not devices:
         if not tags:
-            raise Exception("you don't have any devices in the database.")
-        else:
-            raise Exception(f"you don't have any devices in the database with all of these tags: {', '.join(tags)}.")
+            raise ValueError("you don't have any devices in the database.")
+        raise ValueError(f"you don't have any devices in the database with all of these tags: {', '.join(tags)}.")
 
     print_objects(devices, "devices")
 
@@ -144,30 +157,31 @@ def ping(
 
 @device_command_group.command()
 def deploy(
-        commands: Annotated[
-            List[str],
-            typer.Argument(help="enter the commands you want to deploy to your devices", show_default=False)
-        ] = None,
-        output_folder: Annotated[Path, typer.Option("--output_folder", "-o")] = None,
-        tags: Annotated[
-            List[str],
-            typer.Option(
-                "--tag",
-                "-t",
-                help="deploy the commands to devices matching these tags",
-                show_default=False
-            )
-        ] = None,
-        permission_level: Annotated[PermissionLevel, typer.Option(
+        commands: List[str] = typer.Argument(
+            None,
+            help="enter the commands you want to deploy to your devices",
+            show_default=False
+        ),
+        output_folder: Path = typer.Option(None, "--output_folder", "-o"),
+        tags: List[str] = typer.Option(
+            None,
+            "--tag",
+            "-t",
+            help="deploy the commands to devices matching these tags",
+            show_default=False
+        ),
+        permission_level: PermissionLevel = typer.Option(
+            'user',
             "--permission_level",
             "-p",
             help="the permission level the commands will run at"
-        )] = 'user',
-        extra_devices: Annotated[List[str], typer.Option(
+        ),
+        extra_devices: List[str] = typer.Option(
+            None,
             "--device",
             "-d",
             help="you can specify devices you wish would run these commands on."
-        )] = None,
+        ),
 ):
     """
     deploy command to all the devices in your database that match the tags.
@@ -184,7 +198,7 @@ def deploy(
 
     invalid_commands = list(filterfalse(is_valid_command, commands))
     if invalid_commands:
-        raise Exception(f"{','.join(invalid_commands)} are not valid commands.")
+        raise ValueError(f"{','.join(invalid_commands)} are not valid commands.")
 
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         devices = set(get_all_device_entries(kp, tags))
@@ -192,15 +206,15 @@ def deploy(
 
             non_existent_devices = filter_non_existing_device_names(kp, extra_devices)
             if non_existent_devices:
-                raise Exception(f"devices [{', '.join(non_existent_devices)}] don't exist")
+                raise ValueError(f"devices [{', '.join(non_existent_devices)}] don't exist")
 
             devices.update({get_device(kp, extra_device) for extra_device in extra_devices})
 
     if not devices:
-        raise Exception("you don't have any devices in the database.")
+        raise ValueError("you don't have any devices in the database.")
 
     print_objects(devices, "devices")
-    print_objects(commands, "objects")
+    print_objects(commands, "commands")
 
     typer.confirm(f"do you want to deploy these {len(commands)} commands on {len(devices)} devices?", abort=True)
     for result, device in deploy_commands(commands, devices, permission_level):
@@ -208,17 +222,20 @@ def deploy(
             typer.echo(result)
         else:
             output_file_path = output_folder.joinpath(f"{device.name}.txt")
-            with open(output_file_path, "w") as output_file:
+            with open(output_file_path, "w", encoding="utf-8") as output_file:
                 output_file.write(result)
                 typer.echo(f"'saved output to {str(output_file_path.absolute().resolve())}'")
 
 
 @device_command_group.command(name="list")
 def list_devices(
-        tags: Annotated[
-            List[str],
-            typer.Argument(help="list the devices matching these tags.", show_default=False)
-        ] = None
+        tags: List[str] = typer.Option(
+            None,
+            "--tag",
+            "-t",
+            help="list the devices matching these tags",
+            show_default=False
+        ),
 ):
     """
     list all the devices under your command.
@@ -231,9 +248,9 @@ def list_devices(
 
 @device_command_group.command()
 def add(
-        password: Annotated[str, typer.Option(prompt="Device's password", hide_input=True, show_default=False)] = "",
-        device_strings: Annotated[List[str], typer.Argument(show_default=False)] = None,
-        devices_file: Annotated[typer.FileText, typer.Option(show_default=False)] = sys.stdin,
+        password: str = typer.Option("", prompt="Device's password", hide_input=True, show_default=False),
+        device_strings: List[str] = typer.Argument(None, show_default=False),
+        devices_file: typer.FileText = typer.Option(sys.stdin, show_default=False),
 ):
     """
     add a new device to the list of devices
@@ -255,14 +272,19 @@ def add(
         existing_devices = get_existing_devices(kp, devices)
         existing_device_names = [device.name for device in existing_devices]
         if existing_devices:
-            raise Exception(f"devices [{', '.join(existing_device_names)}] already exist in keepass")
+            raise LookupError(f"devices [{', '.join(existing_device_names)}] already exist in keepass")
         for device in devices:
             add_device_entry(kp, device)
             typer.echo(f"added device {device} to database")
     typer.echo(f"added {len(device_strings)} to database")
 
 
-def read_file(file: TextIO):
+def read_file(file: TextIO) -> List[str]:
+    """
+    this function reads the content of a file, cleans it and return the content of it.
+    :param file: any file (for example: sys.stdin).
+    :return: the lines this file contain.
+    """
     user_inputs = file.readlines()
     user_inputs = [string.strip('\r\n ') for string in user_inputs]
     user_inputs = [string.replace('\4', '') for string in user_inputs]
@@ -281,7 +303,7 @@ def remove(device_names: List[str]):
         all_device_names = [device.name for device in all_device_entry]
         non_existing_devices = set(device_names) - set(all_device_names)
         if non_existing_devices:
-            raise Exception(f"devices {', '.join(non_existing_devices)} don't exist")
+            raise LookupError(f"devices {', '.join(non_existing_devices)} don't exist")
         device_entries = []
         device_name_map = dict(zip(all_device_names, all_device_entry))
         for device_name in device_names:
@@ -310,15 +332,11 @@ def init():
             rich.print(f"deleting directory: {config['commander_directory']}")
             delete_project_files(config['commander_directory'])
     if not is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE):
-        rich.print(f"creating new database in {config['commander_directory']}")
+        rich.print(f"creating a new database in {config['commander_directory']}")
         init_program(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE)
 
     rich.print("finished the initialization process, have a great day")
 
 
-def main():
-    app()
-
-
 if __name__ == '__main__':
-    main()
+    app()

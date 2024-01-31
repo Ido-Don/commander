@@ -4,14 +4,17 @@ from typing import List, Iterable
 import netmiko
 import typer
 
+from NetworkCommander.config import config
 from NetworkCommander.device import Device
 from NetworkCommander.device_executer import execute_commands, PermissionLevel
 
-MAX_WORKERS = 10
 
-
-def deploy_commands(commands: List[str], devices: Iterable[Device], permission_level: PermissionLevel):
-    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as execute_pool:
+def deploy_commands(
+        commands: List[str],
+        devices: Iterable[Device],
+        permission_level: PermissionLevel
+):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=config["max_worker"]) as execute_pool:
         future_to_device = {}
         for device in devices:
             device_options = device.device_options
@@ -24,9 +27,9 @@ def deploy_commands(commands: List[str], devices: Iterable[Device], permission_l
                 result = future.result()
                 typer.echo(f"connected successfully to {device}")
                 yield result, device
-            except netmiko.NetmikoAuthenticationException as e:
+            except netmiko.NetmikoAuthenticationException:
                 typer.echo(f"wasn't able to authenticate to {str(device)}", err=True)
-            except netmiko.NetmikoTimeoutException as e:
+            except netmiko.NetmikoTimeoutException:
                 typer.echo(f"wasn't able to connect to {str(device)}", err=True)
             except Exception as e:
                 # Handle exceptions raised during the task execution
