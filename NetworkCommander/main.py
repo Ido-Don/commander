@@ -124,9 +124,11 @@ def tag_remove(device_tag: str, device_names: List[str]):
 def ping(
         tags: List[str] = typer.Option(
             None,
-            help="ping the devices that have all of these tags",
+            "--tag",
+            "-t",
+            help="ping the devices matching these tags",
             show_default=False
-        )
+        ),
 ):
     """
     try to connect to the devices in your database.
@@ -219,11 +221,13 @@ def deploy(
 
 @device_command_group.command(name="list")
 def list_devices(
-        tags: List[str] = typer.Argument(
+        tags: List[str] = typer.Option(
             None,
-            help="list the devices matching these tags.",
+            "--tag",
+            "-t",
+            help="list the devices matching these tags",
             show_default=False
-        )
+        ),
 ):
     """
     list all the devices under your command.
