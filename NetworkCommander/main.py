@@ -51,6 +51,12 @@ def is_valid_command(command: str) -> bool:
 
 @app.callback(no_args_is_help=True)
 def load_config():
+    """
+    Load configuration settings from the user-specific configuration file.
+    and update the application's configuration accordingly that lives in the config variable.
+
+    Note: The configuration file is expected to be in JSON format.
+    """
     if os.path.isfile(USER_CONFIG_FILE):
         with open(USER_CONFIG_FILE, encoding="UTF-8") as json_file:
             config.update(json.load(json_file))
@@ -59,8 +65,10 @@ def load_config():
 @device_command_group.callback(no_args_is_help=True)
 def initialization_check(keepass_password: Optional[str] = typer.Option(None)):
     """
-    check rather commander has the directory and userconfig.
-    :param keepass_password: the password to the keepass database
+    Check if Commander has been initialized with the necessary directory and user configuration.
+
+    :param keepass_password: The password to access the Keepass database.
+    :raises: an `EnvironmentError` with a message prompting the user to run `commander init`.
     """
     config['keepass_password'] = keepass_password
     if not is_initialized(
