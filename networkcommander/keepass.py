@@ -1,5 +1,5 @@
 import os
-from typing import List, Union
+from typing import List, Union, Dict
 
 import pykeepass
 from pykeepass import pykeepass
@@ -126,7 +126,7 @@ def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = 
         new_entry.set_custom_property(key, str(val), True)
 
 
-def convert_entry_to_json(entry: pykeepass.Entry) -> dict[str, Union[str, int]]:
+def convert_entry_to_json(entry: pykeepass.Entry) -> Dict[str, Union[str, int]]:
     device_options = {
         **entry.custom_properties,
         "username": entry.username,
