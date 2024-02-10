@@ -2,7 +2,7 @@ import json
 import os
 import shutil
 
-from NetworkCommander.keepass import KeepassDB, DEVICE_GROUP_NAME
+from networkcommander.keepass import KeepassDB, DEVICE_GROUP_NAME
 
 
 def delete_project_files(directory):

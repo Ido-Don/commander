@@ -8,16 +8,16 @@ from typing import List, TextIO, Optional
 import rich
 import typer
 
-from NetworkCommander.__init__ import __version__
-from NetworkCommander.config import config, USER_CONFIG_FILE
-from NetworkCommander.deploy import deploy_commands
-from NetworkCommander.device import Device
-from NetworkCommander.device_executer import PermissionLevel
-from NetworkCommander.init import is_initialized, init_program, delete_project_files
-from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
+from networkcommander.__init__ import __version__
+from networkcommander.config import config, USER_CONFIG_FILE
+from networkcommander.deploy import deploy_commands
+from networkcommander.device import Device
+from networkcommander.device_executer import PermissionLevel
+from networkcommander.init import is_initialized, init_program, delete_project_files
+from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
     add_device_entry, tag_device, untag_device, get_device_tags, get_device, \
     filter_non_existing_device_names, get_existing_devices
-from NetworkCommander.printing import print_objects
+from networkcommander.printing import print_objects
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 device_command_group = typer.Typer(pretty_exceptions_show_locals=False,

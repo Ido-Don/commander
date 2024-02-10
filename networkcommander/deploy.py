@@ -4,9 +4,9 @@ from typing import List, Iterable
 import netmiko
 import typer
 
-from NetworkCommander.config import config
-from NetworkCommander.device import Device
-from NetworkCommander.device_executer import execute_commands, PermissionLevel
+from networkcommander.config import config
+from networkcommander.device import Device
+from networkcommander.device_executer import execute_commands, PermissionLevel
 
 
 def deploy_commands(

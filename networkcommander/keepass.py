@@ -5,7 +5,7 @@ import pykeepass
 from pykeepass import pykeepass
 from rich.prompt import Prompt
 
-from NetworkCommander.device import Device
+from networkcommander.device import Device
 
 DEVICE_GROUP_NAME = "device"
 
