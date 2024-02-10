@@ -27,8 +27,6 @@ tag_command_group = typer.Typer(pretty_exceptions_show_locals=False,
                                 help="tag devices to better segment them")
 device_command_group.add_typer(tag_command_group, name="tag")
 
-PIPE = "PIPE_FROM_STDIN"
-
 
 @app.command()
 def version():
