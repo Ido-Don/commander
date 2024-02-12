@@ -5,8 +5,8 @@ import netmiko
 
 
 class PermissionLevel(str, Enum):
-    USER = "user",
-    Enable = "enable",
+    USER = "user"
+    ENABLE = "enable"
     CONFIGURE_TERMINAL = "configure_terminal"
 
 
@@ -35,7 +35,11 @@ def change_permission(device: netmiko.BaseConnection, permission_level: Permissi
         return
 
 
-def execute_commands(device_options: dict, commands: List[str], permission_level: PermissionLevel) -> str:
+def execute_commands(
+        device_options: dict,
+        commands: List[str],
+        permission_level: PermissionLevel
+) -> str:
     output = ""
     with Connection(device_options) as device:
         change_permission(device, permission_level)
@@ -67,6 +71,7 @@ def send_config_commands(device: netmiko.BaseConnection, commands: List[str]) ->
 class Connection:
     def __init__(self, device_options):
         self._device_options = device_options
+        self._device = None
 
     def __enter__(self) -> netmiko.BaseConnection:
         self._device = netmiko.ConnectHandler(**self._device_options)

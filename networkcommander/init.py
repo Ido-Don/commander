@@ -2,12 +2,12 @@ import json
 import os
 import shutil
 
-from NetworkCommander.keepass import KeepassDB, DEVICE_GROUP_NAME
+from networkcommander.keepass import KeepassDB, DEVICE_GROUP_NAME
 
 
 def delete_project_files(directory):
     if not os.path.isdir(directory):
-        raise Exception(f"directory {directory} doesn't exist")
+        raise FileNotFoundError(f"directory {directory} doesn't exist")
     shutil.rmtree(directory)
 
 
@@ -15,7 +15,7 @@ def init_program(directory, keepass_db_path, config_file_path):
     if is_initialized(directory, keepass_db_path, config_file_path):
         return
     if not os.path.isfile(config_file_path):
-        with open(config_file_path, 'w') as config_file:
+        with open(config_file_path, 'w', encoding="utf-8") as config_file:
             json.dump({}, config_file)
     if not os.path.isdir(directory):
         os.mkdir(directory)

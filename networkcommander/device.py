@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, Tuple, Optional
 
-from NetworkCommander.config import config
+from networkcommander.config import config
 
 
 def normalize_string_input(value: Any):
@@ -92,8 +92,8 @@ class Device:
     @property
     def device_options(self) -> Dict[str, str]:
         """
-        netmiko.ConnectionHandler() accepts only arguments.
-        this property convert the data in this class to arguments netmiko.ConnectionHandler() can accept.
+        this property convert the data in this class to
+        arguments netmiko.ConnectionHandler() can accept.
         example - netmiko.ConnectionHandler(**device.device_options).
         :return: a dictionary containing the arguments netmiko.ConnectionHandler() needs to run
         """
@@ -110,13 +110,15 @@ class Device:
     @staticmethod
     def from_string(device: str):
         """
-        this function convert a string in the format {name}({device_type}) -> {username}@{hostname}:{port} to a Device
+        this function convert a string in the format:
+            {name}({device_type}) -> {username}@{hostname}:{port}
+        to a Device
         :param device: a string representing a device in this format
         {name}({device_type}) -> {username}@{hostname}:{port}
         :return: a device
         """
         if not device:
-            raise ValueError(f"you can't have an empty device")
+            raise ValueError("you can't have an empty device")
         device = device.strip(' \n')
         device_descriptor, connection_string = deconstruct_device(device)
         username, hostname, port = deconstruct_connection_string(connection_string)
@@ -131,7 +133,7 @@ class Device:
 
 
 def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional[str]]:
-    device_type_appear = any(f'({device_type})' in device_descriptor for device_type in supported_device_type)
+    device_type_appear = any(f'({device_type})' in device_descriptor for device_type in SupportedDevice)
     perianthes_appear = '(' in device_descriptor or ')' in device_descriptor
     if device_type_appear:
         name, device_type = device_descriptor.split('(')
@@ -139,25 +141,24 @@ def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional
         return name, device_type
 
     if perianthes_appear:
-        raise NotImplemented(f"sorry we don't support '{device_descriptor}' software type.\n"
-                             f"the supported types are {', '.join(supported_device_type)}")
+        raise NotImplementedError(f"sorry we don't support '{device_descriptor}' software type.\n"
+                             f"the supported types are {', '.join(SupportedDevice)}")
 
     return device_descriptor, None
 
 
 def deconstruct_device(device: str):
     if device.count('->') > 1:
-        raise Exception(f"{device} has more then 1 '->'")
+        raise ValueError(f"{device} has more then 1 '->'")
     if device.count('\n') > 1:
-        raise Exception(f"device {device} shouldn't have a line break.")
+        raise ValueError(f"device {device} shouldn't have a line break.")
     if '->' in device:
         device_descriptor, connection_string = device.split('->')
         device_descriptor = device_descriptor.strip()
         connection_string = connection_string.strip()
         return device_descriptor, connection_string
-    else:
-        connection_string: str = device
-        return None, connection_string
+    connection_string: str = device
+    return None, connection_string
 
 
 def deconstruct_socket_id(socket_id: str) -> Tuple[str, int]:
@@ -180,11 +181,11 @@ def deconstruct_socket_id(socket_id: str) -> Tuple[str, int]:
     return hostname, port
 
 
-class supported_device_type(str, Enum):
-    cisco_ios = "cisco_ios",
-    cisco_ios_xe = "cisco_ios_xe",
-    cisco_ios_telnet = "cisco_ios_telnet",
-    cisco_ios_xe_telnet = "cisco_ios_xe_telnet"
+class SupportedDevice(str, Enum):
+    CISCO_IOS = "cisco_ios"
+    CISCO_IOS_XE = "cisco_ios_xe"
+    CISCO_IOS_TELNET = "cisco_ios_telnet"
+    CISCO_IOS_XE_TELNET = "cisco_ios_xe_telnet"
 
 
 def deconstruct_connection_string(connection: str) -> Tuple[Optional[str], str, Optional[int]]:

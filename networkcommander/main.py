@@ -8,16 +8,16 @@ from typing import List, TextIO, Optional
 import rich
 import typer
 
-from NetworkCommander.__init__ import __version__
-from NetworkCommander.config import config, USER_CONFIG_FILE
-from NetworkCommander.deploy import deploy_commands
-from NetworkCommander.device import Device
-from NetworkCommander.device_executer import PermissionLevel
-from NetworkCommander.init import is_initialized, init_program, delete_project_files
-from NetworkCommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
+from networkcommander.__init__ import __version__
+from networkcommander.config import config, USER_CONFIG_FILE
+from networkcommander.deploy import deploy_commands
+from networkcommander.device import Device
+from networkcommander.device_executer import PermissionLevel
+from networkcommander.init import is_initialized, init_program, delete_project_files
+from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
     add_device_entry, tag_device, untag_device, get_device_tags, get_device, \
     filter_non_existing_device_names, get_existing_devices
-from NetworkCommander.printing import print_objects
+from networkcommander.printing import print_objects
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 device_command_group = typer.Typer(pretty_exceptions_show_locals=False,
@@ -26,8 +26,6 @@ app.add_typer(device_command_group, name="device")
 tag_command_group = typer.Typer(pretty_exceptions_show_locals=False,
                                 help="tag devices to better segment them")
 device_command_group.add_typer(tag_command_group, name="tag")
-
-PIPE = "PIPE_FROM_STDIN"
 
 
 @app.command()
@@ -90,10 +88,15 @@ def tag_add(device_tag: str, devices: List[str]):
         if non_existent_devices:
             raise LookupError(f"devices [{', '.join(non_existent_devices)}] doesn't exist")
 
-        # if someone entered a device that was already tagged it can't be tagged again with the same device
+        # if someone entered a device that was already tagged it can't be tagged again
         all_tagged_devices = get_all_device_entries(kp, [device_tag])
         all_tagged_devices_names = {device.name for device in all_tagged_devices}
-        tagged_existing_devices = list(filter(lambda device: device in all_tagged_devices_names, devices))
+        tagged_existing_devices = list(
+            filter(
+                lambda device: device in all_tagged_devices_names,
+                devices
+            )
+        )
         if any(tagged_existing_devices):
             raise ValueError(f"devices [{', '.join(tagged_existing_devices)}] are already tagged")
 
@@ -216,7 +219,10 @@ def deploy(
     print_objects(devices, "devices")
     print_objects(commands, "commands")
 
-    typer.confirm(f"do you want to deploy these {len(commands)} commands on {len(devices)} devices?", abort=True)
+    typer.confirm(
+        f"do you want to deploy these {len(commands)} commands on {len(devices)} devices?",
+        abort=True
+    )
     for result, device in deploy_commands(commands, devices, permission_level):
         if not output_folder:
             typer.echo(result)
@@ -248,7 +254,12 @@ def list_devices(
 
 @device_command_group.command()
 def add(
-        password: str = typer.Option("", prompt="Device's password", hide_input=True, show_default=False),
+        password: str = typer.Option(
+            "",
+            prompt="Device's password",
+            hide_input=True,
+            show_default=False
+        ),
         device_strings: List[str] = typer.Argument(None, show_default=False),
         devices_file: typer.FileText = typer.Option(sys.stdin, show_default=False),
 ):
@@ -324,14 +335,22 @@ def init():
     initialize the project
     """
     rich.print("Welcome to commander!")
-    if is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE):
+    if is_initialized(
+            config['commander_directory'],
+            config['keepass_db_path'],
+            USER_CONFIG_FILE
+    ):
         rich.print("commander is already initialized")
         reinitialize = typer.confirm("do you want to delete everything and start over?")
 
         if reinitialize:
             rich.print(f"deleting directory: {config['commander_directory']}")
             delete_project_files(config['commander_directory'])
-    if not is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE):
+    if not is_initialized(
+            config['commander_directory'],
+            config['keepass_db_path'],
+            USER_CONFIG_FILE
+    ):
         rich.print(f"creating a new database in {config['commander_directory']}")
         init_program(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE)
 

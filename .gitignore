@@ -161,4 +161,4 @@ cython_debug/
 
 # project unneeded files
 **/*.kdbx
-/experiments.py
+/experiments*.py
