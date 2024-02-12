@@ -98,15 +98,10 @@ class Device:
 
 def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional[str]]:
     device_type_appear = any(f'({device_type})' in device_descriptor for device_type in SupportedDevice)
-    perianthes_appear = '(' in device_descriptor or ')' in device_descriptor
     if device_type_appear:
         name, device_type = device_descriptor.split('(')
         device_type = device_type.rstrip(')')
         return name, device_type
-
-    if perianthes_appear:
-        raise NotImplementedError(f"sorry we don't support '{device_descriptor}' software type.\n"
-                                  f"the supported types are {', '.join(SupportedDevice)}")
 
     return device_descriptor, None
 

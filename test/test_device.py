@@ -2,7 +2,8 @@ from typing import Any, Dict, Tuple, Optional
 
 import pytest
 
-from networkcommander.device import Device, deconstruct_connection_string, deconstruct_socket_id
+from networkcommander.device import Device, deconstruct_connection_string, deconstruct_socket_id, \
+    deconstruct_device_descriptor
 
 
 class TestDevice:
@@ -180,3 +181,11 @@ def test_deconstruct_socket_id(socket_id: str, expected_parameters: Tuple[str, i
 ])
 def test_deconstruct_connection_string(connection: str, connection_params: Tuple[Optional[str], str, Optional[int]]):
     assert deconstruct_connection_string(connection) == connection_params
+
+
+@pytest.mark.parametrize(("descriptor", "output"), [
+    ("router1(cisco_ios)", ('router1', "cisco_ios")),
+    ("router1", ("router1", None))
+])
+def test_deconstruct_device_descriptor(descriptor: str, output: Tuple[str, Optional[str]]):
+    assert deconstruct_device_descriptor(descriptor) == output
