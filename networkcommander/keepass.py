@@ -1,11 +1,11 @@
 import os
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Any, Tuple
 
 import pykeepass
 from pykeepass import pykeepass
 from rich.prompt import Prompt
 
-from networkcommander.device import Device
+from networkcommander.device import Device, SupportedDevice
 
 DEVICE_GROUP_NAME = "device"
 
@@ -51,9 +51,42 @@ class KeepassDB:
         return password
 
 
+def normalize_input(value: Any) -> str:
+    """
+    this convert a truthy value to a string and a falsy value to an empty string.
+    :param value: any value that can be converted to string
+    :return: the string if that value is truthy
+    """
+    if not value:
+        return ""
+    return str(value)
+
+
 def entry_to_device(device_entry: pykeepass.Entry) -> Device:
-    device_json = convert_entry_to_json(device_entry)
-    device_entry = Device(**device_json)
+    name = normalize_input(device_entry.title)
+    username = normalize_input(device_entry.username)
+    password = normalize_input(device_entry.password)
+    custom_properties = device_entry.custom_properties
+
+    required_properties = ["device_type", "host"]
+    """
+    this variable is here to
+    """
+    non_existing_properties = [
+        required_property not in custom_properties for required_property in required_properties
+    ]
+    if any(non_existing_properties):
+        raise ValueError(f"there are no {', '.join(non_existing_properties)} in {name}.")
+
+    device_type = SupportedDevice(custom_properties["device_type"])
+    host = custom_properties["host"]
+
+    def key_in_required_properties(pair: Tuple[Any, Any]):
+        key, value = pair
+        return key not in required_properties
+
+    optional_parameters = dict(filter(key_in_required_properties, custom_properties.items()))
+    device_entry = Device(name, username, password, host, device_type, optional_parameters)
     return device_entry
 
 
@@ -118,34 +151,9 @@ def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = 
     password = device.password
     new_entry = kp.add_entry(device_group, entry_title, username, password, tags=tags)
 
-    optional_data = {"host": device.host, "device_type": device.device_type}
-
-    if device.port:
-        optional_data["port"] = device.port
-    for key, val in optional_data.items():
+    custom_properties = {"host": device.host, "device_type": device.device_type, **device.optional_parameters}
+    for key, val in custom_properties.items():
         new_entry.set_custom_property(key, str(val), True)
-
-
-def convert_entry_to_json(entry: pykeepass.Entry) -> Dict[str, Union[str, int]]:
-    device_options = {
-        **entry.custom_properties,
-        "username": entry.username,
-        "password": entry.password,
-        "name": entry.title
-    }
-    if 'port' in device_options:
-        if not device_options['port']:
-            raise ValueError("port is defined in the entry but doesn't have any value")
-
-        port = device_options['port']
-        device_options['port'] = int(port)
-
-    if not device_options["username"]:
-        device_options["username"] = ""
-    if not device_options["password"]:
-        device_options["password"] = ''
-
-    return device_options
 
 
 def tag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
