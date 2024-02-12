@@ -177,13 +177,12 @@ def deconstruct_connection_string(connection: str) -> Tuple[Optional[str], str, 
     # extract hostname and port from socket_id
     port = None
 
-    does_socket_id_ends_with_colon = socket_id[-1] == ':'
+    # if a socket id ends with a colon all the socket id is considered to be the hostname.
+    does_socket_id_ends_with_colon = (socket_id[-1] == ':')
     if does_socket_id_ends_with_colon:
-        hostname = socket_id[:-2]
-
+        hostname = socket_id.rstrip(':')
     elif ':' in socket_id and not does_socket_id_ends_with_colon:
         hostname, port = deconstruct_socket_id(socket_id)
-
     else:
         hostname = socket_id
 

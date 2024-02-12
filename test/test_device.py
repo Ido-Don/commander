@@ -173,7 +173,7 @@ def test_deconstruct_socket_id(socket_id: str, expected_parameters: Tuple[str, i
 
 
 @pytest.mark.parametrize(("connection", "connection_params"), [
-    ("root@google.com:22:", ("root", "google.com", 22)),
+    ("root@google.com:22", ("root", "google.com", 22)),
     ("root@google.com:", ("root", "google.com", None)),
     ("root@google.com", ("root", "google.com", None)),
     ("@google.com", (None, "google.com", None)),
