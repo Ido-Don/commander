@@ -66,34 +66,39 @@ class Device:
             **self.optional_parameters
         }
 
-    @staticmethod
-    def from_string(device: str):
-        """
-        this function convert a string in the format:
-            {name}({device_type}) -> {username}@{hostname}:{port}
-        to a Device
-        :param device: a string representing a device in this format
+
+def device_from_string(device: str, password: str = "", optional_parameters: Dict[str, str] = None):
+    """
+    this function convert a string in the format:
         {name}({device_type}) -> {username}@{hostname}:{port}
-        :return: a device
-        """
-        if not device:
-            raise ValueError("you can't have an empty device")
-        device = device.strip(' \n')
-        device_descriptor, connection_string = deconstruct_device(device)
-        username, hostname, port = deconstruct_connection_string(connection_string)
-        device_type = None
-        if device_descriptor:
-            name, device_type = deconstruct_device_descriptor(device_descriptor)
-        else:
-            name = hostname
-        if not device_type:
-            device_type = config["default_device_type"]
+    to a Device.
+    also you can add to the device some optional parameters
+    :param optional_parameters: any optional parameters (like 'secret'(enable secret) or 'global_timeout')
+    :param password: the password for the device
+    :param device: a string representing a device in this format
+    {name}({device_type}) -> {username}@{hostname}:{port}
+    :return: a device
+    """
+    if not device:
+        raise ValueError("you can't have an empty device")
+    device = device.strip(' \n')
+    device_descriptor, connection_string = deconstruct_device(device)
+    username, hostname, port = deconstruct_connection_string(connection_string)
+    device_type = None
+    if device_descriptor:
+        name, device_type = deconstruct_device_descriptor(device_descriptor)
+    else:
+        name = hostname
+    if not device_type:
+        device_type = config["default_device_type"]
+
+    if not optional_parameters:
         optional_parameters = {}
-        if port:
-            optional_parameters = {
-                "port": str(port)
-            }
-        return Device(name, username, "", hostname, device_type, optional_parameters)
+    if port:
+        optional_parameters = {
+            "port": str(port)
+        }
+    return Device(name, username, password, hostname, device_type, optional_parameters)
 
 
 def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional[str]]:

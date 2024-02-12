@@ -11,7 +11,7 @@ import typer
 from networkcommander.__init__ import __version__
 from networkcommander.config import config, USER_CONFIG_FILE
 from networkcommander.deploy import deploy_commands
-from networkcommander.device import Device
+from networkcommander.device import Device, device_from_string
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
@@ -254,12 +254,8 @@ def list_devices(
 
 @device_command_group.command()
 def add(
-        password: str = typer.Option(
-            "",
-            prompt="Device's password",
-            hide_input=True,
-            show_default=False
-        ),
+        password: str = typer.Option(""),
+        enable_password: str = typer.Option(""),
         device_strings: List[str] = typer.Argument(None, show_default=False),
         devices_file: typer.FileText = typer.Option(sys.stdin, show_default=False),
 ):
@@ -272,12 +268,21 @@ def add(
             typer.echo("hit control-Z or control-D to continue")
         device_strings = read_file(sys.stdin)
 
+    if not password:
+        config['keepass_password'] = typer.prompt("device's password", hide_input=True)
+
+    if not enable_password:
+        enable_password = typer.prompt("device's enable password", hide_input=True)
+
     if not device_strings:
         raise ValueError("no devices supplied... not adding anything")
+
     devices = []
     for device_string in device_strings:
-        device = Device.from_string(device_string)
-        device.password = password
+        if enable_password:
+            device = device_from_string(device_string, password, {"secret": enable_password})
+        else:
+            device = device_from_string(device_string, password)
         devices.append(device)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         existing_devices = get_existing_devices(kp, devices)
