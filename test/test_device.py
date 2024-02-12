@@ -2,29 +2,29 @@ from typing import Any, Dict, Tuple, Optional
 
 import pytest
 
-from NetworkCommander.device import Device, deconstruct_connection_string, deconstruct_socket_id
+from networkcommander.device import Device, deconstruct_connection_string, deconstruct_socket_id
 
 
 class TestDevice:
     @pytest.mark.parametrize(("device", "expected_ssh_string"), [
         (
-                Device("", "Camila", "12345", "asda", "1", 123),
+                Device("", "Camila", "12345", "asda", "1", {"port": "123"}),
                 "Camila@asda:123"
         ),
         (
-                Device("lsdj1", "Iven", "12345", "asda", "1", 123),
+                Device("lsdj1", "Iven", "12345", "asda", "1", {"port": "123"}),
                 "Iven@asda:123"
         ),
         (
-                Device("", "h3lp", "12345", "asda", "None", 123),
+                Device("", "h3lp", "12345", "asda", "None", {"port": "123"}),
                 "h3lp@asda:123"
         ),
         (
-                Device("", "123", "12345", "asda", "1"),
+                Device("", "123", "12345", "asda", "1", {}),
                 "123@asda"
         ),
         (
-                Device("", "Camila", "12345", "asda", "1", 123),
+                Device("", "Camila", "12345", "asda", "1", {"port": "123"}),
                 "Camila@asda:123"
         ),
     ]
@@ -34,27 +34,27 @@ class TestDevice:
 
     @pytest.mark.parametrize(("device", "expected_string"), [
         (
-                Device("", "Camila", "12345", "asda", "1", 123),
+                Device("", "Camila", "12345", "asda", "1", {"port": "123"}),
                 "(1) -> Camila@asda:123"
         ),
         (
-                Device("lsdj1", "Iven", "12345", "asda", "1", 123),
+                Device("lsdj1", "Iven", "12345", "asda", "1", {"port": "123"}),
                 "lsdj1(1) -> Iven@asda:123"
         ),
         (
-                Device("", "h3lp", "12345", "asda", "None", 123),
+                Device("", "h3lp", "12345", "asda", "None", {"port": "123"}),
                 "(None) -> h3lp@asda:123"
         ),
         (
-                Device("hello", "123", "12345", "asda", "device"),
+                Device("hello", "123", "12345", "asda", "device", {}),
                 "hello(device) -> 123@asda"
         ),
         (
-                Device("", "Camila", "12345", "asda", "", 123),
+                Device("", "Camila", "12345", "asda", "", {"port": "123"}),
                 "Camila@asda:123"
         ),
         (
-                Device("", "Camila", "12345", "asda", ""),
+                Device("", "Camila", "12345", "asda", "", {}),
                 "Camila@asda"
         ),
     ]
@@ -66,12 +66,12 @@ class TestDevice:
         ("device1", "device2"),
         [
             (
-                    Device("123", "133", 'soijda1', "135o", "aa1"),
-                    Device("123", "133", 'soijda1', "135o", "aa1")
+                    Device("123", "133", 'soijda1', "135o", "aa1", {}),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {})
             ),
             (
-                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
-                    Device("123", "133", 'soijda1', "135o", "aa1", 123)
+                    Device("123", "133", 'soijda1', "135o", "aa1", {"port": "123"}),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {"port": "123"})
             ),
         ]
     )
@@ -82,48 +82,48 @@ class TestDevice:
         ("device1", "device2"),
         [
             (
-                    Device("123", "133", 'soijda1', "135o", "aa1"),
-                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {}),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {"port": "123"}),
             ),
             (
-                    Device("123", "133", 'soijda1', "135o", "aa1"),
-                    Device("123", "133", 'soijda1', "135o", "aa"),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {}),
+                    Device("123", "133", 'soijda1', "135o", "aa", {}),
             ),
             (
-                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
-                    Device("123", "133", 'soijda1', "135o", "aa", 123),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {"port": "123"}),
+                    Device("123", "133", 'soijda1', "135o", "aa", {"port": "123"}),
             ),
             (
-                    Device("123", "133", 'soijda1', "135o", "aa1"),
-                    Device("123", "133", 'soijda1', "135", "aa1"),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {}),
+                    Device("123", "133", 'soijda1', "135", "aa1", {}),
             ),
             (
-                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
-                    Device("123", "133", 'soijda1', "135", "aa1", 123),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {"port": "123"}),
+                    Device("123", "133", 'soijda1', "135", "aa1", {"port": "123"}),
             ),
             (
-                    Device("123", "133", 'soijda1', "135o", "aa1"),
-                    Device("123", "133", 'soijda', "135o", "aa1"),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {}),
+                    Device("123", "133", 'soijda', "135o", "aa1", {}),
             ),
             (
-                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
-                    Device("123", "133", 'soijda', "135o", "aa1", 123),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {"port": "123"}),
+                    Device("123", "133", 'soijda', "135o", "aa1", {"port": "123"}),
             ),
             (
-                    Device("123", "133", 'soijda1', "135o", "aa1"),
-                    Device("123", "13", 'soijda1', "135o", "aa1"),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {}),
+                    Device("123", "13", 'soijda1', "135o", "aa1", {}),
             ),
             (
-                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
-                    Device("123", "13", 'soijda1', "135o", "aa1", 123),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {"port": "123"}),
+                    Device("123", "13", 'soijda1', "135o", "aa1", {"port": "123"}),
             ),
             (
-                    Device("123", "133", 'soijda1', "135o", "aa1"),
-                    Device("12", "133", 'soijda1', "135o", "aa1"),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {}),
+                    Device("12", "133", 'soijda1', "135o", "aa1", {}),
             ),
             (
-                    Device("123", "133", 'soijda1', "135o", "aa1", 123),
-                    Device("12", "133", 'soijda1', "135o", "aa1", 123),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {"port": "123"}),
+                    Device("12", "133", 'soijda1', "135o", "aa1", {"port": "123"}),
             )
         ]
     )
@@ -139,9 +139,10 @@ class TestDevice:
                         "username": "133",
                         "password": 'soijda1',
                         "host": "135o",
-                        "device_type": "aa1"
+                        "device_type": "aa1",
+                        "optional_parameters": {}
                     },
-                    Device("123", "133", 'soijda1', "135o", "aa1"),
+                    Device("123", "133", 'soijda1', "135o", "aa1", {}),
             ),
             (
                     {
@@ -150,9 +151,9 @@ class TestDevice:
                         "password": '132okdlkf',
                         "host": "135o",
                         "device_type": "aa1",
-                        "port": 123
+                        "optional_parameters": {"port": "123"}
                     },
-                    Device(";lkdfs", "133", '132okdlkf', "135o", "aa1", 123),
+                    Device(";lkdfs", "133", '132okdlkf', "135o", "aa1", {"port": "123"}),
             )
         ]
     )
