@@ -1,46 +1,22 @@
+import dataclasses
 from enum import Enum
-from typing import Any, Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional
 
 from networkcommander.config import config
 
 
-def normalize_string_input(value: Any):
-    """
-    this convert a truthy value to a string and a falsy value to an empty string.
-    :param value: any value that can be converted to string
-    :return: the string if that value is truthy
-    """
-    if not value:
-        return ""
-    return str(value)
-
-
+@dataclasses.dataclass(frozen=True, order=True)
 class Device:
     """
     netmiko.ConnectHandler takes in a lot of arguments that change from execution to execution.
-    this class is here to hold the data netmiko.ConnectHandler needs to run.
+    this class is here to hold the data netmiko.ConnectHandler needs to run par device.
     """
-
-    def __init__(
-            self,
-            name: str,
-            username: str,
-            password: str,
-            host: str,
-            device_type: str,
-            port: int = None
-    ):
-        self.name = name
-        self.username = normalize_string_input(username)
-        self.password = normalize_string_input(password)
-        self.host = host
-        self.device_type = device_type
-        if port:
-            if port < 0 or port > 65535:
-                raise ValueError("port cant be below 0 or below 65535")
-            self.port = port
-        else:
-            self.port = None
+    name: str
+    username: str
+    password: str
+    host: str
+    device_type: str
+    optional_parameters: Dict[str, str]
 
     def __str__(self):
         device_string = ''
@@ -52,21 +28,6 @@ class Device:
             device_string += ' -> '
         device_string += self.get_ssh_string()
         return device_string
-
-    def __eq__(self, other):
-        if not isinstance(other, Device):
-            return False
-        return (
-                self.name == other.name and
-                self.username == other.username and
-                self.password == other.password and
-                self.host == other.host and
-                self.device_type == other.device_type and
-                self.port == other.port
-        )
-
-    def __hash__(self):
-        return hash((self.name, self.username, self.password, self.host, self.port, self.device_type))
 
     def get_ssh_string(self):
         """
@@ -84,8 +45,8 @@ class Device:
 
         ssh_string += self.host
 
-        if self.port:
-            ssh_string += f":{self.port}"
+        if 'port' in self.optional_parameters:
+            ssh_string += f":{self.optional_parameters['port']}"
 
         return ssh_string
 
@@ -97,15 +58,13 @@ class Device:
         example - netmiko.ConnectionHandler(**device.device_options).
         :return: a dictionary containing the arguments netmiko.ConnectionHandler() needs to run
         """
-        json_dump = {
+        return {
             "username": self.username,
             "password": self.password,
             "host": self.host,
-            "device_type": self.device_type
+            "device_type": self.device_type,
+            **self.optional_parameters
         }
-        if self.port:
-            json_dump['port'] = str(self.port)
-        return json_dump
 
     @staticmethod
     def from_string(device: str):
@@ -129,7 +88,12 @@ class Device:
             name = hostname
         if not device_type:
             device_type = config["default_device_type"]
-        return Device(name, username, "", hostname, device_type, port)
+        optional_parameters = {}
+        if port:
+            optional_parameters = {
+                "port": str(port)
+            }
+        return Device(name, username, "", hostname, device_type, optional_parameters)
 
 
 def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional[str]]:
@@ -142,7 +106,7 @@ def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional
 
     if perianthes_appear:
         raise NotImplementedError(f"sorry we don't support '{device_descriptor}' software type.\n"
-                             f"the supported types are {', '.join(SupportedDevice)}")
+                                  f"the supported types are {', '.join(SupportedDevice)}")
 
     return device_descriptor, None
 
