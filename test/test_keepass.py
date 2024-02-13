@@ -5,9 +5,9 @@ import mimesis
 import pykeepass
 import pytest
 
-from NetworkCommander.device import Device, supported_device_type
-from NetworkCommander.init import create_new_keepass_db
-from NetworkCommander.keepass import KeepassDB, add_device_entry, get_all_device_entries, get_device_tags, \
+from networkcommander.device import Device, SupportedDevice
+from networkcommander.init import create_new_keepass_db
+from networkcommander.keepass import KeepassDB, add_device_entry, get_all_device_entries, get_device_tags, \
     does_device_exist
 
 KEEPASS_PASSWORD = "123"
@@ -36,7 +36,7 @@ def get_test_device():
     name = f"{internet.hostname()}.{Finance.company()}{internet.top_level_domain()}"
     host = internet.ip_v4()
     port = internet.port()
-    device_type = generic.random.choice(list(supported_device_type))
+    device_type = generic.random.choice(list(SupportedDevice))
     device = Device(name, username, password, host, device_type, port)
     return device
 
@@ -70,7 +70,7 @@ class TestKeepass:
 
     def test_keepass_db_creation(self):
         test_db_path = "test_db.kdbx"
-        with KeepassDB(test_db_path, KEEPASS_PASSWORD) as kp:
+        with KeepassDB(test_db_path, KEEPASS_PASSWORD):
             assert os.path.isfile(test_db_path)
 
     def test_keepass_db_insertion(self, populated_db):
@@ -85,7 +85,7 @@ class TestKeepass:
         assert entry.password == device.password
         assert entry.username == device.username
         assert entry.get_custom_property("host") == device.host
-        assert entry.get_custom_property("port") == str(device.port)
+        assert entry.get_custom_property("port") == str(device.optional_parameters['port'])
         assert entry.get_custom_property("device_type") == device.device_type
 
     def test_keepass_db_insertion_with_tag(self, populated_db):
@@ -107,7 +107,7 @@ class TestKeepass:
         assert entry.password == device.password
         assert entry.username == device.username
         assert entry.get_custom_property("host") == device.host
-        assert entry.get_custom_property("port") == str(device.port)
+        assert entry.get_custom_property("port") == str(device.optional_parameters['port'])
         assert entry.get_custom_property("device_type") == device.device_type
         assert entry.tags == tags
 
