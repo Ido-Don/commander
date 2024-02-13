@@ -104,6 +104,14 @@ def device_from_string(device: str, password: str = "", optional_parameters: Dic
 
 
 def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional[str]]:
+    """
+    split the device descriptor and return the name and os type of it
+    :param device_descriptor: is a device and possibly the os type of it.
+    for example: r1(cisco_ios)
+
+    :return: the device's name and the os type.
+    for example: 'r1', 'cisco_ios'
+    """
     is_supported_device = any(
         f'({device_type})' in device_descriptor for device_type in SupportedDevice
     )
