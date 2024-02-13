@@ -32,7 +32,9 @@ class Device:
     def get_ssh_string(self):
         """
         this function takes the data in the class and convert it to a valid ssh string.
-        example - Device(host="google", username="root", port="22"...).get_ssh_string() -> root@google:22
+        example -
+            Device(host="google", username="root", port="22"...).get_ssh_string()
+            root@google:22
         then you can use it with ssh command to connect to the remote device.
         example - ssh root@google:22
 
@@ -177,11 +179,9 @@ def deconstruct_connection_string(connection: str) -> Tuple[Optional[str], str, 
     # extract hostname and port from socket_id
     port = None
 
-    # if a socket id ends with a colon all the socket id is considered to be the hostname.
-    does_socket_id_ends_with_colon = (socket_id[-1] == ':')
-    if does_socket_id_ends_with_colon:
+    if socket_id[-1] == ':':
         hostname = socket_id.rstrip(':')
-    elif ':' in socket_id and not does_socket_id_ends_with_colon:
+    elif ':' in socket_id and not socket_id[-1] == ':':
         hostname, port = deconstruct_socket_id(socket_id)
     else:
         hostname = socket_id

@@ -18,7 +18,8 @@ def deploy_commands(
         future_to_device = {}
         for device in devices:
             device_options = device.device_options
-            future = execute_pool.submit(execute_commands, device_options, commands, permission_level)
+            function_arguments = (device_options, commands, permission_level)
+            future = execute_pool.submit(execute_commands, *function_arguments)
             future_to_device[future] = device
 
         for future in concurrent.futures.as_completed(future_to_device.keys()):
