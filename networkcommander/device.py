@@ -124,6 +124,16 @@ def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional
 
 
 def deconstruct_device(device: str):
+    """
+    split a device string to a device descriptor and a connection string.
+
+
+    :param device: a string with the connection information for the device.
+    for example: "r1(cisco_ios) -> root@google.com:22"
+
+    :return: a tuple with a device descriptor and a connection string.
+    for example: ('r1(cisco_ios)', 'root@google.com:22')
+    """
     if device.count('->') > 1:
         raise ValueError(f"{device} has more then 1 '->'")
     if device.count('\n') > 1:
@@ -159,6 +169,9 @@ def deconstruct_socket_id(socket_id: str) -> Tuple[str, int]:
 
 
 class SupportedDevice(str, Enum):
+    """
+    An Enum to represent the device types this program is verified against.
+    """
     CISCO_IOS = "cisco_ios"
     CISCO_IOS_XE = "cisco_ios_xe"
     CISCO_IOS_TELNET = "cisco_ios_telnet"
