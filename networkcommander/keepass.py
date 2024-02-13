@@ -1,5 +1,5 @@
 import os
-from typing import List, Union, Dict, Any, Tuple
+from typing import List, Any, Tuple
 
 import pykeepass
 from pykeepass import pykeepass
@@ -69,9 +69,6 @@ def entry_to_device(device_entry: pykeepass.Entry) -> Device:
     custom_properties = device_entry.custom_properties
 
     required_properties = ["device_type", "host"]
-    """
-    this variable is here to
-    """
     non_existing_properties = [
         required_property not in custom_properties for required_property in required_properties
     ]
@@ -82,7 +79,7 @@ def entry_to_device(device_entry: pykeepass.Entry) -> Device:
     host = custom_properties["host"]
 
     def key_in_required_properties(pair: Tuple[Any, Any]):
-        key, value = pair
+        key = pair[0]
         return key not in required_properties
 
     optional_parameters = dict(filter(key_in_required_properties, custom_properties.items()))
@@ -96,7 +93,7 @@ def get_all_device_entries(kp: pykeepass.PyKeePass, tags: List[str] = None) -> L
         devices_entries = kp.find_entries(group=device_group, tags=tags)
     else:
         devices_entries = device_group.entries
-    devices = [entry_to_device(device_entry) for device_entry in devices_entries]
+    devices = list(map(entry_to_device, devices_entries))
     return devices
 
 
@@ -151,7 +148,11 @@ def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = 
     password = device.password
     new_entry = kp.add_entry(device_group, entry_title, username, password, tags=tags)
 
-    custom_properties = {"host": device.host, "device_type": device.device_type, **device.optional_parameters}
+    custom_properties = {
+        "host": device.host,
+        "device_type": device.device_type,
+        **device.optional_parameters
+    }
     for key, val in custom_properties.items():
         new_entry.set_custom_property(key, str(val), True)
 
