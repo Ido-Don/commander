@@ -5,6 +5,9 @@ import netmiko
 
 
 class PermissionLevel(str, Enum):
+    """
+    Enum defining permission levels for network device command.
+    """
     USER = "user"
     ENABLE = "enable"
     CONFIGURE_TERMINAL = "configure_terminal"
