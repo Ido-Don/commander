@@ -16,12 +16,15 @@ def deploy_commands(
 ):
     with concurrent.futures.ThreadPoolExecutor(max_workers=config["max_worker"]) as execute_pool:
         future_to_device = {}
+
+        # start the threads
         for device in devices:
             device_options = device.device_options
             function_arguments = (device_options, commands, permission_level)
             future = execute_pool.submit(execute_commands, *function_arguments)
             future_to_device[future] = device
 
+        # wait for the threads to finish one by one.
         for future in concurrent.futures.as_completed(future_to_device.keys()):
             device = future_to_device[future]
             try:

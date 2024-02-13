@@ -75,7 +75,7 @@ def device_from_string(device: str, password: str = "", optional_parameters: Dic
         {name}({device_type}) -> {username}@{hostname}:{port}
     to a Device.
     also you can add to the device some optional parameters
-    :param optional_parameters: any optional parameters (like 'secret'(enable secret) or 'global_timeout')
+    :param optional_parameters: any optional parameters like 'secret'(enable secret)
     :param password: the password for the device
     :param device: a string representing a device in this format
     {name}({device_type}) -> {username}@{hostname}:{port}
@@ -104,8 +104,10 @@ def device_from_string(device: str, password: str = "", optional_parameters: Dic
 
 
 def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional[str]]:
-    device_type_appear = any(f'({device_type})' in device_descriptor for device_type in SupportedDevice)
-    if device_type_appear:
+    is_supported_device = any(
+        f'({device_type})' in device_descriptor for device_type in SupportedDevice
+    )
+    if is_supported_device:
         name, device_type = device_descriptor.split('(')
         device_type = device_type.rstrip(')')
         return name, device_type
@@ -130,7 +132,8 @@ def deconstruct_device(device: str):
 def deconstruct_socket_id(socket_id: str) -> Tuple[str, int]:
     """
     this function returns the variables contained inside an IPv4 socket_id
-    :param socket_id: a hostname or ip (IPv4) with a port, like: 1.1.1.1:234, 12312:22, google.com:5000
+    :param socket_id: a hostname or ip (IPv4) with a port,
+        like: 1.1.1.1:234, 12312:22, google.com:5000
     :raise: ValueError if the socket_id is not a real one or doesn't contain a port
      (for example, kjnjsl::: is not a valid socket id)
     :return: the hostname or ip address and port number
@@ -163,7 +166,9 @@ def deconstruct_connection_string(connection: str) -> Tuple[Optional[str], str, 
     :raises: ValueError if the connection string is invalid
     """
     if connection.count('@') > 1:
-        raise ValueError(f"{connection} is not a valid ssh connection string, it has more then 1 '@'.")
+        raise ValueError(
+            f"{connection} is not a valid ssh connection string, it has more then 1 '@'."
+        )
 
     # extract username and socket_id from connection
     if '@' in connection:
