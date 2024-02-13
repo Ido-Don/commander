@@ -24,14 +24,43 @@ Install Commander with a simple pip command:
 pip install NetworkCommander
 ```
 
+## compile from source
+
+if you want to compile from source you can do that with [poetry](https://python-poetry.org/https://python-poetry.org/).
+
+first you have to make sure poetry is installed
+```bash
+poetry --version
+```
+
 ## Usage
 ### Version Check
 
 Check the version of Commander:
 
 ```bash
+poetry --version
+```
+
+after you did that you can start the build.
+
+```bash
+poetry install
+poetry build
+```
+
+a folder named dist will apper with the .tar.gz and .whl files.
+
+```bash
+pip install ./dist/path/to/.whl
+```
+
+after that you can fully use commander
+
+```bash
 commander version
 ```
+
 
 ### Initialization
 
