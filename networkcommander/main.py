@@ -3,7 +3,7 @@ import os.path
 import sys
 from itertools import filterfalse
 from pathlib import Path
-from typing import List, TextIO, Optional
+from typing import List, Optional
 
 import rich
 import typer
@@ -11,13 +11,13 @@ import typer
 from networkcommander.__init__ import __version__
 from networkcommander.config import config, USER_CONFIG_FILE
 from networkcommander.deploy import deploy_commands
-from networkcommander.device import Device, device_from_string
+from networkcommander.device import device_from_string
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
     add_device_entry, tag_device, untag_device, get_device_tags, get_device, \
     filter_non_existing_device_names, get_existing_devices
-from networkcommander.printing import print_objects
+from networkcommander.io_utils import print_objects, read_file
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 device_command_group = typer.Typer(pretty_exceptions_show_locals=False,
@@ -293,20 +293,6 @@ def add(
             add_device_entry(kp, device)
             typer.echo(f"added device {device} to database")
     typer.echo(f"added {len(device_strings)} to database")
-
-
-def read_file(file: TextIO) -> List[str]:
-    """
-    this function reads the content of a file, cleans it and return the content of it.
-    :param file: any file (for example: sys.stdin).
-    :return: the lines this file contain.
-    """
-    user_inputs = file.readlines()
-    user_inputs = [string.strip('\r\n ') for string in user_inputs]
-    user_inputs = [string.replace('\4', '') for string in user_inputs]
-    user_inputs = [string.replace("\26", '') for string in user_inputs]
-    user_inputs = list(filter(bool, user_inputs))
-    return user_inputs
 
 
 @device_command_group.command()
