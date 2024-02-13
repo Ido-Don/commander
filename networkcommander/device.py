@@ -113,8 +113,9 @@ def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional
     for example: 'r1', 'cisco_ios'
     """
     is_supported_device = any(
-        f'({device_type})' in device_descriptor for device_type in SupportedDevice
+        (f'({str(device_type.value)})' in device_descriptor for device_type in SupportedDevice)
     )
+    print(SupportedDevice)
     if is_supported_device:
         name, device_type = device_descriptor.split('(')
         device_type = device_type.rstrip(')')
@@ -168,7 +169,7 @@ def deconstruct_socket_id(socket_id: str) -> Tuple[str, int]:
     return hostname, port
 
 
-class SupportedDevice(str, Enum):
+class SupportedDevice(Enum, str):
     """
     An Enum to represent the device types this program is verified against.
     """
