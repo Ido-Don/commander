@@ -150,7 +150,10 @@ def ping(
     if not devices:
         if not tags:
             raise ValueError("you don't have any devices in the database.")
-        raise ValueError(f"you don't have any devices in the database with all of these tags: {', '.join(tags)}.")
+        raise ValueError(
+            "you don't have any devices in the database with all of these tags: "
+            f"{', '.join(tags)}."
+        )
 
     print_objects(devices, "devices")
 
@@ -288,7 +291,11 @@ def add(
         existing_devices = get_existing_devices(kp, devices)
         existing_device_names = [device.name for device in existing_devices]
         if existing_devices:
-            raise LookupError(f"devices [{', '.join(existing_device_names)}] already exist in keepass")
+            raise LookupError(
+                "devices ["
+                f"{', '.join(existing_device_names)}"
+                "] already exist in keepass"
+            )
         for device in devices:
             add_device_entry(kp, device)
             typer.echo(f"added device {device} to database")
