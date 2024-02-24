@@ -6,7 +6,7 @@ Commander is a powerful command-line interface (CLI) scraping tool designed for 
 
 - **Blazingly Fast:** Commander is optimized for speed, allowing you to execute commands swiftly across your network devices.
 - **Multi-threaded:** Leverage the efficiency of multi-threading to process commands concurrently, ensuring quick and efficient communication with all devices.
-- **Secure by Design:** Prioritizing security, Commander stores sensitive connection information, such as passwords and IPs locally on your computer, in [Keepass](https://keepass.info), a renowned open-source password manager.
+- **Secure by Design:** Prioritizing security, Every connection is made from your local machine. in addition, Commander stores sensitive connection information, such as passwords and IPs locally on your computer, in [Keepass](https://keepass.info), a renowned open-source password manager.
 
 ## Problem Statement
 
@@ -29,12 +29,10 @@ pip install NetworkCommander
 if you want to compile from source you can do that with [poetry](https://python-poetry.org/https://python-poetry.org/).
 
 first you have to make sure poetry is installed
+
 ```bash
 poetry --version
 ```
-
-## Usage
-### Version Check
 
 Check the version of Commander:
 
@@ -61,7 +59,7 @@ after that you can fully use commander
 commander version
 ```
 
-
+## Usage
 ### Initialization
 
 Before using Commander, ensure it's initialized. Run the following command to generate the keepass database and provide the password for it:
