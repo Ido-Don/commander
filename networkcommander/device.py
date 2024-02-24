@@ -169,7 +169,7 @@ def deconstruct_socket_id(socket_id: str) -> Tuple[str, int]:
     return hostname, port
 
 
-class SupportedDevice(Enum, str):
+class SupportedDevice(str, Enum):
     """
     An Enum to represent the device types this program is verified against.
     """
