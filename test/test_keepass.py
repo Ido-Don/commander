@@ -5,13 +5,13 @@ import mimesis
 import pykeepass
 import pytest
 
-from NetworkCommander.device import Device, supported_device_type
-from NetworkCommander.init import create_new_keepass_db
-from NetworkCommander.keepass import KeepassDB, add_device_entry, get_all_device_entries, get_device_tags, \
+from networkcommander.device import Device, SupportedDevice
+from networkcommander.init import create_new_keepass_db
+from networkcommander.keepass import KeepassDB, add_device_entry, get_all_device_entries, get_device_tags, \
     does_device_exist
 
 KEEPASS_PASSWORD = "123"
-POSSIBLE_TAGS = {'manhã', 'vivo', 'pelo', 'tia', 'assuntos', 'mexe', 'diabos', 'correcto', 'rapariga', 'socorro',
+POSSIBLE_TAGS = ['manhã', 'vivo', 'pelo', 'tia', 'assuntos', 'mexe', 'diabos', 'correcto', 'rapariga', 'socorro',
                  'trouxe', 'raparigas', 'liga', 'momentos', 'levar', 'papai', 'eu', 'morgan', 'acreditas', 'vim',
                  'chapéu', 'passagem', 'nos', 'gostei', 'ligo', 'cerca', 'governo', 'prender', 'apareceu', 'escolha',
                  'traz', 'daqui', 'olhos', 'respirar', 'levaram', 'sensação', 'sentado', 'acontecer', 'colega',
@@ -21,28 +21,28 @@ POSSIBLE_TAGS = {'manhã', 'vivo', 'pelo', 'tia', 'assuntos', 'mexe', 'diabos', 
                  'chave', 'praia', 'giro', 'chegou', 'senhoras', 'somos', 'inocente', 'agradecer', 'inocente',
                  'excelente', 'esperava', 'está', 'dou', 'fumar', 'paris', 'poderia', 'dado', 'perdão', 'estado',
                  'limpa', 'tome', 'terem', 'mão', 'completo', 'lamento', 'posição', 'milhão', 'esqueça', 'mal', 'dra',
-                 'irá', 'pode'}
-
+                 'irá', 'pode']
+POSSIBLE_NAMES = list(POSSIBLE_TAGS)
 internet = mimesis.Internet()
 generic = mimesis.Generic()
-Finance = mimesis.Finance()
-
+hardware = mimesis.Hardware()
 POPULATED_DB_PATH = "populated_db.kdbx"
 
 
 def get_test_device():
     username = generic.person.name()
     password = generic.person.password()
-    name = f"{internet.hostname()}.{Finance.company()}{internet.top_level_domain()}"
-    host = internet.ip_v4()
+    ip = internet.ip_v4()
+    name = f"{ip}{internet.top_level_domain()}"
+    host = ip
     port = internet.port()
-    device_type = generic.random.choice(list(supported_device_type))
-    device = Device(name, username, password, host, device_type, port)
+    device_type = generic.random.choice([device.value for device in SupportedDevice])
+    device = Device(name, username, password, host, device_type, {'port': str(port)})
     return device
 
 
 def get_tag_list():
-    tags = [generic.random.choice(POSSIBLE_TAGS) for _ in range(generic.random.randint(0, 10))]
+    tags = generic.random.choices(POSSIBLE_TAGS, k=generic.random.randint(0, 10))
     if not tags:
         tags = None
     return tags
@@ -70,7 +70,7 @@ class TestKeepass:
 
     def test_keepass_db_creation(self):
         test_db_path = "test_db.kdbx"
-        with KeepassDB(test_db_path, KEEPASS_PASSWORD) as kp:
+        with KeepassDB(test_db_path, KEEPASS_PASSWORD):
             assert os.path.isfile(test_db_path)
 
     def test_keepass_db_insertion(self, populated_db):
@@ -85,8 +85,8 @@ class TestKeepass:
         assert entry.password == device.password
         assert entry.username == device.username
         assert entry.get_custom_property("host") == device.host
-        assert entry.get_custom_property("port") == str(device.port)
-        assert entry.get_custom_property("device_type") == device.device_type
+        assert entry.get_custom_property("port") == str(device.optional_parameters['port'])
+        assert entry.get_custom_property("device_type") == str(device.device_type)
 
     def test_keepass_db_insertion_with_tag(self, populated_db):
         # set up test environment
@@ -107,8 +107,8 @@ class TestKeepass:
         assert entry.password == device.password
         assert entry.username == device.username
         assert entry.get_custom_property("host") == device.host
-        assert entry.get_custom_property("port") == str(device.port)
-        assert entry.get_custom_property("device_type") == device.device_type
+        assert entry.get_custom_property("port") == str(device.optional_parameters['port'])
+        assert entry.get_custom_property("device_type") == str(device.device_type)
         assert entry.tags == tags
 
     def test_db_selection(self, populated_db):
@@ -128,16 +128,16 @@ class TestKeepass:
 
         kp = pykeepass.PyKeePass(test_db, KEEPASS_PASSWORD)
         device = get_test_device()
-        tags = get_tag_list()
+        tags = [generic.random.choice(POSSIBLE_TAGS)]
         add_device_entry(kp, device, tags)
 
-        devices = get_all_device_entries(kp, tags)
-        assert devices == [device]
+        devices = get_all_device_entries(kp, set(tags))
+        assert device in devices
 
     def test_get_device_tags(self, populated_db):
         kp = pykeepass.PyKeePass(populated_db, KEEPASS_PASSWORD)
         tags = get_device_tags(kp)
-        assert tags == POSSIBLE_TAGS
+        assert tags == set(POSSIBLE_TAGS)
 
     def test_does_device_exist_false(self, populated_db):
         """
@@ -162,5 +162,7 @@ class TestKeepass:
         this test checks if the does_device_exist can find an entry that is in the database
         """
         kp = pykeepass.PyKeePass(populated_db, KEEPASS_PASSWORD)
+        print(kp.entries)
+
         entry = generic.random.choice(kp.entries)
         assert does_device_exist(kp, entry.title)

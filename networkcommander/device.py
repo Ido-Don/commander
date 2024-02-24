@@ -1,46 +1,22 @@
+import dataclasses
 from enum import Enum
-from typing import Any, Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional
 
 from networkcommander.config import config
 
 
-def normalize_string_input(value: Any):
-    """
-    this convert a truthy value to a string and a falsy value to an empty string.
-    :param value: any value that can be converted to string
-    :return: the string if that value is truthy
-    """
-    if not value:
-        return ""
-    return str(value)
-
-
+@dataclasses.dataclass(frozen=True, order=True)
 class Device:
     """
     netmiko.ConnectHandler takes in a lot of arguments that change from execution to execution.
-    this class is here to hold the data netmiko.ConnectHandler needs to run.
+    this class is here to hold the data netmiko.ConnectHandler needs to run par device.
     """
-
-    def __init__(
-            self,
-            name: str,
-            username: str,
-            password: str,
-            host: str,
-            device_type: str,
-            port: int = None
-    ):
-        self.name = name
-        self.username = normalize_string_input(username)
-        self.password = normalize_string_input(password)
-        self.host = host
-        self.device_type = device_type
-        if port:
-            if port < 0 or port > 65535:
-                raise ValueError("port cant be below 0 or below 65535")
-            self.port = port
-        else:
-            self.port = None
+    name: str
+    username: str
+    password: str
+    host: str
+    device_type: str
+    optional_parameters: Dict[str, str]
 
     def __str__(self):
         device_string = ''
@@ -53,25 +29,12 @@ class Device:
         device_string += self.get_ssh_string()
         return device_string
 
-    def __eq__(self, other):
-        if not isinstance(other, Device):
-            return False
-        return (
-                self.name == other.name and
-                self.username == other.username and
-                self.password == other.password and
-                self.host == other.host and
-                self.device_type == other.device_type and
-                self.port == other.port
-        )
-
-    def __hash__(self):
-        return hash((self.name, self.username, self.password, self.host, self.port, self.device_type))
-
     def get_ssh_string(self):
         """
         this function takes the data in the class and convert it to a valid ssh string.
-        example - Device(host="google", username="root", port="22"...).get_ssh_string() -> root@google:22
+        example -
+            Device(host="google", username="root", port="22"...).get_ssh_string()
+            root@google:22
         then you can use it with ssh command to connect to the remote device.
         example - ssh root@google:22
 
@@ -84,8 +47,8 @@ class Device:
 
         ssh_string += self.host
 
-        if self.port:
-            ssh_string += f":{self.port}"
+        if 'port' in self.optional_parameters:
+            ssh_string += f":{self.optional_parameters['port']}"
 
         return ssh_string
 
@@ -97,57 +60,81 @@ class Device:
         example - netmiko.ConnectionHandler(**device.device_options).
         :return: a dictionary containing the arguments netmiko.ConnectionHandler() needs to run
         """
-        json_dump = {
+        return {
             "username": self.username,
             "password": self.password,
             "host": self.host,
-            "device_type": self.device_type
+            "device_type": self.device_type,
+            **self.optional_parameters
         }
-        if self.port:
-            json_dump['port'] = str(self.port)
-        return json_dump
 
-    @staticmethod
-    def from_string(device: str):
-        """
-        this function convert a string in the format:
-            {name}({device_type}) -> {username}@{hostname}:{port}
-        to a Device
-        :param device: a string representing a device in this format
+
+def device_from_string(device: str, password: str = "", optional_parameters: Dict[str, str] = None):
+    """
+    this function convert a string in the format:
         {name}({device_type}) -> {username}@{hostname}:{port}
-        :return: a device
-        """
-        if not device:
-            raise ValueError("you can't have an empty device")
-        device = device.strip(' \n')
-        device_descriptor, connection_string = deconstruct_device(device)
-        username, hostname, port = deconstruct_connection_string(connection_string)
-        device_type = None
-        if device_descriptor:
-            name, device_type = deconstruct_device_descriptor(device_descriptor)
-        else:
-            name = hostname
-        if not device_type:
-            device_type = config["default_device_type"]
-        return Device(name, username, "", hostname, device_type, port)
+    to a Device.
+    also you can add to the device some optional parameters
+    :param optional_parameters: any optional parameters like 'secret'(enable secret)
+    :param password: the password for the device
+    :param device: a string representing a device in this format
+    {name}({device_type}) -> {username}@{hostname}:{port}
+    :return: a device
+    """
+    if not device:
+        raise ValueError("you can't have an empty device")
+    device = device.strip(' \n')
+    device_descriptor, connection_string = deconstruct_device(device)
+    username, hostname, port = deconstruct_connection_string(connection_string)
+    device_type = None
+    if device_descriptor:
+        name, device_type = deconstruct_device_descriptor(device_descriptor)
+    else:
+        name = hostname
+    if not device_type:
+        device_type = config["default_device_type"]
+
+    if not optional_parameters:
+        optional_parameters = {}
+    if port:
+        optional_parameters = {
+            "port": str(port)
+        }
+    return Device(name, username, password, hostname, device_type, optional_parameters)
 
 
 def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional[str]]:
-    device_type_appear = any(f'({device_type})' in device_descriptor for device_type in SupportedDevice)
-    perianthes_appear = '(' in device_descriptor or ')' in device_descriptor
-    if device_type_appear:
+    """
+    split the device descriptor and return the name and os type of it
+    :param device_descriptor: is a device and possibly the os type of it.
+    for example: r1(cisco_ios)
+
+    :return: the device's name and the os type.
+    for example: 'r1', 'cisco_ios'
+    """
+    is_supported_device = any(
+        (f'({str(device_type.value)})' in device_descriptor for device_type in SupportedDevice)
+    )
+    print(SupportedDevice)
+    if is_supported_device:
         name, device_type = device_descriptor.split('(')
         device_type = device_type.rstrip(')')
         return name, device_type
-
-    if perianthes_appear:
-        raise NotImplementedError(f"sorry we don't support '{device_descriptor}' software type.\n"
-                             f"the supported types are {', '.join(SupportedDevice)}")
 
     return device_descriptor, None
 
 
 def deconstruct_device(device: str):
+    """
+    split a device string to a device descriptor and a connection string.
+
+
+    :param device: a string with the connection information for the device.
+    for example: "r1(cisco_ios) -> root@google.com:22"
+
+    :return: a tuple with a device descriptor and a connection string.
+    for example: ('r1(cisco_ios)', 'root@google.com:22')
+    """
     if device.count('->') > 1:
         raise ValueError(f"{device} has more then 1 '->'")
     if device.count('\n') > 1:
@@ -164,7 +151,8 @@ def deconstruct_device(device: str):
 def deconstruct_socket_id(socket_id: str) -> Tuple[str, int]:
     """
     this function returns the variables contained inside an IPv4 socket_id
-    :param socket_id: a hostname or ip (IPv4) with a port, like: 1.1.1.1:234, 12312:22, google.com:5000
+    :param socket_id: a hostname or ip (IPv4) with a port,
+        like: 1.1.1.1:234, 12312:22, google.com:5000
     :raise: ValueError if the socket_id is not a real one or doesn't contain a port
      (for example, kjnjsl::: is not a valid socket id)
     :return: the hostname or ip address and port number
@@ -182,6 +170,9 @@ def deconstruct_socket_id(socket_id: str) -> Tuple[str, int]:
 
 
 class SupportedDevice(str, Enum):
+    """
+    An Enum to represent the device types this program is verified against.
+    """
     CISCO_IOS = "cisco_ios"
     CISCO_IOS_XE = "cisco_ios_xe"
     CISCO_IOS_TELNET = "cisco_ios_telnet"
@@ -197,7 +188,9 @@ def deconstruct_connection_string(connection: str) -> Tuple[Optional[str], str, 
     :raises: ValueError if the connection string is invalid
     """
     if connection.count('@') > 1:
-        raise ValueError(f"{connection} is not a valid ssh connection string, it has more then 1 '@'.")
+        raise ValueError(
+            f"{connection} is not a valid ssh connection string, it has more then 1 '@'."
+        )
 
     # extract username and socket_id from connection
     if '@' in connection:
@@ -213,13 +206,10 @@ def deconstruct_connection_string(connection: str) -> Tuple[Optional[str], str, 
     # extract hostname and port from socket_id
     port = None
 
-    does_socket_id_ends_with_colon = socket_id[-1] == ':'
-    if does_socket_id_ends_with_colon:
-        hostname = socket_id[:-2]
-
-    elif ':' in socket_id and not does_socket_id_ends_with_colon:
+    if socket_id[-1] == ':':
+        hostname = socket_id.rstrip(':')
+    elif ':' in socket_id and not socket_id[-1] == ':':
         hostname, port = deconstruct_socket_id(socket_id)
-
     else:
         hostname = socket_id
 

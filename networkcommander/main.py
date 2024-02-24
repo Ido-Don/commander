@@ -3,7 +3,7 @@ import os.path
 import sys
 from itertools import filterfalse
 from pathlib import Path
-from typing import List, TextIO, Optional
+from typing import List, Optional
 
 import rich
 import typer
@@ -11,13 +11,13 @@ import typer
 from networkcommander.__init__ import __version__
 from networkcommander.config import config, USER_CONFIG_FILE
 from networkcommander.deploy import deploy_commands
-from networkcommander.device import Device
+from networkcommander.device import device_from_string
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
     add_device_entry, tag_device, untag_device, get_device_tags, get_device, \
     filter_non_existing_device_names, get_existing_devices
-from networkcommander.printing import print_objects
+from networkcommander.io_utils import print_objects, read_file
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 device_command_group = typer.Typer(pretty_exceptions_show_locals=False,
@@ -89,7 +89,7 @@ def tag_add(device_tag: str, devices: List[str]):
             raise LookupError(f"devices [{', '.join(non_existent_devices)}] doesn't exist")
 
         # if someone entered a device that was already tagged it can't be tagged again
-        all_tagged_devices = get_all_device_entries(kp, [device_tag])
+        all_tagged_devices = get_all_device_entries(kp, {device_tag})
         all_tagged_devices_names = {device.name for device in all_tagged_devices}
         tagged_existing_devices = list(
             filter(
@@ -145,12 +145,15 @@ def ping(
     try to connect to the devices in your database.
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        devices = get_all_device_entries(kp, tags)
+        devices = get_all_device_entries(kp, set(tags))
 
     if not devices:
         if not tags:
             raise ValueError("you don't have any devices in the database.")
-        raise ValueError(f"you don't have any devices in the database with all of these tags: {', '.join(tags)}.")
+        raise ValueError(
+            "you don't have any devices in the database with all of these tags: "
+            f"{', '.join(tags)}."
+        )
 
     print_objects(devices, "devices")
 
@@ -204,7 +207,7 @@ def deploy(
         raise ValueError(f"{','.join(invalid_commands)} are not valid commands.")
 
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        devices = set(get_all_device_entries(kp, tags))
+        devices = set(get_all_device_entries(kp, set(tags)))
         if extra_devices:
 
             non_existent_devices = filter_non_existing_device_names(kp, extra_devices)
@@ -247,19 +250,15 @@ def list_devices(
     list all the devices under your command.
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        devices = get_all_device_entries(kp, tags)
+        devices = get_all_device_entries(kp, set(tags))
 
     print_objects(devices, "devices")
 
 
 @device_command_group.command()
 def add(
-        password: str = typer.Option(
-            "",
-            prompt="Device's password",
-            hide_input=True,
-            show_default=False
-        ),
+        password: str = typer.Option(""),
+        enable_password: str = typer.Option(""),
         device_strings: List[str] = typer.Argument(None, show_default=False),
         devices_file: typer.FileText = typer.Option(sys.stdin, show_default=False),
 ):
@@ -272,36 +271,45 @@ def add(
             typer.echo("hit control-Z or control-D to continue")
         device_strings = read_file(sys.stdin)
 
+    if not password:
+        password = typer.prompt(
+            "device's password",
+            hide_input=True,
+            default="",
+            show_default=False
+        )
+
+    if not enable_password:
+        enable_password = typer.prompt(
+            "device's enable password",
+            hide_input=True,
+            default="",
+            show_default=False
+        )
+
     if not device_strings:
         raise ValueError("no devices supplied... not adding anything")
+
     devices = []
     for device_string in device_strings:
-        device = Device.from_string(device_string)
-        device.password = password
+        if enable_password:
+            device = device_from_string(device_string, password, {"secret": enable_password})
+        else:
+            device = device_from_string(device_string, password)
         devices.append(device)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         existing_devices = get_existing_devices(kp, devices)
         existing_device_names = [device.name for device in existing_devices]
         if existing_devices:
-            raise LookupError(f"devices [{', '.join(existing_device_names)}] already exist in keepass")
+            raise LookupError(
+                "devices ["
+                f"{', '.join(existing_device_names)}"
+                "] already exist in keepass"
+            )
         for device in devices:
             add_device_entry(kp, device)
             typer.echo(f"added device {device} to database")
     typer.echo(f"added {len(device_strings)} to database")
-
-
-def read_file(file: TextIO) -> List[str]:
-    """
-    this function reads the content of a file, cleans it and return the content of it.
-    :param file: any file (for example: sys.stdin).
-    :return: the lines this file contain.
-    """
-    user_inputs = file.readlines()
-    user_inputs = [string.strip('\r\n ') for string in user_inputs]
-    user_inputs = [string.replace('\4', '') for string in user_inputs]
-    user_inputs = [string.replace("\26", '') for string in user_inputs]
-    user_inputs = list(filter(bool, user_inputs))
-    return user_inputs
 
 
 @device_command_group.command()
