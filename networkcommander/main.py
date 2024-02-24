@@ -272,10 +272,20 @@ def add(
         device_strings = read_file(sys.stdin)
 
     if not password:
-        password = typer.prompt("device's password", hide_input=True, default="", show_default=False)
+        password = typer.prompt(
+            "device's password",
+            hide_input=True,
+            default="",
+            show_default=False
+        )
 
     if not enable_password:
-        enable_password = typer.prompt("device's enable password", hide_input=True, default="", show_default=False)
+        enable_password = typer.prompt(
+            "device's enable password",
+            hide_input=True,
+            default="",
+            show_default=False
+        )
 
     if not device_strings:
         raise ValueError("no devices supplied... not adding anything")
