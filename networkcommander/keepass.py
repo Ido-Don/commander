@@ -1,5 +1,5 @@
 import os
-from typing import List, Any, Tuple
+from typing import List, Any, Tuple, Set
 
 import pykeepass
 from pykeepass import pykeepass
@@ -114,7 +114,7 @@ def entry_to_device(device_entry: pykeepass.Entry) -> Device:
     return device_entry
 
 
-def get_all_device_entries(kp: pykeepass.PyKeePass, tags: List[str] = None) -> List[Device]:
+def get_all_device_entries(kp: pykeepass.PyKeePass, tags: Set[str] = None) -> List[Device]:
     """
     Retrieve all device entries from the KeePass database.
 
@@ -122,12 +122,20 @@ def get_all_device_entries(kp: pykeepass.PyKeePass, tags: List[str] = None) -> L
     :param tags: Optional list of tags to filter the entries.
     :Returns: A list of Device objects representing the retrieved entries.
     """
-    device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
+    group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
+    device_entries = group.entries
     if tags:
-        devices_entries = kp.find_entries(group=device_group, tags=tags)
+        tagged_devices = []
+        for device in device_entries:
+            if not device.tags:
+                continue
+            device_tags = set(device.tags)
+            if device_tags.issubset(tags):
+                tagged_devices.append(device)
+
+        devices = list(map(entry_to_device, tagged_devices))
     else:
-        devices_entries = device_group.entries
-    devices = list(map(entry_to_device, devices_entries))
+        devices = list(map(entry_to_device, device_entries))
     return devices
 
 

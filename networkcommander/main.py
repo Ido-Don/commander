@@ -89,7 +89,7 @@ def tag_add(device_tag: str, devices: List[str]):
             raise LookupError(f"devices [{', '.join(non_existent_devices)}] doesn't exist")
 
         # if someone entered a device that was already tagged it can't be tagged again
-        all_tagged_devices = get_all_device_entries(kp, [device_tag])
+        all_tagged_devices = get_all_device_entries(kp, {device_tag})
         all_tagged_devices_names = {device.name for device in all_tagged_devices}
         tagged_existing_devices = list(
             filter(
@@ -145,7 +145,7 @@ def ping(
     try to connect to the devices in your database.
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        devices = get_all_device_entries(kp, tags)
+        devices = get_all_device_entries(kp, set(tags))
 
     if not devices:
         if not tags:
@@ -207,7 +207,7 @@ def deploy(
         raise ValueError(f"{','.join(invalid_commands)} are not valid commands.")
 
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        devices = set(get_all_device_entries(kp, tags))
+        devices = set(get_all_device_entries(kp, set(tags)))
         if extra_devices:
 
             non_existent_devices = filter_non_existing_device_names(kp, extra_devices)
@@ -250,7 +250,7 @@ def list_devices(
     list all the devices under your command.
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        devices = get_all_device_entries(kp, tags)
+        devices = get_all_device_entries(kp, set(tags))
 
     print_objects(devices, "devices")
 

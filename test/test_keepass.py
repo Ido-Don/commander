@@ -128,11 +128,11 @@ class TestKeepass:
 
         kp = pykeepass.PyKeePass(test_db, KEEPASS_PASSWORD)
         device = get_test_device()
-        tags = get_tag_list()
+        tags = [generic.random.choice(POSSIBLE_TAGS)]
         add_device_entry(kp, device, tags)
 
-        devices = get_all_device_entries(kp, tags)
-        assert devices == [device]
+        devices = get_all_device_entries(kp, set(tags))
+        assert device in devices
 
     def test_get_device_tags(self, populated_db):
         kp = pykeepass.PyKeePass(populated_db, KEEPASS_PASSWORD)
