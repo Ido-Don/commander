@@ -160,7 +160,7 @@ if there are any spasific devices you need to deploy to you can use the --device
 commander device deploy --tag "router" --device "device not tagged with router" "<command_1>" "<command_2>" 
 ```
 
-By default the deploy command will deploy with the most basic permission level possible.
+By default, the "deploy" command will deploy with the most basic permission level possible.
 
 In order to escalate the permisions you need to specify the --permision_level flag
 
