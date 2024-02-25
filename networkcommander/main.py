@@ -20,11 +20,19 @@ from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_d
 from networkcommander.io_utils import print_objects, read_file
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
-device_command_group = typer.Typer(pretty_exceptions_show_locals=False,
-                                   help="control and manage the devices under your command")
+
+device_command_group = typer.Typer(
+    pretty_exceptions_show_locals=False,
+    help="control and manage the devices under your command"
+)
+
 app.add_typer(device_command_group, name="device")
-tag_command_group = typer.Typer(pretty_exceptions_show_locals=False,
-                                help="tag devices to better segment them")
+
+tag_command_group = typer.Typer(
+    pretty_exceptions_show_locals=False,
+    help="tag devices to better segment them"
+)
+
 device_command_group.add_typer(tag_command_group, name="tag")
 
 
