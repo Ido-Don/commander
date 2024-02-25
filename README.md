@@ -89,6 +89,15 @@ Alternatively, you can provide a file containing device strings:
 commander device add --devices_file path/to/devices_file
 ```
 
+If you don't enter any device or a device file the program defaultly will read from devices from stdin.
+
+```bash
+commander device add
+
+r1(cisco_ios) -> root@localhost:5000
+^Z
+```
+
 ### Remove Device
 
 Remove one or more devices from the database:
@@ -130,18 +139,37 @@ commander device ping --tag <tag_name>
 ```
 ### Command Deployment
 
-Deploy commands to devices, either to all or specific devices:
+in order to deploy a command to the devices in your database need to use the deploy command
+```bash
+commander device deploy "<command_1>" "<command_2>" 
+```
+
+in case you want to deploy the commands to some devices but not all you can use tags.
 
 ```bash
-commander device deploy  --permision_level "configure_terminal" --tag <tag_name> --device <device_name_1> "<command_1>" "<command_2>" 
+commander device deploy --tag "router" "<command_1>" "<command_2>" 
 ```
-Specify the permission level for command execution using the -p or --permission_level option.
+
+if there are any spasific devices you need to deploy to you can use the --device option also
+
+```bash
+commander device deploy --tag "router" --device "device not tagged with router" "<command_1>" "<command_2>" 
+```
+
+By default the deploy command will deploy with the most basic permission level possible.
+
+In order to escalate the permisions you need to specify the --permision_level flag
+
+```bash
+commander device deploy  --permision_level "configure_terminal" "<command_1>" "<command_2>" 
+```
+
 Output Folder (Optional)
 
 Save command output to a specified folder:
 
 ```bash
-commander device deploy "<command>" --output_folder <path/to/output_folder>
+commander device deploy --output_folder <path/to/output_folder> "<command>"
 ```
 
 Conclusion
