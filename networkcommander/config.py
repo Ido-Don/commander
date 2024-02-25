@@ -1,7 +1,7 @@
 import os
 
 HOME_FOLDER = os.path.expanduser("~")
-USER_CONFIG_FILE = os.path.join(HOME_FOLDER, "commander-config.json")
+USER_CONFIG_FILE = os.path.join(HOME_FOLDER, ".CommanderConfig")
 DEFAULT_COMMANDER_FOLDER = os.path.join(HOME_FOLDER, '.commander')
 DEFAULT_KEEPASS_DB_PATH = os.path.join(DEFAULT_COMMANDER_FOLDER, 'db.kdbx')
 config = {
