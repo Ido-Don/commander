@@ -132,14 +132,18 @@ commander device tag list
 ## Device Connectivity
 ### Ping Devices
 
-Test connectivity to devices:
+this command will try to connect to every device in your database, it will not deploy any commands to the device.
+
+optionally filter by tags.
 
 ```bash
 commander device ping --tag <tag_name>
 ```
+
 ### Command Deployment
 
 in order to deploy a command to the devices in your database need to use the deploy command
+
 ```bash
 commander device deploy "<command_1>" "<command_2>" 
 ```
