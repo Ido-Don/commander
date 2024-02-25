@@ -224,6 +224,9 @@ def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = 
     :Raises: LookupError if a device with the same name already exists in the database.
     """
     entry_title = device.name
+    if not entry_title:
+        raise ValueError("device doesn't have a name...")
+
     if does_device_exist(kp, entry_title):
         raise LookupError(f"{entry_title} already exist in db")
 
@@ -231,6 +234,11 @@ def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = 
 
     username = device.username
     password = device.password
+    if not username:
+        username = ""
+    if not password:
+        password = ""
+
     new_entry = kp.add_entry(device_group, entry_title, username, password, tags=tags)
 
     custom_properties = {

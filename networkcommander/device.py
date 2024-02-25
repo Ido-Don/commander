@@ -69,7 +69,7 @@ class Device:
         }
 
 
-def device_from_string(device: str, password: str = "", optional_parameters: Dict[str, str] = None):
+def device_from_string(device: str, password: str = "", optional_parameters: Optional[Dict[str, str]] = None):
     """
     this function convert a string in the format:
         {name}({device_type}) -> {username}@{hostname}:{port}
@@ -81,6 +81,9 @@ def device_from_string(device: str, password: str = "", optional_parameters: Dic
     {name}({device_type}) -> {username}@{hostname}:{port}
     :return: a device
     """
+    if optional_parameters is None:
+        optional_parameters = {}
+
     if not device:
         raise ValueError("you can't have an empty device")
     device = device.strip(' \n')
@@ -94,8 +97,11 @@ def device_from_string(device: str, password: str = "", optional_parameters: Dic
     if not device_type:
         device_type = config["default_device_type"]
 
-    if not optional_parameters:
-        optional_parameters = {}
+    if not username:
+        username = ""
+    if not password:
+        password = ""
+
     if port:
         optional_parameters = {
             "port": str(port)
@@ -115,7 +121,6 @@ def deconstruct_device_descriptor(device_descriptor: str) -> Tuple[str, Optional
     is_supported_device = any(
         (f'({str(device_type.value)})' in device_descriptor for device_type in SupportedDevice)
     )
-    print(SupportedDevice)
     if is_supported_device:
         name, device_type = device_descriptor.split('(')
         device_type = device_type.rstrip(')')
