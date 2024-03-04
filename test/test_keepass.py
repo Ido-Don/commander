@@ -5,47 +5,17 @@ import mimesis
 import pykeepass
 import pytest
 
-from networkcommander.device import Device, SupportedDevice
 from networkcommander.init import create_new_keepass_db
 from networkcommander.keepass import KeepassDB, add_device_entry, get_all_device_entries, get_device_tags, \
     does_device_exist
+from mocks import get_test_device, get_tag_list, POSSIBLE_TAGS
 
 KEEPASS_PASSWORD = "123"
-POSSIBLE_TAGS = ['manhã', 'vivo', 'pelo', 'tia', 'assuntos', 'mexe', 'diabos', 'correcto', 'rapariga', 'socorro',
-                 'trouxe', 'raparigas', 'liga', 'momentos', 'levar', 'papai', 'eu', 'morgan', 'acreditas', 'vim',
-                 'chapéu', 'passagem', 'nos', 'gostei', 'ligo', 'cerca', 'governo', 'prender', 'apareceu', 'escolha',
-                 'traz', 'daqui', 'olhos', 'respirar', 'levaram', 'sensação', 'sentado', 'acontecer', 'colega',
-                 'inglaterra', 'pescoço', 'vídeo', 'deu', 'chá', 'imaginar', 'bebida', 'pé', 'ponham', 'unidade',
-                 'esperança', 'suficiente', 'larga', 'nota', 'última', 'méxico', 'notícias', 'verão', 'faz',
-                 'interessante', 'geral', 'uso', 'homens', 'lado', 'indo', 'vegas', 'estará', 'semana', 'bocadinho',
-                 'chave', 'praia', 'giro', 'chegou', 'senhoras', 'somos', 'inocente', 'agradecer', 'inocente',
-                 'excelente', 'esperava', 'está', 'dou', 'fumar', 'paris', 'poderia', 'dado', 'perdão', 'estado',
-                 'limpa', 'tome', 'terem', 'mão', 'completo', 'lamento', 'posição', 'milhão', 'esqueça', 'mal', 'dra',
-                 'irá', 'pode']
 POSSIBLE_NAMES = list(POSSIBLE_TAGS)
 internet = mimesis.Internet()
 generic = mimesis.Generic()
 hardware = mimesis.Hardware()
 POPULATED_DB_PATH = "populated_db.kdbx"
-
-
-def get_test_device():
-    username = generic.person.name()
-    password = generic.person.password()
-    ip = internet.ip_v4()
-    name = f"{ip}{internet.top_level_domain()}"
-    host = ip
-    port = internet.port()
-    device_type = generic.random.choice([device.value for device in SupportedDevice])
-    device = Device(name, username, password, host, device_type, {'port': str(port)})
-    return device
-
-
-def get_tag_list():
-    tags = generic.random.choices(POSSIBLE_TAGS, k=generic.random.randint(0, 10))
-    if not tags:
-        tags = None
-    return tags
 
 
 def populate_db(keepass_db_path: str):
@@ -60,7 +30,6 @@ def populate_db(keepass_db_path: str):
 
 
 class TestKeepass:
-
     @pytest.fixture
     def populated_db(self) -> str:
         if os.path.isfile(POPULATED_DB_PATH):
