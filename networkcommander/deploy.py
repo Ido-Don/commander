@@ -1,7 +1,9 @@
 import concurrent.futures
+import sys
 from typing import List, Iterable
 
 import netmiko
+import rich
 import typer
 
 from networkcommander.config import config
@@ -36,14 +38,17 @@ def deploy_commands(
         # wait for the threads to finish one by one.
         for future in concurrent.futures.as_completed(future_to_device.keys()):
             device = future_to_device[future]
+
             try:
                 result = future.result()
-                typer.echo(f"connected successfully to {device}")
+                rich.print(f"connected successfully to {device}")
                 yield result, device
             except netmiko.NetmikoAuthenticationException:
-                typer.echo(f"wasn't able to authenticate to {str(device)}", err=True)
+                rich.print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
+                yield "", device
             except netmiko.NetmikoTimeoutException:
-                typer.echo(f"wasn't able to connect to {str(device)}", err=True)
+                rich.print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
+                yield "", device
             except Exception as e:
-                # Handle exceptions raised during the task execution
-                typer.echo(f"device {str(device)} encountered an exception: {e}", err=True)
+                rich.print(f"device {str(device)} encountered an exception: {str(e)}", file=sys.stderr)
+                yield "", device
