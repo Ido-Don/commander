@@ -7,6 +7,7 @@ from typing import List, Optional
 
 import rich
 import typer
+from rich.progress import track, Progress
 
 from networkcommander.__init__ import __version__
 from networkcommander.config import config, USER_CONFIG_FILE
@@ -165,8 +166,12 @@ def ping(
 
     print_objects(devices, "devices")
 
-    # deploy no commands just to test connectivity
-    list(deploy_commands([], devices, PermissionLevel.USER))
+    with Progress() as progress:
+        task = progress.add_task("connecting to devices...", total=len(devices))
+
+        # deploy no commands just to test connectivity
+        for _ in deploy_commands([], devices, PermissionLevel.USER):
+            progress.advance(task)
 
 
 @device_command_group.command()
