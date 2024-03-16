@@ -176,7 +176,7 @@ Save command output to a specified folder:
 commander device deploy --output_folder <path/to/output_folder> "<command>"
 ```
 
-Conclusion
+## Conclusion
 
 Commander provides a streamlined solution for scraping network devices, offering speed and simplicity without the complexities of traditional configuration management tools. Empower your networking and IT teams to enforce standardization across your network effortlessly.
 
