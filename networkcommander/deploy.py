@@ -1,10 +1,5 @@
 import concurrent.futures
-import sys
 from typing import List, Iterable
-
-import netmiko
-import rich
-import typer
 
 from networkcommander.config import config
 from networkcommander.device import Device
