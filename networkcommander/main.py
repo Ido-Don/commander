@@ -5,6 +5,7 @@ from itertools import filterfalse
 from pathlib import Path
 from typing import List, Optional
 
+import netmiko
 import rich
 import typer
 from rich.progress import track, Progress
@@ -170,7 +171,19 @@ def ping(
         task = progress.add_task("connecting to devices...", total=len(devices))
 
         # deploy no commands just to test connectivity
-        for _ in deploy_commands([], devices, PermissionLevel.USER):
+        for result, device, exception in deploy_commands([], devices, PermissionLevel.USER):
+            if exception:
+                try:
+                    raise exception
+                except netmiko.NetmikoAuthenticationException:
+                    print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
+                except netmiko.NetmikoTimeoutException:
+                    print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
+                except Exception as exception:
+                    print(f"device {str(device)} encountered an exception: {str(exception)}", file=sys.stderr)
+
+            else:
+                rich.print(f"connected successfully to {device}")
             progress.advance(task)
 
 
@@ -195,7 +208,7 @@ def deploy(
             "-p",
             help="the permission level the commands will run at"
         ),
-        extra_devices: List[str] = typer.Option(
+        extra_device_names: List[str] = typer.Option(
             None,
             "--device",
             "-d",
@@ -220,14 +233,15 @@ def deploy(
         raise ValueError(f"{','.join(invalid_commands)} are not valid commands.")
 
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        devices = set(get_all_device_entries(kp, set(tags)))
-        if extra_devices:
-
-            non_existent_devices = filter_non_existing_device_names(kp, extra_devices)
+        devices = get_all_device_entries(kp, set(tags))
+        if extra_device_names:
+            non_existent_devices = filter_non_existing_device_names(kp, extra_device_names)
             if non_existent_devices:
                 raise ValueError(f"devices [{', '.join(non_existent_devices)}] don't exist")
-
-            devices.update({get_device(kp, extra_device) for extra_device in extra_devices})
+            extra_devices = [get_device(kp, extra_device) for extra_device in extra_device_names]
+            for extra_device in extra_devices:
+                if extra_device not in devices:
+                    devices.append(extra_device)
 
     if not devices:
         raise ValueError("you don't have any devices in the database.")
@@ -239,14 +253,31 @@ def deploy(
         f"do you want to deploy these {len(commands)} commands on {len(devices)} devices?",
         abort=True
     )
-    for result, device in deploy_commands(commands, devices, permission_level):
-        if not output_folder:
-            typer.echo(result)
-        else:
-            output_file_path = output_folder.joinpath(f"{device.name}.txt")
-            with open(output_file_path, "w", encoding="utf-8") as output_file:
-                output_file.write(result)
-                typer.echo(f"'saved output to {str(output_file_path.absolute().resolve())}'")
+
+    with Progress() as progress:
+        task = progress.add_task("connecting to devices...", total=len(devices))
+
+        for result, device, exception in deploy_commands(commands, devices, permission_level):
+            if exception:
+                try:
+                    raise exception
+                except netmiko.NetmikoAuthenticationException:
+                    print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
+                except netmiko.NetmikoTimeoutException:
+                    print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
+                except Exception as exception:
+                    print(f"device {str(device)} encountered an exception: {str(exception)}", file=sys.stderr)
+            else:
+                rich.print(f"connected successfully to {device}")
+                if output_folder:
+                    output_file_path = output_folder.joinpath(f"{device.name}.txt")
+                    with open(output_file_path, "w", encoding="utf-8") as output_file:
+                        output_file.write(result)
+                        rich.print(f"'saved output to {str(output_file_path.absolute().resolve())}'")
+                else:
+                    rich.print(result)
+
+            progress.advance(task)
 
 
 @device_command_group.command(name="list")
