@@ -17,7 +17,7 @@ def print_objects(objects: Iterable, object_name: str) -> None:
     number_of_objects = 0
     for obj in objects:
         number_of_objects += 1
-        typer.echo(f"{obj}")
+        typer.echo(f"{str(obj)}")
     typer.echo(f"there are {number_of_objects} {object_name}")
 
 

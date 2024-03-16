@@ -176,21 +176,21 @@ def ping(
                 try:
                     raise exception
                 except netmiko.NetmikoAuthenticationException:
-                    print(f"wasn't able to authenticate to {device}", file=sys.stderr)
+                    print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
                 except netmiko.NetmikoTimeoutException:
-                    print(f"wasn't able to connect to {device}", file=sys.stderr)
+                    print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
                 except Exception as exception:
-                    print(f"device {device} encountered an exception: {exception}", file=sys.stderr)
+                    print(f"device {str(device)} encountered an exception: {exception}", file=sys.stderr)
 
             else:
-                rich.print(f"connected successfully to {device}")
+                rich.print(f"connected successfully to {str(device)}")
             progress.advance(task)
 
 
 @device_command_group.command()
 def deploy(
         commands: List[str] = typer.Argument(
-            "configuration_commands",
+            metavar="configuration_commands",
             help="enter the commands you want to deploy to your devices",
             show_default=False
         ),
@@ -262,13 +262,13 @@ def deploy(
                 try:
                     raise exception
                 except netmiko.NetmikoAuthenticationException:
-                    print(f"wasn't able to authenticate to {device}", file=sys.stderr)
+                    print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
                 except netmiko.NetmikoTimeoutException:
-                    print(f"wasn't able to connect to {device}", file=sys.stderr)
+                    print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
                 except Exception as exception:
-                    print(f"device {device} encountered an exception: {exception}", file=sys.stderr)
+                    print(f"device {str(device)} encountered an exception: {exception}", file=sys.stderr)
             else:
-                rich.print(f"connected successfully to {device}")
+                rich.print(f"connected successfully to {str(device)}")
                 if output_folder:
                     output_file_path = output_folder.joinpath(f"{device.name}.txt")
                     with open(output_file_path, "w", encoding="utf-8") as output_file:
@@ -352,7 +352,7 @@ def add(
             )
         for device in devices:
             add_device_entry(kp, device)
-            typer.echo(f"added device {device} to database")
+            typer.echo(f"added device {str(device)} to database")
     typer.echo(f"added {len(device_strings)} to database")
 
 
