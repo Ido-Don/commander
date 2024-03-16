@@ -190,7 +190,7 @@ def ping(
 @device_command_group.command()
 def deploy(
         commands: List[str] = typer.Argument(
-            None,
+            "configuration_commands",
             help="enter the commands you want to deploy to your devices",
             show_default=False
         ),
