@@ -8,7 +8,7 @@ from typing import List, Optional
 import netmiko
 import rich
 import typer
-from rich.progress import track, Progress
+from rich.progress import Progress
 
 from networkcommander.__init__ import __version__
 from networkcommander.config import config, USER_CONFIG_FILE
@@ -16,10 +16,10 @@ from networkcommander.deploy import deploy_commands
 from networkcommander.device import device_from_string
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
+from networkcommander.io_utils import print_objects, read_file
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
     add_device_entry, tag_device, untag_device, get_device_tags, get_device, \
     filter_non_existing_device_names, get_existing_devices
-from networkcommander.io_utils import print_objects, read_file
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
