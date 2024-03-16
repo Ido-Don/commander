@@ -41,14 +41,6 @@ def deploy_commands(
 
             try:
                 result = future.result()
-                rich.print(f"connected successfully to {device}")
-                yield result, device
-            except netmiko.NetmikoAuthenticationException:
-                rich.print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
-                yield "", device
-            except netmiko.NetmikoTimeoutException:
-                rich.print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
-                yield "", device
-            except Exception as e:
-                rich.print(f"device {str(device)} encountered an exception: {str(e)}", file=sys.stderr)
-                yield "", device
+                yield result, device, None
+            except Exception as exception:
+                yield "", device, exception
