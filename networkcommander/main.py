@@ -176,11 +176,11 @@ def ping(
                 try:
                     raise exception
                 except netmiko.NetmikoAuthenticationException:
-                    print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
+                    print(f"wasn't able to authenticate to {device}", file=sys.stderr)
                 except netmiko.NetmikoTimeoutException:
-                    print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
+                    print(f"wasn't able to connect to {device}", file=sys.stderr)
                 except Exception as exception:
-                    print(f"device {str(device)} encountered an exception: {str(exception)}", file=sys.stderr)
+                    print(f"device {device} encountered an exception: {exception}", file=sys.stderr)
 
             else:
                 rich.print(f"connected successfully to {device}")
@@ -262,18 +262,18 @@ def deploy(
                 try:
                     raise exception
                 except netmiko.NetmikoAuthenticationException:
-                    print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
+                    print(f"wasn't able to authenticate to {device}", file=sys.stderr)
                 except netmiko.NetmikoTimeoutException:
-                    print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
+                    print(f"wasn't able to connect to {device}", file=sys.stderr)
                 except Exception as exception:
-                    print(f"device {str(device)} encountered an exception: {str(exception)}", file=sys.stderr)
+                    print(f"device {device} encountered an exception: {exception}", file=sys.stderr)
             else:
                 rich.print(f"connected successfully to {device}")
                 if output_folder:
                     output_file_path = output_folder.joinpath(f"{device.name}.txt")
                     with open(output_file_path, "w", encoding="utf-8") as output_file:
                         output_file.write(result)
-                        rich.print(f"'saved output to {str(output_file_path.absolute().resolve())}'")
+                        rich.print(f"'saved output to {str(output_file_path)}'")
                 else:
                     rich.print(result)
 
