@@ -19,7 +19,7 @@ from networkcommander.init import is_initialized, init_program, delete_project_f
 from networkcommander.io_utils import print_objects, read_file
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
     add_device_entry, tag_device, untag_device, get_device_tags, get_device, \
-    filter_non_existing_device_names, get_existing_devices
+    get_non_existing_device_names, get_existing_devices
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -94,7 +94,7 @@ def tag_add(device_tag: str, devices: List[str]):
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         # if someone entered a wrong device name, it can't be tagged so an error is raised
-        non_existent_devices = filter_non_existing_device_names(kp, devices)
+        non_existent_devices = get_non_existing_device_names(kp, devices)
         if non_existent_devices:
             raise LookupError(f"devices [{', '.join(non_existent_devices)}] doesn't exist")
 
@@ -132,7 +132,7 @@ def tag_remove(device_tag: str, device_names: List[str]):
     remove a tag from devices
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        non_existent_devices = filter_non_existing_device_names(kp, device_names)
+        non_existent_devices = get_non_existing_device_names(kp, device_names)
         if non_existent_devices:
             raise LookupError(f"devices {', '.join(non_existent_devices)} doesn't exist")
 
@@ -218,33 +218,11 @@ def deploy(
     """
     deploy command to all the devices in your database that match the tags.
     """
-    if output_folder:
-        if output_folder.exists() and not output_folder.is_dir():
-            raise FileExistsError(f"{str(output_folder)} is a file not a directory")
-        if not output_folder.exists():
-            os.mkdir(output_folder)
-    if not commands:
-        typer.echo("enter the commands you want to deploy")
-        typer.echo("hit control-Z or control-D to continue")
-        commands = read_file(sys.stdin)
+    create_folder_if_non_existent(output_folder)
 
-    invalid_commands = list(filterfalse(is_valid_command, commands))
-    if invalid_commands:
-        raise ValueError(f"{','.join(invalid_commands)} are not valid commands.")
+    commands = sanitize_commands(commands)
 
-    with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        devices = get_all_device_entries(kp, set(tags))
-        if extra_device_names:
-            non_existent_devices = filter_non_existing_device_names(kp, extra_device_names)
-            if non_existent_devices:
-                raise ValueError(f"devices [{', '.join(non_existent_devices)}] don't exist")
-            extra_devices = [get_device(kp, extra_device) for extra_device in extra_device_names]
-            for extra_device in extra_devices:
-                if extra_device not in devices:
-                    devices.append(extra_device)
-
-    if not devices:
-        raise ValueError("you don't have any devices in the database.")
+    devices = sanitize_devices(extra_device_names, tags)
 
     print_objects(devices, "devices")
     print_objects(commands, "commands")
@@ -258,26 +236,88 @@ def deploy(
         task = progress.add_task("connecting to devices...", total=len(devices))
 
         for result, device, exception in deploy_commands(commands, devices, permission_level):
-            if exception:
-                try:
-                    raise exception
-                except netmiko.NetmikoAuthenticationException:
-                    print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
-                except netmiko.NetmikoTimeoutException:
-                    print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
-                except Exception as exception:
-                    print(f"device {str(device)} encountered an exception: {exception}", file=sys.stderr)
-            else:
-                rich.print(f"connected successfully to {str(device)}")
-                if output_folder:
-                    output_file_path = output_folder.joinpath(f"{device.name}.txt")
-                    with open(output_file_path, "w", encoding="utf-8") as output_file:
-                        output_file.write(result)
-                        rich.print(f"'saved output to {str(output_file_path)}'")
-                else:
-                    rich.print(result)
-
+            handel_results(device, exception, output_folder, result)
             progress.advance(task)
+
+
+def sanitize_commands(commands):
+    if not commands:
+        commands = read_from_stdin()
+    check_for_invalid_commands(commands)
+    return commands
+
+
+def handel_results(device, exception, output_folder, result):
+    if exception:
+        handel_exception(device, exception)
+    else:
+        rich.print(f"connected successfully to {str(device)}")
+        if output_folder:
+            write_to_folder(device.name, output_folder, result)
+        else:
+            rich.print(result)
+
+
+def check_for_invalid_commands(commands):
+    invalid_commands = list(filterfalse(is_valid_command, commands))
+    if invalid_commands:
+        raise ValueError(f"{','.join(invalid_commands)} are not valid commands.")
+
+
+def handel_exception(device, exception):
+    try:
+        raise exception
+    except netmiko.NetmikoAuthenticationException:
+        print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
+    except netmiko.NetmikoTimeoutException:
+        print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
+    except Exception as exception:
+        print(f"device {str(device)} encountered an exception: {exception}", file=sys.stderr)
+
+
+def write_to_folder(file_name, output_folder, result):
+    output_file_path = output_folder.joinpath(f"{file_name}.txt")
+    with open(output_file_path, "w", encoding="utf-8") as output_file:
+        output_file.write(result)
+        rich.print(f"'saved output to {str(output_file_path)}'")
+
+
+def sanitize_devices(extra_device_names, tags):
+    with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
+        devices = get_all_device_entries(kp, set(tags))
+
+        if extra_device_names:
+            extra_devices = get_device_list(kp, extra_device_names)
+            for extra_device in extra_devices:
+                if extra_device not in devices:
+                    devices.append(extra_device)
+    if not devices:
+        raise ValueError("you don't have any devices in the database.")
+    return devices
+
+
+def get_device_list(kp, extra_device_names):
+    non_existent_devices = get_non_existing_device_names(kp, extra_device_names)
+    if any(non_existent_devices):
+        raise ValueError(f"devices [{', '.join(non_existent_devices)}] don't exist")
+
+    devices = [get_device(kp, extra_device) for extra_device in extra_device_names]
+    return devices
+
+
+def read_from_stdin():
+    typer.echo("enter the commands you want to deploy")
+    typer.echo("hit control-Z or control-D to continue")
+    commands = read_file(sys.stdin)
+    return commands
+
+
+def create_folder_if_non_existent(output_folder):
+    if output_folder:
+        if output_folder.exists() and not output_folder.is_dir():
+            raise FileExistsError(f"{str(output_folder)} is a file not a directory")
+        if not output_folder.exists():
+            os.mkdir(output_folder)
 
 
 @device_command_group.command(name="list")
