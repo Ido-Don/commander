@@ -16,7 +16,7 @@ from networkcommander.deploy import deploy_commands
 from networkcommander.device import device_from_string
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
-from networkcommander.io_utils import print_objects, read_file
+from networkcommander.io_utils import print_objects, read_file, read_from_stdin
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
     add_device_entry, tag_device, untag_device, get_device_tags, get_device, \
     get_non_existing_device_names, get_existing_devices
@@ -189,10 +189,12 @@ def ping(
 
 @device_command_group.command()
 def deploy(
-        commands: List[str] = typer.Argument(
+        commands: Optional[List[str]] = typer.Argument(
+            None,
             metavar="configuration_commands",
             help="enter the commands you want to deploy to your devices",
-            show_default=False
+            show_default=False,
+
         ),
         output_folder: Path = typer.Option(None, "--output_folder", "-o"),
         tags: List[str] = typer.Option(
@@ -305,17 +307,10 @@ def get_device_list(kp, extra_device_names):
     return devices
 
 
-def read_from_stdin():
-    typer.echo("enter the commands you want to deploy")
-    typer.echo("hit control-Z or control-D to continue")
-    commands = read_file(sys.stdin)
-    return commands
-
-
 def create_folder_if_non_existent(output_folder):
     if output_folder:
         if output_folder.exists() and not output_folder.is_dir():
-            raise FileExistsError(f"{str(output_folder)} is a file not a directory")
+            raise NotADirectoryError(f"{str(output_folder)} exist and is not a directory")
         if not output_folder.exists():
             os.mkdir(output_folder)
 
@@ -350,50 +345,66 @@ def add(
     add a new device to the list of devices
     """
     if not device_strings:
+        device_strings = []
+
+    if devices_file:
         if devices_file == sys.stdin:
-            typer.echo("enter the devices you want to add to database")
-            typer.echo("hit control-Z or control-D to continue")
-        device_strings = read_file(sys.stdin)
+            read_from_stdin()
+        device_strings = read_file(devices_file)
 
     if not password:
-        password = typer.prompt(
-            "device's password",
-            hide_input=True,
-            default="",
-            show_default=False
-        )
+        password = password_input("device's password")
 
     if not enable_password:
-        enable_password = typer.prompt(
-            "device's enable password",
-            hide_input=True,
-            default="",
-            show_default=False
-        )
+        enable_password = password_input("device's enable password")
 
     if not device_strings:
         raise ValueError("no devices supplied... not adding anything")
 
+    devices = convert_devices(device_strings, enable_password, password)
+
+    with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
+        check_for_existing_devices(kp, devices)
+        add_devices(devices, kp)
+    typer.echo(f"added {len(device_strings)} to database")
+
+
+def check_for_existing_devices(kp, devices):
+    existing_devices = get_existing_devices(kp, devices)
+    existing_device_names = [device.name for device in existing_devices]
+    if existing_devices:
+        raise LookupError(
+            "devices ["
+            f"{', '.join(existing_device_names)}"
+            "] already exist in keepass"
+        )
+
+
+def add_devices(devices, kp):
+    for device in devices:
+        add_device_entry(kp, device)
+        typer.echo(f"added device {str(device)} to database")
+
+
+def convert_devices(device_strings, enable_password, password):
     devices = []
     for device_string in device_strings:
+        optional_parameters = None
         if enable_password:
-            device = device_from_string(device_string, password, {"secret": enable_password})
-        else:
-            device = device_from_string(device_string, password)
+            optional_parameters = {"secret": enable_password}
+        device = device_from_string(device_string, password, optional_parameters)
         devices.append(device)
-    with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        existing_devices = get_existing_devices(kp, devices)
-        existing_device_names = [device.name for device in existing_devices]
-        if existing_devices:
-            raise LookupError(
-                "devices ["
-                f"{', '.join(existing_device_names)}"
-                "] already exist in keepass"
-            )
-        for device in devices:
-            add_device_entry(kp, device)
-            typer.echo(f"added device {str(device)} to database")
-    typer.echo(f"added {len(device_strings)} to database")
+    return devices
+
+
+def password_input(prompt):
+    password = typer.prompt(
+        prompt,
+        hide_input=True,
+        default="",
+        show_default=False
+    )
+    return password
 
 
 @device_command_group.command()
