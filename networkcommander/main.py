@@ -57,7 +57,8 @@ def is_valid_command(command: str) -> bool:
     return True
 
 
-@app.callback(no_args_is_help=True)
+# the help="" is here so that the docstring does not show
+@app.callback(no_args_is_help=True, help="")
 def load_config():
     """
     Load configuration settings from the user-specific configuration file.
@@ -150,6 +151,7 @@ def ping(
             help="ping the devices matching these tags",
             show_default=False
         ),
+
 ):
     """
     try to connect to the devices in your database.
