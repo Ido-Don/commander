@@ -13,7 +13,7 @@ from rich.progress import Progress
 from networkcommander.__init__ import __version__
 from networkcommander.config import config, USER_CONFIG_FILE
 from networkcommander.deploy import deploy_commands
-from networkcommander.device import device_from_string
+from networkcommander.device import device_from_string, Device
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin
@@ -150,8 +150,7 @@ def ping(
             "-t",
             help="ping the devices matching these tags",
             show_default=False
-        ),
-
+        )
 ):
     """
     try to connect to the devices in your database.
@@ -342,17 +341,28 @@ def add(
         enable_password: str = typer.Option(""),
         device_strings: List[str] = typer.Argument(None, show_default=False),
         devices_file: typer.FileText = typer.Option(sys.stdin, show_default=False),
+        check_pre_existing: bool = typer.Option(
+            True,
+            '--check-pre-existing/--ignore-pre-existing',
+            help="if set then devices that are already in keepass won't be taken "
+                 "into consideration. (i.e. won't be added to keepass and won't cause an error)",
+            show_default=False
+        )
 ):
     """
     add a new device to the list of devices
     """
+
     if not device_strings:
         device_strings = []
 
-    if devices_file:
-        if devices_file == sys.stdin:
-            read_from_stdin()
+    if devices_file == sys.stdin:
+        read_from_stdin()
+    elif devices_file:
         device_strings = read_file(devices_file)
+
+    if not device_strings:
+        raise ValueError("no devices entered... not adding anything")
 
     if not password:
         password = password_input("device's password")
@@ -360,18 +370,21 @@ def add(
     if not enable_password:
         enable_password = password_input("device's enable password")
 
-    if not device_strings:
-        raise ValueError("no devices supplied... not adding anything")
-
     devices = convert_devices(device_strings, enable_password, password)
 
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        check_for_existing_devices(kp, devices)
-        add_devices(devices, kp)
+        if check_pre_existing:
+            check_pre_existing_devices(kp, devices)
+        else:
+            devices = get_existing_devices(kp, devices)
+            if not devices:
+                raise ValueError("no new devices entered... not adding anything")
+
+        add_devices(kp, devices)
     typer.echo(f"added {len(device_strings)} to database")
 
 
-def check_for_existing_devices(kp, devices):
+def check_pre_existing_devices(kp, devices):
     existing_devices = get_existing_devices(kp, devices)
     existing_device_names = [device.name for device in existing_devices]
     if existing_devices:
@@ -382,13 +395,13 @@ def check_for_existing_devices(kp, devices):
         )
 
 
-def add_devices(devices, kp):
+def add_devices(kp, devices):
     for device in devices:
         add_device_entry(kp, device)
         typer.echo(f"added device {str(device)} to database")
 
 
-def convert_devices(device_strings, enable_password, password):
+def convert_devices(device_strings, enable_password, password) -> List[Device]:
     devices = []
     for device_string in device_strings:
         optional_parameters = None
