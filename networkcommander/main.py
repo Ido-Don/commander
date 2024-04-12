@@ -361,7 +361,7 @@ def add(
         device_strings = []
 
     if devices_file == sys.stdin:
-        read_from_stdin()
+        device_strings = read_from_stdin()
     elif devices_file:
         device_strings = read_file(devices_file)
 

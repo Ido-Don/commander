@@ -23,7 +23,7 @@ class Device:
         if self.name:
             device_string += self.name
         if self.device_type:
-            device_string += f'({self.device_type})'
+            device_string += f'({str(self.device_type)})'
         if device_string:
             device_string += ' -> '
         device_string += self.get_ssh_string()
@@ -182,6 +182,9 @@ class SupportedDevice(str, Enum):
     CISCO_IOS_XE = "cisco_ios_xe"
     CISCO_IOS_TELNET = "cisco_ios_telnet"
     CISCO_IOS_XE_TELNET = "cisco_ios_xe_telnet"
+
+    def __str__(self):
+        return self.value
 
 
 def deconstruct_connection_string(connection: str) -> Tuple[Optional[str], str, Optional[int]]:
