@@ -57,7 +57,7 @@ def is_valid_command(command: str) -> bool:
     return True
 
 
-# the help="" is here so that the docstring does not show
+# the help="" is here so that the docstring is not shown to the user.
 @app.callback(no_args_is_help=True, help="")
 def load_config():
     """
@@ -68,7 +68,11 @@ def load_config():
     """
     if os.path.isfile(USER_CONFIG_FILE):
         with open(USER_CONFIG_FILE, encoding="UTF-8") as json_file:
-            config.update(json.load(json_file))
+            file_content = json_file.read()
+            if not file_content:
+                return
+            user_custom_config = json.loads(file_content)
+            config.update(user_custom_config)
 
 
 @device_command_group.callback(no_args_is_help=True)
@@ -462,8 +466,8 @@ def init():
         reinitialize = typer.confirm("do you want to delete everything and start over?")
 
         if reinitialize:
-            rich.print(f"deleting directory: {config['commander_directory']}")
             delete_project_files(config['commander_directory'])
+
     if not is_initialized(
             config['commander_directory'],
             config['keepass_db_path'],
