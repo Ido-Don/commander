@@ -19,7 +19,7 @@ from networkcommander.init import is_initialized, init_program, delete_project_f
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
     add_device_entry, tag_device, untag_device, get_device_tags, get_device, \
-    get_non_existing_device_names, get_existing_devices
+    get_non_existing_device_names, get_existing_devices, does_device_exist
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -339,15 +339,29 @@ def list_devices(
     print_objects(devices, "devices")
 
 
+def get_non_existing_device(kp, devices):
+    """
+    Retrieve existing devices from the list of devices in the KeePass database.
+
+    :param kp: The connection to the KeePass database.
+    :param devices: A list of Device objects.
+    :Returns: A list of Device objects representing the devices that already exist in the database.
+    """
+    non_existing_devices = []
+    for device in devices:
+        if not does_device_exist(kp, device.name):
+            non_existing_devices.append(device)
+    return non_existing_devices
+
+
 @device_command_group.command()
 def add(
         password: str = typer.Option(""),
         enable_password: str = typer.Option(""),
         device_strings: List[str] = typer.Argument(None, show_default=False),
         devices_file: typer.FileText = typer.Option(sys.stdin, show_default=False),
-        check_pre_existing: bool = typer.Option(
-            True,
-            '--check-pre-existing/--ignore-pre-existing',
+        ignore_pre_existing: bool = typer.Option(
+            False,
             help="if set then devices that are already in keepass won't be taken "
                  "into consideration. (i.e. won't be added to keepass and won't cause an error)",
             show_default=False
@@ -377,15 +391,15 @@ def add(
     devices = convert_devices(device_strings, enable_password, password)
 
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        if check_pre_existing:
+        if not ignore_pre_existing:
             check_pre_existing_devices(kp, devices)
         else:
-            devices = get_existing_devices(kp, devices)
+            devices = get_non_existing_device(kp, devices)
             if not devices:
                 raise ValueError("no new devices entered... not adding anything")
 
         add_devices(kp, devices)
-    typer.echo(f"added {len(device_strings)} to database")
+    typer.echo(f"added {len(devices)} to database")
 
 
 def check_pre_existing_devices(kp, devices):
