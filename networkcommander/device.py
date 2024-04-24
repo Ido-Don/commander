@@ -1,6 +1,6 @@
 import dataclasses
 from enum import Enum
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional, Any
 
 from networkcommander.config import config
 
@@ -69,7 +69,7 @@ class Device:
         }
 
 
-def device_from_string(device: str, password: str = "", optional_parameters: Optional[Dict[str, str]] = None):
+def device_from_string(device: str, password: str = "", optional_parameters: Optional[Dict[str, Any]] = None):
     """
     this function convert a string in the format:
         {name}({device_type}) -> {username}@{hostname}:{port}
@@ -103,9 +103,7 @@ def device_from_string(device: str, password: str = "", optional_parameters: Opt
         password = ""
 
     if port:
-        optional_parameters = {
-            "port": str(port)
-        }
+        optional_parameters["port"] = str(port)
     return Device(name, username, password, hostname, device_type, optional_parameters)
 
 

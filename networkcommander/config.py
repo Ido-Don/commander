@@ -8,5 +8,6 @@ config = {
     "commander_directory": COMMANDER_FOLDER,
     'keepass_db_path': DEFAULT_KEEPASS_DB_PATH,
     "max_worker": 30,
-    "default_device_type": "cisco_ios"
+    "default_device_type": "cisco_ios",
+    "optional_parameters": {}
 }

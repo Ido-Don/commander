@@ -3,11 +3,12 @@ import os.path
 import sys
 from itertools import filterfalse
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Iterable
 
 import netmiko
 import rich
 import typer
+import yaml
 from rich.progress import Progress
 
 from networkcommander.__init__ import __version__
@@ -354,11 +355,17 @@ def get_non_existing_device(kp, devices):
     return non_existing_devices
 
 
+def convert_parameters(content: List[str]):
+    new_parameters = yaml.safe_load('\n'.join(content))
+    return new_parameters
+
+
 @device_command_group.command()
 def add(
         password: str = typer.Option(""),
         enable_password: str = typer.Option(""),
         device_strings: List[str] = typer.Argument(None, show_default=False),
+        optional_parameters_stream: typer.FileText = typer.Option(sys.stdin, show_default=False),
         devices_file: typer.FileText = typer.Option(sys.stdin, show_default=False),
         ignore_pre_existing: bool = typer.Option(
             False,
@@ -368,13 +375,14 @@ def add(
         )
 ):
     """
-    add a new device to the list of devices
+    add a new devices to the list of devices
     """
 
     if not device_strings:
         device_strings = []
 
     if devices_file == sys.stdin:
+        rich.print("please enter the devices you want to connect to.")
         device_strings = read_from_stdin()
     elif devices_file:
         device_strings = read_file(devices_file)
@@ -387,8 +395,17 @@ def add(
 
     if not enable_password:
         enable_password = password_input("device's enable password")
+    optional_parameters = config["optional_parameters"]
+    if optional_parameters_stream == sys.stdin:
+        rich.print("please enter any other optional parameters.")
+        rich.print("specify values in YAML format, for exemple: global_delay_factor: 1.5")
+        stream_content: List[str] = read_from_stdin()
+        optional_parameters = convert_parameters(stream_content)
+    elif optional_parameters_stream:
+        stream_content: List[str] = read_file(optional_parameters_stream)
+        optional_parameters = convert_parameters(stream_content)
 
-    devices = convert_devices(device_strings, enable_password, password)
+    devices = convert_devices(device_strings, password, optional_parameters)
 
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         if not ignore_pre_existing:
@@ -419,15 +436,14 @@ def add_devices(kp, devices):
         typer.echo(f"added device {str(device)} to database")
 
 
-def convert_devices(device_strings, enable_password, password) -> List[Device]:
-    devices = []
-    for device_string in device_strings:
-        optional_parameters = None
-        if enable_password:
-            optional_parameters = {"secret": enable_password}
-        device = device_from_string(device_string, password, optional_parameters)
-        devices.append(device)
-    return devices
+def convert_devices(devices: Iterable[str], password, optional_parameters) -> List[Device]:
+    new_devices = [convert_device(device, password, optional_parameters) for device in devices]
+    return new_devices
+
+
+def convert_device(device: str, password, optional_parameters=None):
+    new_device = device_from_string(device, password, optional_parameters)
+    return new_device
 
 
 def password_input(prompt):
