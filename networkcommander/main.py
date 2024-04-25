@@ -187,7 +187,6 @@ def ping(
                     print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
                 except Exception as exception:
                     print(f"device {str(device)} encountered an exception: {exception}", file=sys.stderr)
-
             else:
                 rich.print(f"connected successfully to {str(device)}")
             progress.advance(task)
@@ -197,7 +196,7 @@ def ping(
 def deploy(
         commands: Optional[List[str]] = typer.Argument(
             None,
-            metavar="configuration_commands",
+            metavar="configuration commands",
             help="enter the commands you want to deploy to your devices",
             show_default=False,
 
@@ -255,6 +254,18 @@ def sanitize_commands(commands):
     return commands
 
 
+
+def handel_exception(device, exception):
+    try:
+        raise exception
+    except netmiko.NetmikoAuthenticationException:
+        print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
+    except netmiko.NetmikoTimeoutException:
+        print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
+    except Exception as exception:
+        print(f"device {str(device)} encountered an exception: {exception}", file=sys.stderr)
+
+
 def handel_results(device, exception, output_folder, result):
     if exception:
         handel_exception(device, exception)
@@ -270,17 +281,6 @@ def check_for_invalid_commands(commands):
     invalid_commands = list(filterfalse(is_valid_command, commands))
     if invalid_commands:
         raise ValueError(f"{','.join(invalid_commands)} are not valid commands.")
-
-
-def handel_exception(device, exception):
-    try:
-        raise exception
-    except netmiko.NetmikoAuthenticationException:
-        print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
-    except netmiko.NetmikoTimeoutException:
-        print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
-    except Exception as exception:
-        print(f"device {str(device)} encountered an exception: {exception}", file=sys.stderr)
 
 
 def write_to_folder(file_name, output_folder, result):
@@ -311,7 +311,14 @@ def get_device_list(kp, extra_device_names):
 
     devices = [get_device(kp, extra_device) for extra_device in extra_device_names]
     return devices
+  
+def get_device_list(kp, extra_device_names):
+    non_existent_devices = get_non_existing_device_names(kp, extra_device_names)
+    if any(non_existent_devices):
+        raise ValueError(f"devices [{', '.join(non_existent_devices)}] don't exist")
 
+    devices = [get_device(kp, extra_device) for extra_device in extra_device_names]
+    return devices
 
 def create_folder_if_non_existent(output_folder):
     if output_folder:
@@ -319,7 +326,6 @@ def create_folder_if_non_existent(output_folder):
             raise NotADirectoryError(f"{str(output_folder)} exist and is not a directory")
         if not output_folder.exists():
             os.mkdir(output_folder)
-
 
 @device_command_group.command(name="list")
 def list_devices(
