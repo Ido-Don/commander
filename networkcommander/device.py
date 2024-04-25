@@ -180,6 +180,18 @@ class SupportedDevice(str, Enum):
     CISCO_IOS_XE = "cisco_ios_xe"
     CISCO_IOS_TELNET = "cisco_ios_telnet"
     CISCO_IOS_XE_TELNET = "cisco_ios_xe_telnet"
+    ARISTA_VEOS = "arista_veos"
+    ARISTA_VEOS_TELNET = "arista_veos_telnet"
+    CISCO_IOS_XR = "cisco_ios_xr"
+    CISCO_IOS_XR_TELNET = "cisco_ios_xr_telnet"
+    CISCO_NX_OS = "cisco_nx_os"
+    CISCO_NX_OS_TELNET = "cisco_nx_os_telnet"
+    CISCO_SG300 = "cisco_sg300"
+    CISCO_SG300_TELNET = "cisco_sg300_telnet"
+    HP_PROCURVE = "hp_procurve"
+    HP_PROCURVE_TELNET = "hp_procurve_telnet"
+    JUNIPER_JUNOS = "juniper_junos"
+    JUNIPER_JUNOS_TELNET = "juniper_junos_telnet"
 
     def __str__(self):
         return self.value
