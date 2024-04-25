@@ -311,7 +311,7 @@ def get_existing_devices(kp: pykeepass.PyKeePass, devices: List[Device]):
     return existing_devices
 
 
-def filter_non_existing_device_names(kp: pykeepass.PyKeePass, devices_names: List[str]):
+def get_non_existing_device_names(kp: pykeepass.PyKeePass, devices_names: List[str]):
     """
     Filter out device names that do not exist in the KeePass database.
 

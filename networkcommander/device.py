@@ -1,6 +1,6 @@
 import dataclasses
 from enum import Enum
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional, Any
 
 from networkcommander.config import config
 
@@ -23,7 +23,7 @@ class Device:
         if self.name:
             device_string += self.name
         if self.device_type:
-            device_string += f'({self.device_type})'
+            device_string += f'({str(self.device_type)})'
         if device_string:
             device_string += ' -> '
         device_string += self.get_ssh_string()
@@ -69,7 +69,7 @@ class Device:
         }
 
 
-def device_from_string(device: str, password: str = "", optional_parameters: Optional[Dict[str, str]] = None):
+def device_from_string(device: str, password: str = "", optional_parameters: Optional[Dict[str, Any]] = None):
     """
     this function convert a string in the format:
         {name}({device_type}) -> {username}@{hostname}:{port}
@@ -103,9 +103,7 @@ def device_from_string(device: str, password: str = "", optional_parameters: Opt
         password = ""
 
     if port:
-        optional_parameters = {
-            "port": str(port)
-        }
+        optional_parameters["port"] = str(port)
     return Device(name, username, password, hostname, device_type, optional_parameters)
 
 
@@ -182,6 +180,21 @@ class SupportedDevice(str, Enum):
     CISCO_IOS_XE = "cisco_ios_xe"
     CISCO_IOS_TELNET = "cisco_ios_telnet"
     CISCO_IOS_XE_TELNET = "cisco_ios_xe_telnet"
+    ARISTA_VEOS = "arista_veos"
+    ARISTA_VEOS_TELNET = "arista_veos_telnet"
+    CISCO_IOS_XR = "cisco_ios_xr"
+    CISCO_IOS_XR_TELNET = "cisco_ios_xr_telnet"
+    CISCO_NX_OS = "cisco_nx_os"
+    CISCO_NX_OS_TELNET = "cisco_nx_os_telnet"
+    CISCO_SG300 = "cisco_sg300"
+    CISCO_SG300_TELNET = "cisco_sg300_telnet"
+    HP_PROCURVE = "hp_procurve"
+    HP_PROCURVE_TELNET = "hp_procurve_telnet"
+    JUNIPER_JUNOS = "juniper_junos"
+    JUNIPER_JUNOS_TELNET = "juniper_junos_telnet"
+
+    def __str__(self):
+        return self.value
 
 
 def deconstruct_connection_string(connection: str) -> Tuple[Optional[str], str, Optional[int]]:

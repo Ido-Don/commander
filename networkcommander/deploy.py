@@ -37,5 +37,7 @@ def deploy_commands(
             try:
                 result = future.result()
                 yield result, device, None
+            except KeyboardInterrupt:
+                raise KeyboardInterrupt
             except Exception as exception:
                 yield "", device, exception

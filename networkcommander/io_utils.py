@@ -1,3 +1,4 @@
+import sys
 from typing import Iterable, TextIO, List
 
 import typer
@@ -17,7 +18,7 @@ def print_objects(objects: Iterable, object_name: str) -> None:
     number_of_objects = 0
     for obj in objects:
         number_of_objects += 1
-        typer.echo(f"{obj}")
+        typer.echo(f"{str(obj)}")
     typer.echo(f"there are {number_of_objects} {object_name}")
 
 
@@ -33,3 +34,9 @@ def read_file(file: TextIO) -> List[str]:
     user_inputs = [string.replace("\26", '') for string in user_inputs]
     user_inputs = list(filter(bool, user_inputs))
     return user_inputs
+
+
+def read_from_stdin():
+    typer.echo("hit control-Z or control-D to continue")
+    commands = read_file(sys.stdin)
+    return commands
