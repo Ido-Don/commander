@@ -1,6 +1,6 @@
 import mimesis
 
-from networkcommander.device import SupportedDevice, Device
+from networkcommander.device import DeviceType, Device
 
 generic = mimesis.Generic()
 internet = mimesis.Internet()
@@ -26,7 +26,7 @@ def get_test_device():
     name = f"{ip}{internet.top_level_domain()}"
     host = ip
     port = internet.port()
-    device_type = generic.random.choice([device.value for device in SupportedDevice])
+    device_type = generic.random.choice([device.value for device in DeviceType])
     device = Device(name, username, password, host, device_type, {'port': str(port)})
     return device
 
