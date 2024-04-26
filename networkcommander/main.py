@@ -499,7 +499,7 @@ def init():
             USER_CONFIG_FILE
     ):
         rich.print("commander is already initialized")
-        reinitialize = typer.confirm("do you want to delete everything and start over?")
+        reinitialize = typer.confirm("do you want to delete everything (including config and database) and start over?")
 
         if reinitialize:
             delete_project_files(config['commander_directory'])
@@ -510,7 +510,7 @@ def init():
             USER_CONFIG_FILE
     ):
         rich.print(f"creating a new database in {config['commander_directory']}")
-        init_program(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE)
+        init_program(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE, config)
 
     rich.print("finished the initialization process, have a great day")
 

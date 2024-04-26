@@ -14,13 +14,13 @@ def delete_project_files(directory):
     shutil.rmtree(directory)
 
 
-def init_program(directory, keepass_db_path, config_file_path):
+def init_program(directory, keepass_db_path, config_file_path, config):
     if is_initialized(directory, keepass_db_path, config_file_path):
         return
     os.makedirs(directory, exist_ok=True)
     if not os.path.isfile(config_file_path):
         with open(config_file_path, 'w', encoding="utf-8") as config_file:
-            json.dump({}, config_file)
+            json.dump(config, config_file)
     if not os.path.isfile(keepass_db_path):
         create_new_keepass_db(keepass_db_path)
 
