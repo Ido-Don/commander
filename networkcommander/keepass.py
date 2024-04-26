@@ -5,7 +5,7 @@ import pykeepass
 from pykeepass import pykeepass
 from rich.prompt import Prompt
 
-from networkcommander.device import Device, SupportedDevice
+from networkcommander.device import Device, DeviceType
 
 DEVICE_GROUP_NAME = "device"
 
@@ -102,7 +102,7 @@ def entry_to_device(device_entry: pykeepass.Entry) -> Device:
     if any(non_existing_properties):
         raise ValueError(f"there are no {', '.join(non_existing_properties)} in {name}.")
 
-    device_type = SupportedDevice(custom_properties["device_type"])
+    device_type = DeviceType(custom_properties["device_type"])
     host = custom_properties["host"]
 
     def key_in_required_properties(pair: Tuple[Any, Any]):
