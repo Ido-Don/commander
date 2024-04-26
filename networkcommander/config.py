@@ -7,7 +7,7 @@ DEFAULT_KEEPASS_DB_PATH = os.path.join(COMMANDER_FOLDER, 'db.kdbx')
 config = {
     "commander_directory": COMMANDER_FOLDER,
     'keepass_db_path': DEFAULT_KEEPASS_DB_PATH,
-    "max_worker": 30,
+    "max_worker": 60,
     "default_device_type": "cisco_ios",
     "optional_parameters": {}
 }
