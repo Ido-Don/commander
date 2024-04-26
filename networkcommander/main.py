@@ -254,7 +254,6 @@ def sanitize_commands(commands):
     return commands
 
 
-
 def handel_exception(device, exception):
     try:
         raise exception
@@ -311,7 +310,8 @@ def get_device_list(kp, extra_device_names):
 
     devices = [get_device(kp, extra_device) for extra_device in extra_device_names]
     return devices
-  
+
+
 def get_device_list(kp, extra_device_names):
     non_existent_devices = get_non_existing_device_names(kp, extra_device_names)
     if any(non_existent_devices):
@@ -320,12 +320,14 @@ def get_device_list(kp, extra_device_names):
     devices = [get_device(kp, extra_device) for extra_device in extra_device_names]
     return devices
 
+
 def create_folder_if_non_existent(output_folder):
     if output_folder:
         if output_folder.exists() and not output_folder.is_dir():
             raise NotADirectoryError(f"{str(output_folder)} exist and is not a directory")
         if not output_folder.exists():
             os.mkdir(output_folder)
+
 
 @device_command_group.command(name="list")
 def list_devices(
