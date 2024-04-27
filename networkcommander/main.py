@@ -416,7 +416,7 @@ def add(
     """
     add a new devices to the list of devices
     """
-    device_strings = ""
+    device_strings = []
     if devices_file == sys.stdin:
         rich.print("please enter the devices you want to connect to.")
         device_strings = read_from_stdin()
@@ -443,8 +443,8 @@ def add(
 
     if optional_parameters_file:
         file_content: List[str] = read_file(optional_parameters_file)
-
-        optional_parameters = convert_yaml('\n'.join(file_content))
+        joined_file_content = '\n'.join(file_content)
+        optional_parameters = convert_yaml(joined_file_content)
 
     devices = convert_devices(device_strings, password, optional_parameters)
 
