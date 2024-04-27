@@ -365,7 +365,7 @@ def list_devices(
             "-t",
             help="list the devices matching these tags",
             show_default=False
-        ),
+        )
 ):
     """
     list all the devices under your command.
