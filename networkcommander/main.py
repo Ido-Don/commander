@@ -384,15 +384,12 @@ def add(
     """
     add a new devices to the list of devices
     """
-
     if not device_strings:
-        device_strings = []
-
-    if devices_file == sys.stdin:
-        rich.print("please enter the devices you want to connect to.")
-        device_strings = read_from_stdin()
-    elif devices_file:
-        device_strings = read_file(devices_file)
+        if devices_file == sys.stdin:
+            rich.print("please enter the devices you want to connect to.")
+            device_strings = read_from_stdin()
+        elif devices_file:
+            device_strings = read_file(devices_file)
 
     if not device_strings:
         raise ValueError("no devices entered... not adding anything")
