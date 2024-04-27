@@ -134,7 +134,7 @@ def is_entry_tagged(tag: str):
     return inner
 
 
-def is_entry_tagged_by_multiple_tags(tags: Set[str]):
+def is_entry_tagged_by_tag_set(tags: Set[str]):
     def inner(entry: pykeepass.Entry):
         if not entry:
             return False
