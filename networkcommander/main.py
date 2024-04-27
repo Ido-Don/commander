@@ -198,8 +198,7 @@ def deploy(
             None,
             metavar="configuration commands",
             help="enter the commands you want to deploy to your devices",
-            show_default=False,
-
+            show_default=False
         ),
         output_folder: Path = typer.Option(None, "--output_folder", "-o"),
         tags: List[str] = typer.Option(
@@ -403,7 +402,12 @@ def add(
 
     if not enable_password:
         enable_password = password_input("device's enable password")
+
     optional_parameters = config["optional_parameters"]
+
+    if enable_password:
+        optional_parameters["secret"] = enable_password
+
     if optional_parameters_stream == sys.stdin:
         rich.print("please enter any other optional parameters.")
         rich.print("specify values in YAML format, for exemple: global_delay_factor: 1.5")
