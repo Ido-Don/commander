@@ -404,7 +404,6 @@ def convert_yaml(content: str):
 def add(
         password: str = typer.Option(""),
         enable_password: str = typer.Option(""),
-        device_strings: List[str] = typer.Argument(None, show_default=False),
         optional_parameters_file: Optional[typer.FileText] = typer.Option(None, show_default=False),
         devices_file: typer.FileText = typer.Option(sys.stdin, show_default=False),
         ignore_pre_existing: bool = typer.Option(
@@ -417,12 +416,12 @@ def add(
     """
     add a new devices to the list of devices
     """
-    if not device_strings:
-        if devices_file == sys.stdin:
-            rich.print("please enter the devices you want to connect to.")
-            device_strings = read_from_stdin()
-        elif devices_file:
-            device_strings = read_file(devices_file)
+    device_strings = ""
+    if devices_file == sys.stdin:
+        rich.print("please enter the devices you want to connect to.")
+        device_strings = read_from_stdin()
+    elif devices_file:
+        device_strings = read_file(devices_file)
 
     if not device_strings:
         raise ValueError("no devices entered... not adding anything")
@@ -433,7 +432,11 @@ def add(
     if not enable_password:
         enable_password = password_input("device's enable password")
 
-    optional_parameters = config["optional_parameters"]
+    default_optional_parameters = config["optional_parameters"]
+    if not default_optional_parameters:
+        default_optional_parameters = {}
+
+    optional_parameters = default_optional_parameters
 
     if enable_password:
         optional_parameters["secret"] = enable_password
