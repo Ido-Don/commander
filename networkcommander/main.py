@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import List, Optional, Iterable, Union, Set, Any
 
 import netmiko
-from pykeepass import pykeepass
 import rich
 import typer
 import yaml
@@ -24,6 +23,7 @@ from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_d
     add_device_entry, untag_device, get_device, \
     get_non_existing_device_names, get_existing_devices, does_device_exist, get_all_entries, entry_to_device, \
     add_tag_to_entry
+from networkcommander.keypass import is_entry_tagged
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -104,7 +104,7 @@ def find_value_in_set(value_bank: Set[Any]):
 
 
 @tag_command_group.command(name="add")
-def tag_add(device_tag: str, device_names: List[str]):
+def add_tag(device_tag: str, device_names: List[str]):
     """
     add a tag to devices
     """
@@ -120,17 +120,6 @@ def tag_add(device_tag: str, device_names: List[str]):
             raise LookupError(f"devices [{', '.join(fabricated_device_names)}] doesn't exist")
 
         # if someone entered a device that was already tagged it can't be tagged again
-        def is_entry_tagged(tag: str):
-            def inner(entry: pykeepass.Entry):
-                if not entry:
-                    return False
-                if not tag:
-                    return True
-                if not entry.tags:
-                    return False
-                return tag in entry.tags
-
-            return inner
 
         every_tagged_entries = filter(is_entry_tagged(device_tag), entries)
         every_tagged_devices = tuple((entry_to_device(entry) for entry in every_tagged_entries))
