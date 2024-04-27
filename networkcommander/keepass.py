@@ -121,6 +121,19 @@ def entry_to_device(device_entry: pykeepass.Entry) -> Device:
     return device_entry
 
 
+def is_entry_tagged(tag: str):
+    def inner(entry: pykeepass.Entry):
+        if not entry:
+            return False
+        if not tag:
+            return True
+        if not entry.tags:
+            return False
+        return tag in entry.tags
+
+    return inner
+
+
 def get_all_device_entries(kp: pykeepass.PyKeePass, tags: Set[str] = None) -> List[Device]:
     """
     Retrieve all device entries from the KeePass database.
