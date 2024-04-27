@@ -71,10 +71,11 @@ class KeepassDB:
         return password
 
 
-def get_all_entries(kp: pykeepass.PyKeePass) -> List[pykeepass.Entry]:
+def get_all_entries(kp: pykeepass.PyKeePass) -> Tuple[pykeepass.Entry]:
     primary_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     entries = primary_group.entries
-    return entries
+    tuple_entries = tuple(entries)
+    return tuple_entries
 
 
 def normalize_input(value: Any) -> str:
@@ -330,3 +331,12 @@ def get_non_existing_device_names(kp: pykeepass.PyKeePass, devices_names: List[s
         devices_names
     ))
     return non_existing_devices
+
+
+def add_tag_to_entry(entry: pykeepass.Entry, device_tag: str):
+    existing_tags = entry.tags
+    if existing_tags:
+        existing_tags += [device_tag]
+    else:
+        existing_tags = [device_tag]
+    entry.tags = existing_tags

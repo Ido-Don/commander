@@ -4,9 +4,10 @@ import sys
 from functools import reduce
 from itertools import filterfalse
 from pathlib import Path
-from typing import List, Optional, Iterable, Union, Set
+from typing import List, Optional, Iterable, Union, Set, Any
 
 import netmiko
+from pykeepass import pykeepass
 import rich
 import typer
 import yaml
@@ -20,8 +21,9 @@ from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
-    add_device_entry, tag_device, untag_device, get_device, \
-    get_non_existing_device_names, get_existing_devices, does_device_exist, get_all_entries
+    add_device_entry, untag_device, get_device, \
+    get_non_existing_device_names, get_existing_devices, does_device_exist, get_all_entries, entry_to_device, \
+    add_tag_to_entry
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -94,32 +96,59 @@ def initialization_check(keepass_password: Optional[str] = typer.Option(None)):
         raise EnvironmentError("program is not initialized, please run commander init!")
 
 
+def find_value_in_set(value_bank: Set[Any]):
+    def inner(value: Any):
+        return value in value_bank
+
+    return inner
+
+
 @tag_command_group.command(name="add")
-def tag_add(device_tag: str, devices: List[str]):
+def tag_add(device_tag: str, device_names: List[str]):
     """
     add a tag to devices
     """
+    device_names_to_be_tagged = set(device_names)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
+        entries = get_all_entries(kp)
+        all_devices = tuple((entry_to_device(entry) for entry in entries))
+        all_device_names = {device.name for device in all_devices}
+
         # if someone entered a wrong device name, it can't be tagged so an error is raised
-        non_existent_devices = get_non_existing_device_names(kp, devices)
-        if non_existent_devices:
-            raise LookupError(f"devices [{', '.join(non_existent_devices)}] doesn't exist")
+        fabricated_device_names = device_names_to_be_tagged - all_device_names
+        if fabricated_device_names:
+            raise LookupError(f"devices [{', '.join(fabricated_device_names)}] doesn't exist")
 
         # if someone entered a device that was already tagged it can't be tagged again
-        all_tagged_devices = get_all_device_entries(kp, {device_tag})
-        all_tagged_devices_names = {device.name for device in all_tagged_devices}
-        tagged_existing_devices = list(
-            filter(
-                lambda device: device in all_tagged_devices_names,
-                devices
-            )
-        )
-        if any(tagged_existing_devices):
-            raise ValueError(f"devices [{', '.join(tagged_existing_devices)}] are already tagged")
+        def is_entry_tagged(tag: str):
+            def inner(entry: pykeepass.Entry):
+                if not entry:
+                    return False
+                if not tag:
+                    return True
+                if not entry.tags:
+                    return False
+                return tag in entry.tags
 
-        for device_name in devices:
-            tag_device(kp, device_tag, device_name)
-        rich.print(f"added '{device_tag}' tag to {len(devices)} devices")
+            return inner
+
+        every_tagged_entries = filter(is_entry_tagged(device_tag), entries)
+        every_tagged_devices = tuple((entry_to_device(entry) for entry in every_tagged_entries))
+        every_tagged_device_name = {device.name for device in every_tagged_devices}
+
+        # if there are any devices that need to be tagged and are already tagged they will be in
+        # the intersection between the two groups
+        device_names_already_tagged_that_need_to_be_tagged = device_names_to_be_tagged.intersection(
+            every_tagged_device_name
+        )
+        if device_names_already_tagged_that_need_to_be_tagged:
+            raise ValueError(
+                f"devices [{', '.join(device_names_already_tagged_that_need_to_be_tagged)}] are already tagged"
+            )
+        entries_to_tag = filter(lambda entry: entry.title in device_names_to_be_tagged, entries)
+        for entry in entries_to_tag:
+            add_tag_to_entry(entry, device_tag)
+        rich.print(f"added '{device_tag}' tag to {len(device_names_to_be_tagged)} devices")
 
 
 @tag_command_group.command(name="list")
