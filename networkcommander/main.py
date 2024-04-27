@@ -9,6 +9,7 @@ import netmiko
 import rich
 import typer
 import yaml
+from rich import Console
 from rich.progress import Progress
 
 from networkcommander.__init__ import __version__
@@ -128,8 +129,7 @@ def list_tags():
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         tags = get_device_tags(kp)
-        for tag in tags:
-            rich.print(tag)
+        print_objects(tags, "tag")
 
 
 @tag_command_group.command(name="remove")
