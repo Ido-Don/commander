@@ -338,27 +338,10 @@ def get_devices_from_tags_and_names(extra_device_names: Set[str], tags: Set[str]
         extra_explicit_devices = entries_to_devices(extra_explicit_entries)
         all_tagged_devices = entries_to_devices(all_tagged_entries)
 
-        devices = tuple(filter(lambda device: device not in all_tagged_devices, extra_explicit_devices)) + all_tagged_devices
+        devices = tuple(
+            filter(lambda device: device not in all_tagged_devices, extra_explicit_devices)
+        ) + all_tagged_devices
         return devices
-
-
-
-def get_device_list(kp, extra_device_names):
-    non_existent_devices = get_non_existing_device_names(kp, extra_device_names)
-    if any(non_existent_devices):
-        raise ValueError(f"devices [{', '.join(non_existent_devices)}] don't exist")
-
-    devices = [get_device(kp, extra_device) for extra_device in extra_device_names]
-    return devices
-
-
-def get_device_list1(kp, extra_device_names):
-    non_existent_devices = get_non_existing_device_names(kp, extra_device_names)
-    if any(non_existent_devices):
-        raise ValueError(f"devices [{', '.join(non_existent_devices)}] don't exist")
-
-    devices = [get_device(kp, extra_device) for extra_device in extra_device_names]
-    return devices
 
 
 def create_folder_if_non_existent(output_folder):
