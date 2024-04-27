@@ -395,9 +395,9 @@ def get_non_existing_device(kp, devices):
     return non_existing_devices
 
 
-def convert_parameters(content: List[str]):
-    new_parameters = yaml.safe_load('\n'.join(content))
-    return new_parameters
+def convert_yaml(content: str):
+    new_yaml = yaml.safe_load(content)
+    return new_yaml
 
 
 @device_command_group.command()
@@ -405,7 +405,7 @@ def add(
         password: str = typer.Option(""),
         enable_password: str = typer.Option(""),
         device_strings: List[str] = typer.Argument(None, show_default=False),
-        optional_parameters_stream: typer.FileText = typer.Option(sys.stdin, show_default=False),
+        optional_parameters_file: Optional[typer.FileText] = typer.Option(None, show_default=False),
         devices_file: typer.FileText = typer.Option(sys.stdin, show_default=False),
         ignore_pre_existing: bool = typer.Option(
             False,
@@ -438,14 +438,10 @@ def add(
     if enable_password:
         optional_parameters["secret"] = enable_password
 
-    if optional_parameters_stream == sys.stdin:
-        rich.print("please enter any other optional parameters.")
-        rich.print("specify values in YAML format, for exemple: global_delay_factor: 1.5")
-        stream_content: List[str] = read_from_stdin()
-        optional_parameters = convert_parameters(stream_content)
-    elif optional_parameters_stream:
-        stream_content: List[str] = read_file(optional_parameters_stream)
-        optional_parameters = convert_parameters(stream_content)
+    if optional_parameters_file:
+        file_content: List[str] = read_file(optional_parameters_file)
+
+        optional_parameters = convert_yaml('\n'.join(file_content))
 
     devices = convert_devices(device_strings, password, optional_parameters)
 
