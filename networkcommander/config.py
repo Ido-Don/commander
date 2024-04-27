@@ -9,5 +9,8 @@ config = {
     'keepass_db_path': DEFAULT_KEEPASS_DB_PATH,
     "max_worker": 60,
     "default_device_type": "cisco_ios",
-    "optional_parameters": {}
+    "optional_parameters": {
+        "ssh_strict": True,
+        "system_host_keys": True
+    }
 }
