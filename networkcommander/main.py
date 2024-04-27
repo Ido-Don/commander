@@ -4,7 +4,7 @@ import sys
 from functools import reduce
 from itertools import filterfalse
 from pathlib import Path
-from typing import List, Optional, Iterable, Union, Set, Any, Dict
+from typing import List, Optional, Iterable, Union, Set, Any
 
 import netmiko
 import pykeepass.entry
@@ -176,8 +176,8 @@ def remove_tag(device_tag: str, device_names: List[str]):
         if non_existent_devices:
             raise LookupError(f"devices {', '.join(non_existent_devices)} doesn't exist")
         entries_to_untag = filter(lambda entry: entry.title in device_names_to_be_untagged, all_entries)
-        for entry in entries_to_untag:
-            untag_entry(entry, device_tag)
+        for entry_to_untag in entries_to_untag:
+            untag_entry(entry_to_untag, device_tag)
         rich.print(f"removed {device_tag} from {len(device_names)} devices")
 
 
@@ -473,7 +473,9 @@ def add_devices(
             new_non_existing_unique_devices = remove_device_duplicates(new_non_existing_devices)
             devices_to_add = new_non_existing_unique_devices
 
-        add_devices(kp, devices_to_add)
+        for device in devices_to_add:
+            add_device_entry(kp, device)
+            typer.echo(f"added device {str(device)} to database")
     typer.echo(f"added {len(devices_to_add)} to database")
 
 
@@ -498,12 +500,6 @@ def check_pre_existing_devices(kp, devices):
             f"{', '.join(existing_device_names)}"
             "] already exist in keepass"
         )
-
-
-def add_devices(kp, devices):
-    for device in devices:
-        add_device_entry(kp, device)
-        typer.echo(f"added device {str(device)} to database")
 
 
 def convert_devices(devices: Iterable[str], password, optional_parameters) -> List[Device]:
