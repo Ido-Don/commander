@@ -71,6 +71,12 @@ class KeepassDB:
         return password
 
 
+def get_all_entries(kp: pykeepass.PyKeePass) -> List[pykeepass.Entry]:
+    primary_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
+    entries = primary_group.entries
+    return entries
+
+
 def normalize_input(value: Any) -> str:
     """
     Converts a truthy value to a string and a falsy value to an empty string.

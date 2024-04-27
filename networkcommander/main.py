@@ -1,15 +1,15 @@
 import json
 import os.path
 import sys
+from functools import reduce
 from itertools import filterfalse
 from pathlib import Path
-from typing import List, Optional, Iterable
+from typing import List, Optional, Iterable, Union, Set
 
 import netmiko
 import rich
 import typer
 import yaml
-from rich import Console
 from rich.progress import Progress
 
 from networkcommander.__init__ import __version__
@@ -20,8 +20,8 @@ from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
-    add_device_entry, tag_device, untag_device, get_device_tags, get_device, \
-    get_non_existing_device_names, get_existing_devices, does_device_exist
+    add_device_entry, tag_device, untag_device, get_device, \
+    get_non_existing_device_names, get_existing_devices, does_device_exist, get_all_entries
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -128,8 +128,16 @@ def list_tags():
     list every tag you put on devices
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        tags = get_device_tags(kp)
-        print_objects(tags, "tag")
+        entries = get_all_entries(kp)
+        entries_tags: List[Union[List[str], None]] = [entry.tags for entry in entries]
+        entries_tags_without_none: Iterable[List[str]] = filter(None, entries_tags)
+        flatten_tag_list: Iterable[str] = reduce(
+            lambda aggregate, tags: aggregate + tags,
+            entries_tags_without_none,
+            []
+        )
+        unique_tags = set(flatten_tag_list)
+        print_objects(unique_tags, "tags")
 
 
 @tag_command_group.command(name="remove")
