@@ -374,7 +374,7 @@ def list_devices(
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp)
 
-    all_tagged_entries = tuple(filter(is_entry_tagged_by_multiple_tags(tags_set),all_entries))
+    all_tagged_entries = tuple(filter(is_entry_tagged_by_multiple_tags(tags_set), all_entries))
     all_tagged_devices = tuple((entry_to_device(entry) for entry in all_tagged_entries))
 
     print_objects(all_tagged_devices, "devices")
