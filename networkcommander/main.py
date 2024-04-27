@@ -159,7 +159,7 @@ def list_tags():
 
 
 @tag_command_group.command(name="remove")
-def tag_remove(device_tag: str, device_names: List[str]):
+def remove_tag(device_tag: str, device_names: List[str]):
     """
     remove a tag from devices
     """
