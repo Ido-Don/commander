@@ -23,7 +23,7 @@ from networkcommander.io_utils import print_objects, read_file, read_from_stdin
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
     add_device_entry, get_device, \
     get_non_existing_device_names, get_existing_devices, does_device_exist, get_all_entries, entry_to_device, \
-    tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_multiple_tags
+    tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tag_set
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -228,8 +228,7 @@ def ping(
 
 @device_command_group.command()
 def deploy(
-        commands: Optional[List[str]] = typer.Argument(
-            None,
+        commands: List[str] = typer.Argument(
             metavar="configuration commands",
             help="enter the commands you want to deploy to your devices",
             show_default=False
@@ -260,9 +259,16 @@ def deploy(
     """
     create_folder_if_non_existent(output_folder)
 
-    commands = sanitize_commands(commands)
+    if not extra_device_names:
+        extra_device_names = []
 
-    devices = sanitize_devices(extra_device_names, tags)
+    if not tags:
+        tags = []
+
+    devices = get_devices_from_tags_and_names(set(extra_device_names), set(tags))
+
+    if not devices:
+        raise ValueError("you don't have any devices in the database.")
 
     print_objects(devices, "devices")
     print_objects(commands, "commands")
@@ -278,13 +284,6 @@ def deploy(
         for result, device, exception in deploy_commands(commands, devices, permission_level):
             handel_results(device, exception, output_folder, result)
             progress.advance(task)
-
-
-def sanitize_commands(commands):
-    if not commands:
-        commands = read_from_stdin()
-    check_for_invalid_commands(commands)
-    return commands
 
 
 def handel_exception(device, exception):
@@ -322,18 +321,26 @@ def write_to_folder(file_name, output_folder, result):
         rich.print(f"'saved output to {str(output_file_path)}'")
 
 
-def sanitize_devices(extra_device_names, tags):
+def get_devices_from_tags_and_names(extra_device_names: Set[str], tags: Set[str]):
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        devices = get_all_device_entries(kp, set(tags))
+        all_entries = get_all_entries(kp)
 
-        if extra_device_names:
-            extra_devices = get_device_list1(kp, extra_device_names)
-            for extra_device in extra_devices:
-                if extra_device not in devices:
-                    devices.append(extra_device)
-    if not devices:
-        raise ValueError("you don't have any devices in the database.")
-    return devices
+        if not tags:
+            devices = entries_to_devices(all_entries)
+            return devices
+        all_tagged_entries = tuple(filter(is_entry_tagged_by_tag_set(tags), all_entries))
+
+        if not extra_device_names:
+            devices = entries_to_devices(all_tagged_entries)
+            return devices
+
+        extra_explicit_entries = filter(lambda entry: entry.title in extra_device_names, all_entries)
+        extra_explicit_devices = entries_to_devices(extra_explicit_entries)
+        all_tagged_devices = entries_to_devices(all_tagged_entries)
+
+        devices = tuple(filter(lambda device: device not in all_tagged_devices, extra_explicit_devices)) + all_tagged_devices
+        return devices
+
 
 
 def get_device_list(kp, extra_device_names):
@@ -379,25 +386,10 @@ def list_devices(
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp)
 
-    all_tagged_entries = tuple(filter(is_entry_tagged_by_multiple_tags(tags_set), all_entries))
+    all_tagged_entries = tuple(filter(is_entry_tagged_by_tag_set(tags_set), all_entries))
     all_tagged_devices = tuple((entry_to_device(entry) for entry in all_tagged_entries))
 
     print_objects(all_tagged_devices, "devices")
-
-
-def get_non_existing_device(kp, devices):
-    """
-    Retrieve existing devices from the list of devices in the KeePass database.
-
-    :param kp: The connection to the KeePass database.
-    :param devices: A list of Device objects.
-    :Returns: A list of Device objects representing the devices that already exist in the database.
-    """
-    non_existing_devices = []
-    for device in devices:
-        if not does_device_exist(kp, device.name):
-            non_existing_devices.append(device)
-    return non_existing_devices
 
 
 def extract_device_names(devices: Iterable[Device]) -> Set[str]:
