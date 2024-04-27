@@ -20,7 +20,7 @@ def init_program(directory, keepass_db_path, config_file_path, config):
     os.makedirs(directory, exist_ok=True)
     if not os.path.isfile(config_file_path):
         with open(config_file_path, 'w', encoding="utf-8") as config_file:
-            json.dump(config, config_file)
+            json.dump(config, config_file, indent=2)
     if not os.path.isfile(keepass_db_path):
         create_new_keepass_db(keepass_db_path)
 
