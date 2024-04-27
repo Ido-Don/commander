@@ -4,7 +4,7 @@ import sys
 from functools import reduce
 from itertools import filterfalse
 from pathlib import Path
-from typing import List, Optional, Iterable, Union, Set, Any
+from typing import List, Optional, Iterable, Union, Set, Any, Dict
 
 import netmiko
 import pykeepass.entry
@@ -530,17 +530,19 @@ def remove(device_names: List[str]):
     """
     remove a device from your database
     """
+    device_names_to_be_removed = set(device_names)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        all_device_entry = get_all_device_entries(kp)
-        all_device_names = [device.name for device in all_device_entry]
-        non_existing_devices = set(device_names) - set(all_device_names)
+        all_entries = get_all_entries(kp)
+        all_devices = entries_to_devices(all_entries)
+        all_device_names = extract_device_names(all_devices)
+
+        non_existing_devices = device_names_to_be_removed - all_device_names
         if non_existing_devices:
             raise LookupError(f"devices {', '.join(non_existing_devices)} don't exist")
-        device_entries = []
-        device_name_map = dict(zip(all_device_names, all_device_entry))
-        for device_name in device_names:
-            if device_name in device_name_map:
-                device_entries.append(device_name_map[device_name])
+
+        device_entries = tuple(filter(
+            lambda device: device.name in device_names_to_be_removed, all_devices
+        ))
         print_objects(device_entries, "devices")
         typer.confirm(f"are you sure you want to delete {len(device_entries)} devices?", abort=True)
 
