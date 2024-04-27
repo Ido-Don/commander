@@ -22,7 +22,7 @@ from networkcommander.io_utils import print_objects, read_file, read_from_stdin
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
     add_device_entry, get_device, \
     get_non_existing_device_names, get_existing_devices, does_device_exist, get_all_entries, entry_to_device, \
-    tag_entry, untag_entry, is_entry_tagged
+    tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_multiple_tags
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -359,7 +359,7 @@ def create_folder_if_non_existent(output_folder):
 
 @device_command_group.command(name="list")
 def list_devices(
-        tags: List[str] = typer.Option(
+        tags_list: List[str] = typer.Option(
             None,
             "--tag",
             "-t",
@@ -370,10 +370,14 @@ def list_devices(
     """
     list all the devices under your command.
     """
+    tags_set = set(tags_list)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        devices = get_all_device_entries(kp, set(tags))
+        all_entries = get_all_entries(kp)
 
-    print_objects(devices, "devices")
+    all_tagged_entries = tuple(filter(is_entry_tagged_by_multiple_tags(tags_set),all_entries))
+    all_tagged_devices = tuple((entry_to_device(entry) for entry in all_tagged_entries))
+
+    print_objects(all_tagged_devices, "devices")
 
 
 def get_non_existing_device(kp, devices):

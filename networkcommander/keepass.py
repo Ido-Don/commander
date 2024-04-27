@@ -134,6 +134,19 @@ def is_entry_tagged(tag: str):
     return inner
 
 
+def is_entry_tagged_by_multiple_tags(tags: Set[str]):
+    def inner(entry: pykeepass.Entry):
+        if not entry:
+            return False
+        if not tags:
+            return True
+        if not entry.tags:
+            return False
+        return all((tag in entry.tags for tag in tags))
+
+    return inner
+
+
 def get_all_device_entries(kp: pykeepass.PyKeePass, tags: Set[str] = None) -> List[Device]:
     """
     Retrieve all device entries from the KeePass database.
