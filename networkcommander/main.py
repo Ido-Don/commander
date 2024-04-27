@@ -470,17 +470,22 @@ def add(
                 lambda device: device not in all_devices and device.name not in all_device_names,
                 new_devices
             ))
-            new_non_existing_unique_devices = []
-            new_non_existing_unique_device_names = {}
-            for new_device in new_non_existing_devices:
-                is_unique_device = new_device not in new_non_existing_unique_devices
-                is_unique_device_name = new_device.name not in new_non_existing_unique_device_names
-                if is_unique_device and is_unique_device_name:
-                    new_non_existing_unique_devices.append(new_device)
-                    new_non_existing_unique_device_names.update(new_device.name)
+            new_non_existing_unique_devices = remove_device_duplicates(new_non_existing_devices)
             device_to_add = new_non_existing_unique_devices
         add_devices(kp, device_to_add)
     typer.echo(f"added {len(device_to_add)} to database")
+
+
+def remove_device_duplicates(new_non_existing_devices):
+    new_non_existing_unique_devices = []
+    new_non_existing_unique_device_names = {}
+    for new_device in new_non_existing_devices:
+        is_unique_device = new_device not in new_non_existing_unique_devices
+        is_unique_device_name = new_device.name not in new_non_existing_unique_device_names
+        if is_unique_device and is_unique_device_name:
+            new_non_existing_unique_devices.append(new_device)
+            new_non_existing_unique_device_names.update(new_device.name)
+    return new_non_existing_unique_devices
 
 
 def check_pre_existing_devices(kp, devices):
