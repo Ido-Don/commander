@@ -346,10 +346,18 @@ def get_non_existing_device_names(kp: pykeepass.PyKeePass, devices_names: List[s
     return non_existing_devices
 
 
-def add_tag_to_entry(entry: pykeepass.Entry, device_tag: str):
+def tag_entry(entry: pykeepass.Entry, device_tag: str):
     existing_tags = entry.tags
     if existing_tags:
         existing_tags += [device_tag]
     else:
         existing_tags = [device_tag]
     entry.tags = existing_tags
+
+
+def untag_entry(entry, device_tag):
+    tags = entry.tags
+    if not tags or device_tag not in tags:
+        raise ValueError(f"entry {entry.title} is not tagged with {device_tag}")
+    tags.remove(device_tag)
+    entry.tags = tags
