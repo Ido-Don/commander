@@ -22,8 +22,7 @@ from networkcommander.io_utils import print_objects, read_file, read_from_stdin
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
     add_device_entry, get_device, \
     get_non_existing_device_names, get_existing_devices, does_device_exist, get_all_entries, entry_to_device, \
-    tag_entry, untag_entry
-from networkcommander.keypass import is_entry_tagged
+    tag_entry, untag_entry, is_entry_tagged
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -323,7 +322,7 @@ def sanitize_devices(extra_device_names, tags):
         devices = get_all_device_entries(kp, set(tags))
 
         if extra_device_names:
-            extra_devices = get_device_list(kp, extra_device_names)
+            extra_devices = get_device_list1(kp, extra_device_names)
             for extra_device in extra_devices:
                 if extra_device not in devices:
                     devices.append(extra_device)
@@ -341,7 +340,7 @@ def get_device_list(kp, extra_device_names):
     return devices
 
 
-def get_device_list(kp, extra_device_names):
+def get_device_list1(kp, extra_device_names):
     non_existent_devices = get_non_existing_device_names(kp, extra_device_names)
     if any(non_existent_devices):
         raise ValueError(f"devices [{', '.join(non_existent_devices)}] don't exist")
