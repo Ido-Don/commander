@@ -20,9 +20,9 @@ from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
-    add_device_entry, untag_device, get_device, \
+    add_device_entry, get_device, \
     get_non_existing_device_names, get_existing_devices, does_device_exist, get_all_entries, entry_to_device, \
-    add_tag_to_entry
+    tag_entry, untag_entry
 from networkcommander.keypass import is_entry_tagged
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
@@ -110,8 +110,8 @@ def add_tag(device_tag: str, device_names: List[str]):
     """
     device_names_to_be_tagged = set(device_names)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        entries = get_all_entries(kp)
-        all_devices = tuple((entry_to_device(entry) for entry in entries))
+        all_entries = get_all_entries(kp)
+        all_devices = tuple((entry_to_device(entry) for entry in all_entries))
         all_device_names = {device.name for device in all_devices}
 
         # if someone entered a wrong device name, it can't be tagged so an error is raised
@@ -121,7 +121,7 @@ def add_tag(device_tag: str, device_names: List[str]):
 
         # if someone entered a device that was already tagged it can't be tagged again
 
-        every_tagged_entries = filter(is_entry_tagged(device_tag), entries)
+        every_tagged_entries = filter(is_entry_tagged(device_tag), all_entries)
         every_tagged_devices = tuple((entry_to_device(entry) for entry in every_tagged_entries))
         every_tagged_device_name = {device.name for device in every_tagged_devices}
 
@@ -134,9 +134,9 @@ def add_tag(device_tag: str, device_names: List[str]):
             raise ValueError(
                 f"devices [{', '.join(device_names_already_tagged_that_need_to_be_tagged)}] are already tagged"
             )
-        entries_to_tag = filter(lambda entry: entry.title in device_names_to_be_tagged, entries)
+        entries_to_tag = filter(lambda entry: entry.title in device_names_to_be_tagged, all_entries)
         for entry in entries_to_tag:
-            add_tag_to_entry(entry, device_tag)
+            tag_entry(entry, device_tag)
         rich.print(f"added '{device_tag}' tag to {len(device_names_to_be_tagged)} devices")
 
 
@@ -146,8 +146,8 @@ def list_tags():
     list every tag you put on devices
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        entries = get_all_entries(kp)
-        entries_tags: List[Union[List[str], None]] = [entry.tags for entry in entries]
+        all_entries = get_all_entries(kp)
+        entries_tags: List[Union[List[str], None]] = [entry.tags for entry in all_entries]
         entries_tags_without_none: Iterable[List[str]] = filter(None, entries_tags)
         flatten_tag_list: Iterable[str] = reduce(
             lambda aggregate, tags: aggregate + tags,
@@ -163,13 +163,17 @@ def remove_tag(device_tag: str, device_names: List[str]):
     """
     remove a tag from devices
     """
+    device_names_to_be_untagged = set(device_names)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        non_existent_devices = get_non_existing_device_names(kp, device_names)
+        all_entries = get_all_entries(kp)
+        all_devices = tuple((entry_to_device(entry) for entry in all_entries))
+        all_device_names = {device.name for device in all_devices}
+        non_existent_devices = device_names_to_be_untagged - all_device_names
         if non_existent_devices:
             raise LookupError(f"devices {', '.join(non_existent_devices)} doesn't exist")
-
-        for device_name in device_names:
-            untag_device(kp, device_tag, device_name)
+        entries_to_untag = filter(lambda entry: entry.title in device_names_to_be_untagged, all_entries)
+        for entry in entries_to_untag:
+            untag_entry(entry, device_tag)
         rich.print(f"removed {device_tag} from {len(device_names)} devices")
 
 
