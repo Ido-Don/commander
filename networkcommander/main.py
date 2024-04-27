@@ -404,8 +404,8 @@ def extract_device_names(devices: Iterable[Device]) -> Set[str]:
     return {device.name for device in devices}
 
 
-@device_command_group.command()
-def add(
+@device_command_group.command(name="add")
+def add_devices(
         password: str = typer.Option(""),
         enable_password: str = typer.Option(""),
         optional_parameters_file: Optional[typer.FileText] = typer.Option(None, show_default=False),
@@ -456,7 +456,7 @@ def add(
         all_entries = get_all_entries(kp)
         all_devices = entries_to_devices(all_entries)
         all_device_names = extract_device_names(all_devices)
-        device_to_add = new_devices
+        devices_to_add = new_devices
         if not ignore_pre_existing:
             pre_existing_device_names = {device.name in all_device_names for device in new_devices}
             if any(pre_existing_device_names):
@@ -471,9 +471,10 @@ def add(
                 new_devices
             ))
             new_non_existing_unique_devices = remove_device_duplicates(new_non_existing_devices)
-            device_to_add = new_non_existing_unique_devices
-        add_devices(kp, device_to_add)
-    typer.echo(f"added {len(device_to_add)} to database")
+            devices_to_add = new_non_existing_unique_devices
+
+        add_devices(kp, devices_to_add)
+    typer.echo(f"added {len(devices_to_add)} to database")
 
 
 def remove_device_duplicates(new_non_existing_devices):
@@ -525,8 +526,8 @@ def password_input(prompt):
     return password
 
 
-@device_command_group.command()
-def remove(device_names: List[str]):
+@device_command_group.command(name="remove")
+def remove_devices(device_names: List[str]):
     """
     remove a device from your database
     """
