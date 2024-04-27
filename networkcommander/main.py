@@ -7,9 +7,9 @@ from pathlib import Path
 from typing import List, Optional, Iterable, Union, Set, Any
 
 import netmiko
+import pykeepass.entry
 import rich
 import typer
-import yaml
 from rich.progress import Progress
 
 from networkcommander.__init__ import __version__
@@ -18,6 +18,7 @@ from networkcommander.deploy import deploy_commands
 from networkcommander.device import device_from_string, Device
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
+from networkcommander.io_tools import convert_to_yaml
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
     add_device_entry, get_device, \
@@ -110,8 +111,8 @@ def add_tag(device_tag: str, device_names: List[str]):
     device_names_to_be_tagged = set(device_names)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp)
-        all_devices = tuple((entry_to_device(entry) for entry in all_entries))
-        all_device_names = {device.name for device in all_devices}
+        all_devices = entries_to_devices(all_entries)
+        all_device_names = extract_device_names(all_devices)
 
         # if someone entered a wrong device name, it can't be tagged so an error is raised
         fabricated_device_names = device_names_to_be_tagged - all_device_names
@@ -121,8 +122,8 @@ def add_tag(device_tag: str, device_names: List[str]):
         # if someone entered a device that was already tagged it can't be tagged again
 
         every_tagged_entries = filter(is_entry_tagged(device_tag), all_entries)
-        every_tagged_devices = tuple((entry_to_device(entry) for entry in every_tagged_entries))
-        every_tagged_device_name = {device.name for device in every_tagged_devices}
+        every_tagged_devices = entries_to_devices(every_tagged_entries)
+        every_tagged_device_name = extract_device_names(every_tagged_devices)
 
         # if there are any devices that need to be tagged and are already tagged they will be in
         # the intersection between the two groups
@@ -134,9 +135,13 @@ def add_tag(device_tag: str, device_names: List[str]):
                 f"devices [{', '.join(device_names_already_tagged_that_need_to_be_tagged)}] are already tagged"
             )
         entries_to_tag = filter(lambda entry: entry.title in device_names_to_be_tagged, all_entries)
-        for entry in entries_to_tag:
-            tag_entry(entry, device_tag)
+        for entry_to_tag in entries_to_tag:
+            tag_entry(entry_to_tag, device_tag)
         rich.print(f"added '{device_tag}' tag to {len(device_names_to_be_tagged)} devices")
+
+
+def entries_to_devices(entries: Iterable[pykeepass.entry.Entry]):
+    return tuple((entry_to_device(entry) for entry in entries))
 
 
 @tag_command_group.command(name="list")
@@ -165,8 +170,8 @@ def remove_tag(device_tag: str, device_names: List[str]):
     device_names_to_be_untagged = set(device_names)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp)
-        all_devices = tuple((entry_to_device(entry) for entry in all_entries))
-        all_device_names = {device.name for device in all_devices}
+        all_devices = entries_to_devices(all_entries)
+        all_device_names = extract_device_names(all_devices)
         non_existent_devices = device_names_to_be_untagged - all_device_names
         if non_existent_devices:
             raise LookupError(f"devices {', '.join(non_existent_devices)} doesn't exist")
@@ -395,9 +400,8 @@ def get_non_existing_device(kp, devices):
     return non_existing_devices
 
 
-def convert_yaml(content: str):
-    new_yaml = yaml.safe_load(content)
-    return new_yaml
+def extract_device_names(devices: Iterable[Device]) -> Set[str]:
+    return {device.name for device in devices}
 
 
 @device_command_group.command()
@@ -444,20 +448,39 @@ def add(
     if optional_parameters_file:
         file_content: List[str] = read_file(optional_parameters_file)
         joined_file_content = '\n'.join(file_content)
-        optional_parameters = convert_yaml(joined_file_content)
+        optional_parameters.update(convert_to_yaml(joined_file_content))
 
-    devices = convert_devices(device_strings, password, optional_parameters)
+    new_devices = convert_devices(device_strings, password, optional_parameters)
 
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
+        all_entries = get_all_entries(kp)
+        all_devices = entries_to_devices(all_entries)
+        all_device_names = extract_device_names(all_devices)
+        device_to_add = new_devices
         if not ignore_pre_existing:
-            check_pre_existing_devices(kp, devices)
+            pre_existing_device_names = {device.name in all_device_names for device in new_devices}
+            if any(pre_existing_device_names):
+                raise LookupError(
+                    "devices ["
+                    f"{', '.join(pre_existing_device_names)}"
+                    "] already exist in keepass"
+                )
         else:
-            devices = get_non_existing_device(kp, devices)
-            if not devices:
-                raise ValueError("no new devices entered... not adding anything")
-
-        add_devices(kp, devices)
-    typer.echo(f"added {len(devices)} to database")
+            new_non_existing_devices = tuple(filter(
+                lambda device: device not in all_devices and device.name not in all_device_names,
+                new_devices
+            ))
+            new_non_existing_unique_devices = []
+            new_non_existing_unique_device_names = {}
+            for new_device in new_non_existing_devices:
+                is_unique_device = new_device not in new_non_existing_unique_devices
+                is_unique_device_name = new_device.name not in new_non_existing_unique_device_names
+                if is_unique_device and is_unique_device_name:
+                    new_non_existing_unique_devices.append(new_device)
+                    new_non_existing_unique_device_names.update(new_device.name)
+            device_to_add = new_non_existing_unique_devices
+        add_devices(kp, device_to_add)
+    typer.echo(f"added {len(device_to_add)} to database")
 
 
 def check_pre_existing_devices(kp, devices):
