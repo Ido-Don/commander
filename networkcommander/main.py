@@ -2,7 +2,6 @@ import json
 import os.path
 import sys
 from functools import reduce
-from itertools import filterfalse
 from pathlib import Path
 from typing import List, Optional, Iterable, Union, Set, Any
 
@@ -21,8 +20,7 @@ from networkcommander.init import is_initialized, init_program, delete_project_f
 from networkcommander.io_tools import convert_to_yaml
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
-    add_device_entry, get_device, \
-    get_non_existing_device_names, get_existing_devices, does_device_exist, get_all_entries, entry_to_device, \
+    add_device_entry, get_existing_devices, get_all_entries, entry_to_device, \
     tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tag_set
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
@@ -306,12 +304,6 @@ def handel_results(device, exception, output_folder, result):
             write_to_folder(device.name, output_folder, result)
         else:
             rich.print(result)
-
-
-def check_for_invalid_commands(commands):
-    invalid_commands = list(filterfalse(is_valid_command, commands))
-    if invalid_commands:
-        raise ValueError(f"{','.join(invalid_commands)} are not valid commands.")
 
 
 def write_to_folder(file_name, output_folder, result):
