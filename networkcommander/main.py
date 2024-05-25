@@ -458,17 +458,6 @@ def remove_device_duplicates(new_non_existing_devices):
     return new_non_existing_unique_devices
 
 
-def check_pre_existing_devices(kp, devices):
-    existing_devices = get_existing_devices(kp, devices)
-    existing_device_names = [device.name for device in existing_devices]
-    if existing_devices:
-        raise LookupError(
-            "devices ["
-            f"{', '.join(existing_device_names)}"
-            "] already exist in keepass"
-        )
-
-
 def convert_devices(devices: Iterable[str], password, optional_parameters) -> List[Device]:
     new_devices = [convert_device(device, password, optional_parameters) for device in devices]
     return new_devices
