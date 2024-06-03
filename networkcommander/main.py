@@ -349,6 +349,10 @@ def list_devices(
 
 
 def extract_device_names(devices: Iterable[Device]) -> Set[str]:
+    """
+    :param devices: an iterable containing devices
+    :return: set of every device name in devices
+    """
     return {device.name for device in devices}
 
 
@@ -483,7 +487,7 @@ def remove_devices(device_names: List[str]):
         for device_name in device_names:
             remove_device(kp, device_name)
 
-        typer.echo(f"deleted {len(device_entries)} devices")
+    typer.echo(f"deleted {len(device_entries)} devices")
 
 
 @app.command()
