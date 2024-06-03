@@ -194,6 +194,9 @@ def ping(
             if exception:
                 try:
                     raise exception
+                except KeyboardInterrupt:
+                    print("keyboard Interrupt")
+                    exit(1)
                 except netmiko.NetmikoAuthenticationException:
                     print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
                 except netmiko.NetmikoTimeoutException:
@@ -265,9 +268,12 @@ def deploy(
             progress.advance(task)
 
 
-def handel_exception(device, exception):
+def handel_exception(device: Device, exception: Exception) -> None:
     try:
         raise exception
+    except KeyboardInterrupt:
+        print("keyboard Interrupt")
+        exit(1)
     except netmiko.NetmikoAuthenticationException:
         print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
     except netmiko.NetmikoTimeoutException:
