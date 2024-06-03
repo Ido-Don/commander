@@ -3,7 +3,7 @@ import os.path
 import sys
 from functools import reduce
 from pathlib import Path
-from typing import List, Optional, Iterable, Union, Set
+from typing import List, Optional, Iterable, Union, Set, Tuple
 
 import netmiko
 import pykeepass.entry
@@ -120,7 +120,7 @@ def add_tag(device_tag: str, device_names: List[str]):
         rich.print(f"added '{device_tag}' tag to {len(device_names_to_be_tagged)} devices")
 
 
-def entries_to_devices(entries: Iterable[pykeepass.entry.Entry]):
+def entries_to_devices(entries: Iterable[pykeepass.entry.Entry]) -> Tuple[Device]:
     return tuple((entry_to_device(entry) for entry in entries))
 
 
