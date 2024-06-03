@@ -26,7 +26,7 @@ pip install NetworkCommander
 
 ## compile from source
 
-if you want to compile from source you can do that with [poetry](https://python-poetry.org/https://python-poetry.org/).
+if you want to compile from source you can do that with [poetry](https://python-poetry.org/).
 
 first you have to make sure poetry is installed
 
