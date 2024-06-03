@@ -190,13 +190,13 @@ def ping(
         task = progress.add_task("connecting to devices...", total=len(devices))
 
         # deploy no commands just to test connectivity
-        for result, device, exception in deploy_commands([], devices, PermissionLevel.USER):
+        for _, device, exception in deploy_commands([], devices, PermissionLevel.USER):
             if exception:
                 try:
                     raise exception
                 except KeyboardInterrupt:
                     print("keyboard Interrupt")
-                    exit(1)
+                    sys.exit(1)
                 except netmiko.NetmikoAuthenticationException:
                     print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
                 except netmiko.NetmikoTimeoutException:
@@ -244,10 +244,14 @@ def deploy(
     if not extra_device_names:
         extra_device_names = []
 
-    if not tags:
-        tags = []
+    with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
+        all_entries = get_all_entries(kp)
 
-    devices = get_devices_from_tags_and_names(set(extra_device_names), set(tags))
+    if not tags:
+        devices = entries_to_devices(all_entries)
+    else:
+        tags = set(tags)
+        devices = get_devices_from_tags_and_names(all_entries, set(extra_device_names), tags)
 
     if not devices:
         raise ValueError("you don't have any devices in the database.")
@@ -273,7 +277,7 @@ def handel_exception(device: Device, exception: Exception) -> None:
         raise exception
     except KeyboardInterrupt:
         print("keyboard Interrupt")
-        exit(1)
+        sys.exit(1)
     except netmiko.NetmikoAuthenticationException:
         print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
     except netmiko.NetmikoTimeoutException:
@@ -297,30 +301,30 @@ def write_to_folder(file_name, output_folder, result):
     output_file_path = output_folder.joinpath(f"{file_name}.txt")
     with open(output_file_path, "w", encoding="utf-8") as output_file:
         output_file.write(result)
-        rich.print(f"'saved output to {str(output_file_path)}'")
+        rich.print(f"saved output to '{str(output_file_path)}'")
 
 
-def get_devices_from_tags_and_names(extra_device_names: Set[str], tags: Set[str]):
-    with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        all_entries = get_all_entries(kp)
-
+def get_devices_from_tags_and_names(
+        all_entries: Iterable[pykeepass.entry],
+        extra_device_names: Set[str],
+        tags: Set[str]
+) -> Tuple[Device]:
     if not tags:
-        devices = entries_to_devices(all_entries)
-        return devices
+        raise ValueError("tags argument doesn't have any tags")
     all_tagged_entries = tuple(filter(is_entry_tagged_by_tag_set(tags), all_entries))
+    all_tagged_devices = entries_to_devices(all_tagged_entries)
 
     if not extra_device_names:
-        devices = entries_to_devices(all_tagged_entries)
-        return devices
+        return all_tagged_devices
 
     extra_explicit_entries = filter(lambda entry: entry.title in extra_device_names, all_entries)
     extra_explicit_devices = entries_to_devices(extra_explicit_entries)
-    all_tagged_devices = entries_to_devices(all_tagged_entries)
 
-    devices = tuple(
-        filter(lambda device: device not in all_tagged_devices, extra_explicit_devices)
-    ) + all_tagged_devices
-    return devices
+    extra_explicit_not_tagged_devices = tuple(filter(
+        lambda device: device not in all_tagged_devices, extra_explicit_devices
+    ))
+    tagged_devices_with_extra_entries = extra_explicit_not_tagged_devices + all_tagged_devices
+    return tagged_devices_with_extra_entries
 
 
 def create_folder_if_non_existent(output_folder):
