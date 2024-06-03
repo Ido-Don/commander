@@ -17,8 +17,7 @@ from networkcommander.deploy import deploy_commands
 from networkcommander.device import device_from_string, Device
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
-from networkcommander.io_tools import convert_to_yaml
-from networkcommander.io_utils import print_objects, read_file, read_from_stdin
+from networkcommander.io_utils import print_objects, read_file, read_from_stdin, convert_to_yaml
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
     add_device_entry, get_all_entries, entry_to_device, \
     tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tag_set
