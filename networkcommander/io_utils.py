@@ -2,6 +2,7 @@ import sys
 from typing import Iterable, TextIO, List
 
 import typer
+import yaml
 
 
 def print_objects(objects: Iterable, object_name: str) -> None:
@@ -40,3 +41,8 @@ def read_from_stdin():
     typer.echo("hit control-Z or control-D to continue")
     commands = read_file(sys.stdin)
     return commands
+
+
+def convert_to_yaml(content: str):
+    new_yaml = yaml.safe_load(content)
+    return new_yaml
