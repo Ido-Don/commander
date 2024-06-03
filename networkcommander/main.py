@@ -304,23 +304,23 @@ def get_devices_from_tags_and_names(extra_device_names: Set[str], tags: Set[str]
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp)
 
-        if not tags:
-            devices = entries_to_devices(all_entries)
-            return devices
-        all_tagged_entries = tuple(filter(is_entry_tagged_by_tag_set(tags), all_entries))
-
-        if not extra_device_names:
-            devices = entries_to_devices(all_tagged_entries)
-            return devices
-
-        extra_explicit_entries = filter(lambda entry: entry.title in extra_device_names, all_entries)
-        extra_explicit_devices = entries_to_devices(extra_explicit_entries)
-        all_tagged_devices = entries_to_devices(all_tagged_entries)
-
-        devices = tuple(
-            filter(lambda device: device not in all_tagged_devices, extra_explicit_devices)
-        ) + all_tagged_devices
+    if not tags:
+        devices = entries_to_devices(all_entries)
         return devices
+    all_tagged_entries = tuple(filter(is_entry_tagged_by_tag_set(tags), all_entries))
+
+    if not extra_device_names:
+        devices = entries_to_devices(all_tagged_entries)
+        return devices
+
+    extra_explicit_entries = filter(lambda entry: entry.title in extra_device_names, all_entries)
+    extra_explicit_devices = entries_to_devices(extra_explicit_entries)
+    all_tagged_devices = entries_to_devices(all_tagged_entries)
+
+    devices = tuple(
+        filter(lambda device: device not in all_tagged_devices, extra_explicit_devices)
+    ) + all_tagged_devices
+    return devices
 
 
 def create_folder_if_non_existent(output_folder):
