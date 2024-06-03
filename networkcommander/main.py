@@ -131,15 +131,15 @@ def list_tags():
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp)
-        entries_tags: List[Union[List[str], None]] = [entry.tags for entry in all_entries]
-        entries_tags_without_none: Iterable[List[str]] = filter(None, entries_tags)
-        flatten_tag_list: Iterable[str] = reduce(
-            lambda aggregate, tags: aggregate + tags,
-            entries_tags_without_none,
-            []
-        )
-        unique_tags = set(flatten_tag_list)
-        print_objects(unique_tags, "tags")
+    entries_tags: List[Union[List[str], None]] = [entry.tags for entry in all_entries]
+    entries_tags_without_none: Iterable[List[str]] = filter(None, entries_tags)
+    flatten_tag_list: Iterable[str] = reduce(
+        lambda aggregate, tags: aggregate + tags,
+        entries_tags_without_none,
+        []
+    )
+    unique_tags = set(flatten_tag_list)
+    print_objects(unique_tags, "tags")
 
 
 @tag_command_group.command(name="remove")
