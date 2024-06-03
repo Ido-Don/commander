@@ -366,7 +366,7 @@ def add_devices(
         )
 ):
     """
-    add a new devices to the list of devices
+    add new devices to the list of devices
     """
     device_strings = []
     if devices_file == sys.stdin:
@@ -427,16 +427,16 @@ def add_devices(
     typer.echo(f"added {len(devices_to_add)} to database")
 
 
-def remove_device_duplicates(new_non_existing_devices):
-    new_non_existing_unique_devices = []
-    new_non_existing_unique_device_names = {}
-    for new_device in new_non_existing_devices:
-        is_unique_device = new_device not in new_non_existing_unique_devices
-        is_unique_device_name = new_device.name not in new_non_existing_unique_device_names
+def remove_device_duplicates(devices: Iterable[Device]) -> List[Device]:
+    unique_devices = []
+    unique_device_names = set()
+    for new_device in devices:
+        is_unique_device = new_device not in unique_devices
+        is_unique_device_name = new_device.name not in unique_device_names
         if is_unique_device and is_unique_device_name:
-            new_non_existing_unique_devices.append(new_device)
-            new_non_existing_unique_device_names.update(new_device.name)
-    return new_non_existing_unique_devices
+            unique_devices.append(new_device)
+            unique_device_names.update(new_device.name)
+    return unique_devices
 
 
 def convert_devices(devices: Iterable[str], password, optional_parameters) -> List[Device]:
