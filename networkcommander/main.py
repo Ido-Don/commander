@@ -3,7 +3,7 @@ import os.path
 import sys
 from functools import reduce
 from pathlib import Path
-from typing import List, Optional, Iterable, Union, Set, Any
+from typing import List, Optional, Iterable, Union, Set
 
 import netmiko
 import pykeepass.entry
@@ -20,7 +20,7 @@ from networkcommander.init import is_initialized, init_program, delete_project_f
 from networkcommander.io_tools import convert_to_yaml
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin
 from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
-    add_device_entry, get_existing_devices, get_all_entries, entry_to_device, \
+    add_device_entry, get_all_entries, entry_to_device, \
     tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tag_set
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
@@ -46,17 +46,6 @@ def version():
         show the version of the application
     """
     typer.echo(f"Commander version: {__version__}")
-
-
-def is_valid_command(command: str) -> bool:
-    """
-    checks if a string is a valid command or not
-    """
-    if not command:
-        return False
-    if command[0] == '#':
-        return False
-    return True
 
 
 # the help="" is here so that the docstring is not shown to the user.
@@ -92,13 +81,6 @@ def initialization_check(keepass_password: Optional[str] = typer.Option(None)):
             USER_CONFIG_FILE
     ):
         raise EnvironmentError("program is not initialized, please run commander init!")
-
-
-def find_value_in_set(value_bank: Set[Any]):
-    def inner(value: Any):
-        return value in value_bank
-
-    return inner
 
 
 @tag_command_group.command(name="add")
