@@ -18,7 +18,7 @@ from networkcommander.device import device_from_string, Device
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin, convert_to_yaml
-from networkcommander.keepass import KeepassDB, get_all_device_entries, remove_device, \
+from networkcommander.keepass import KeepassDB, remove_device, \
     add_device_entry, get_all_entries, entry_to_device, \
     tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tag_set
 
@@ -174,7 +174,14 @@ def ping(
     try to connect to the devices in your database.
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        devices = get_all_device_entries(kp, set(tags))
+        all_entries = get_all_entries(kp)
+
+    if tags:
+        tags = set(tags)
+        all_tagged_entries = tuple(filter(is_entry_tagged_by_tag_set(tags), all_entries))
+        devices = entries_to_devices(all_tagged_entries)
+    else:
+        devices = entries_to_devices(all_entries)
 
     if not devices:
         if not tags:
