@@ -1,9 +1,10 @@
 import json
 import os.path
 import sys
+from enum import Enum
 from functools import reduce
 from pathlib import Path
-from typing import List, Optional, Iterable, Union, Set, Tuple
+from typing import List, Optional, Iterable, Union, Set, Tuple, Literal, Annotated
 
 import netmiko
 import pykeepass.entry
@@ -12,6 +13,7 @@ import typer
 from rich.progress import Progress
 
 from networkcommander.__init__ import __version__
+from networkcommander.commander_logging import commander_logger, add_stream_handler, LogLevel
 from networkcommander.config import config, USER_CONFIG_FILE
 from networkcommander.deploy import deploy_commands
 from networkcommander.device import device_from_string, Device
@@ -63,6 +65,17 @@ def load_config():
                 return
             user_custom_config = json.loads(file_content)
             config.update(user_custom_config)
+
+
+@app.callback()
+def change_log_level(log_level: Annotated[
+    Optional[LogLevel],
+    typer.Option("--log-level", "-l")
+] = None
+              ):
+    if not log_level:
+        return
+    add_stream_handler(log_level)
 
 
 @device_command_group.callback(no_args_is_help=True)
