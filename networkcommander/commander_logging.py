@@ -24,12 +24,12 @@ commander_logger.addHandler(file_handler)
 
 
 class LogLevel(str, Enum):
-    NOTSET = "notset"
-    DEBUG = "debug"
-    INFO = "info"
-    WARN = "warn"
-    ERROR = "error"
-    CRITICAL = "critical"
+    NOTSET = "NOTSET"
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARN = "WARN"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
     def __str__(self):
         return self.value
