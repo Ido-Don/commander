@@ -38,3 +38,4 @@ class LogLevel(str, Enum):
 def add_stream_handler(log_level: LogLevel):
     stream_handler.setLevel(log_level)
     commander_logger.addHandler(stream_handler)
+    commander_logger.debug("added stream logger at log level %s", log_level)
