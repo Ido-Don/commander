@@ -74,6 +74,8 @@ class KeepassDB:
 def get_all_entries(kp: pykeepass.PyKeePass) -> Tuple[pykeepass.Entry]:
     primary_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     entries = primary_group.entries
+    if not entries:
+        entries = []
     tuple_entries = tuple(entries)
     return tuple_entries
 
@@ -147,31 +149,6 @@ def is_entry_tagged_by_tag_set(tags: Set[str]):
     return inner
 
 
-def get_all_device_entries(kp: pykeepass.PyKeePass, tags: Set[str] = None) -> List[Device]:
-    """
-    Retrieve all device entries from the KeePass database.
-
-    :param kp: The connection to the KeePass database.
-    :param tags: Optional list of tags to filter the entries.
-    :Returns: A list of Device objects representing the retrieved entries.
-    """
-    group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
-    device_entries = group.entries
-    if tags:
-        tagged_devices = []
-        for device in device_entries:
-            if not device.tags:
-                continue
-            device_tags = set(device.tags)
-            if device_tags.issubset(tags):
-                tagged_devices.append(device)
-
-        devices = list(map(entry_to_device, tagged_devices))
-    else:
-        devices = list(map(entry_to_device, device_entries))
-    return devices
-
-
 def get_device_tags(kp: pykeepass.PyKeePass):
     """
     Retrieve all unique device tags from the KeePass database.
@@ -198,22 +175,6 @@ def does_device_exist(kp: pykeepass.PyKeePass, device_name: str) -> bool:
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     devices = kp.find_entries(group=device_group, title=device_name)
     return bool(devices)
-
-
-def get_device(kp: pykeepass.PyKeePass, device_name: str):
-    """
-    Retrieve a device from the KeePass database by its name.
-
-    :param kp: The connection to the KeePass database.
-    :param device_name: The name of the device to retrieve.
-    :Returns: The Device object representing the retrieved device.
-    """
-    entries = get_device_entries(kp, device_name)
-    if len(entries) > 1:
-        raise LookupError(f"{device_name} has more then 1 entry associated with it")
-    entry = entries[0]
-    device = entry_to_device(entry)
-    return device
 
 
 def remove_device(kp: pykeepass.PyKeePass, device_name: str) -> None:
@@ -283,94 +244,18 @@ def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = 
         new_entry.set_custom_property(key, str(val), True)
 
 
-def tag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
-    """
-    Tag a device entry in the KeePass database with a specified tag.
-
-    :param kp: The connection to the KeePass database.
-    :param device_tag: The tag to assign to the device entry.
-    :param device_name: The name of the device entry.
-    :Raises: LookupError if the device does not exist in the database.
-    """
-    if not does_device_exist(kp, device_name):
-        raise LookupError(f"{device_name} doesn't exist in db")
-    device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
-    device_entries = kp.find_entries(group=device_group, title=device_name)
-
-    for device_entry in device_entries:
-        tags = device_entry.tags
-        if tags:
-            tags += [device_tag]
-        else:
-            tags = [device_tag]
-        device_entry.tags = tags
-
-
-def untag_device(kp: pykeepass.PyKeePass, device_tag: str, device_name: str):
-    """
-    Remove a tag from a device entry in the KeePass database.
-
-    :param kp: The connection to the KeePass database.
-    :param device_tag: The tag to remove from the device entry.
-    :param device_name: The name of the device entry.
-    :raises: LookupError if the device does not exist in the database.
-             ValueError if the device is not tagged with the specified tag.
-    """
-    if not does_device_exist(kp, device_name):
-        raise LookupError(f"{device_name} doesn't exist in db")
-    device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
-    device_entries = kp.find_entries(group=device_group, title=device_name)
-
-    for device_entry in device_entries:
-        tags = device_entry.tags
-        if not tags or device_tag not in tags:
-            raise ValueError(f"device {device_name} is not tagged with {device_tag}")
-        tags.remove(device_tag)
-        device_entry.tags = tags
-
-
-def get_existing_devices(kp: pykeepass.PyKeePass, devices: List[Device]):
-    """
-    Retrieve existing devices from the list of devices in the KeePass database.
-
-    :param kp: The connection to the KeePass database.
-    :param devices: A list of Device objects.
-    :Returns: A list of Device objects representing the devices that already exist in the database.
-    """
-    existing_devices = []
-    for device in devices:
-        if does_device_exist(kp, device.name):
-            existing_devices.append(device)
-    return existing_devices
-
-
-def get_non_existing_device_names(kp: pykeepass.PyKeePass, devices_names: List[str]):
-    """
-    Filter out device names that do not exist in the KeePass database.
-
-    :param kp: The connection to the KeePass database.
-    :param devices_names: A list of device names to filter.
-    :Returns: A list of device names that do not exist in the database.
-    """
-    non_existing_devices = list(filter(
-        lambda device_name: not does_device_exist(kp, device_name),
-        devices_names
-    ))
-    return non_existing_devices
-
-
-def tag_entry(entry: pykeepass.Entry, device_tag: str):
+def tag_entry(entry: pykeepass.Entry, tag: str):
     existing_tags = entry.tags
     if existing_tags:
-        existing_tags += [device_tag]
+        existing_tags += [tag]
     else:
-        existing_tags = [device_tag]
+        existing_tags = [tag]
     entry.tags = existing_tags
 
 
-def untag_entry(entry, device_tag):
+def untag_entry(entry: pykeepass.Entry, tag: str):
     tags = entry.tags
-    if not tags or device_tag not in tags:
-        raise ValueError(f"entry {entry.title} is not tagged with {device_tag}")
-    tags.remove(device_tag)
+    if not tags or tag not in tags:
+        raise ValueError(f"entry {entry.title} is not tagged with {tag}")
+    tags.remove(tag)
     entry.tags = tags
