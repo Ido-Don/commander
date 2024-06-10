@@ -1,10 +1,9 @@
-import json
+import os.path
 import os.path
 import sys
-from enum import Enum
 from functools import reduce
 from pathlib import Path
-from typing import List, Optional, Iterable, Union, Set, Tuple, Literal, Annotated
+from typing import List, Optional, Iterable, Union, Set, Tuple, Annotated
 
 import netmiko
 import pykeepass.entry
@@ -47,30 +46,6 @@ def version():
         show the version of the application
     """
     typer.echo(f"Commander version: {__version__}")
-
-
-# the help="" is here so that the docstring is not shown to the user.
-@app.callback(no_args_is_help=True, help="")
-def load_config():
-    """
-    Load configuration settings from the user-specific configuration file.
-    and update the application's configuration accordingly that lives in the config variable.
-
-    Note: The configuration file is expected to be in JSON format.
-    """
-    commander_logger.info("loading user config from %s", USER_CONFIG_FILE)
-    if os.path.isfile(USER_CONFIG_FILE):
-        commander_logger.debug("starting to open file located at %s", USER_CONFIG_FILE)
-        with open(USER_CONFIG_FILE, encoding="UTF-8") as json_file:
-            commander_logger.debug("successfully opened file located at %s", USER_CONFIG_FILE)
-            file_content = json_file.read()
-            if not file_content:
-                commander_logger.debug("file %s had no data", USER_CONFIG_FILE)
-                return
-            commander_logger.debug("loading json", USER_CONFIG_FILE)
-            user_custom_config = json.loads(file_content)
-            config.update(user_custom_config)
-            commander_logger.info("finished loading user config")
 
 
 @app.callback()
