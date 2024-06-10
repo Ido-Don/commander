@@ -18,7 +18,7 @@ from networkcommander.deploy import deploy_commands
 from networkcommander.device import device_from_string, Device
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
-from networkcommander.io_utils import print_objects, read_file, read_from_stdin, convert_to_yaml
+from networkcommander.io_utils import print_objects, read_file, read_from_stdin, convert_to_yaml, load_user_config
 from networkcommander.keepass import KeepassDB, remove_device, \
     add_device_entry, get_all_entries, entry_to_device, \
     tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tag_set
@@ -54,6 +54,7 @@ def change_log_level(log_level: Annotated[
     typer.Option("--log-level", "-l")
 ] = None
                      ):
+    print("hello")
     if not log_level:
         return
     add_stream_handler(log_level)
@@ -516,4 +517,5 @@ def init():
 
 
 if __name__ == '__main__':
+    load_user_config()
     app()
