@@ -199,17 +199,7 @@ def ping(
         # deploy no commands just to test connectivity
         for result, device, exception in deploy_commands([], devices, PermissionLevel.USER):
             if exception:
-                try:
-                    raise exception
-                except KeyboardInterrupt:
-                    print("keyboard Interrupt")
-                    exit(1)
-                except netmiko.NetmikoAuthenticationException:
-                    print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
-                except netmiko.NetmikoTimeoutException:
-                    print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
-                except Exception as exception:
-                    print(f"device {str(device)} encountered an exception: {exception}", file=sys.stderr)
+                handel_exception(device, exception)
             else:
                 rich.print(f"connected successfully to {str(device)}")
             progress.advance(task)
