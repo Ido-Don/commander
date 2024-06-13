@@ -1,13 +1,14 @@
 import os.path
 import shutil
+from typing import Set
 
 import mimesis
 import pykeepass
 import pytest
-
+from pykeepass.pykeepass import Entry
 from networkcommander.init import create_new_keepass_db
 from networkcommander.keepass import KeepassDB, add_device_entry, \
-    does_device_exist, get_all_entries
+    does_device_exist, get_all_entries, is_entry_tagged_by_tag_set, is_entry_tagged
 from mocks import get_test_device, get_tag_list, POSSIBLE_TAGS
 
 KEEPASS_PASSWORD = "123"
@@ -16,6 +17,7 @@ internet = mimesis.Internet()
 generic = mimesis.Generic()
 hardware = mimesis.Hardware()
 POPULATED_DB_PATH = "populated_db.kdbx"
+READ_ONLY_KP = pykeepass.PyKeePass(POPULATED_DB_PATH, password=KEEPASS_PASSWORD)
 
 
 def populate_db(keepass_db_path: str):
@@ -107,3 +109,204 @@ class TestKeepass:
 
         entry = generic.random.choice(kp.entries)
         assert does_device_exist(kp, entry.title)
+
+
+@pytest.mark.parametrize(
+    ("entry", "tags", "should_match"),
+    [
+        (
+                Entry("",
+                      "",
+                      "",
+                      kp=READ_ONLY_KP),
+                {"hello"},
+                False
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      tags=["hello", "item2"],
+                      kp=READ_ONLY_KP),
+                {"hello", "world", "item3"},
+                False
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      tags=["hello", "item3"],
+                      kp=READ_ONLY_KP),
+                {"hello", "world", "item3"},
+                False
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      tags=["item1", 'world', "item3"],
+                      kp=READ_ONLY_KP),
+                {"hello", "item4"},
+                False
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      kp=READ_ONLY_KP),
+                {"hello", "world", "python"},
+                False
+        ),
+        (
+                None,
+                {"hello", "world"},
+                False
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      kp=READ_ONLY_KP),
+                {},
+                True
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      kp=READ_ONLY_KP),
+                None,
+                True
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      tags=["hello", 'world'],
+                      kp=READ_ONLY_KP),
+                {"hello"},
+                True
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      tags=["hello", 'world', "item3"],
+                      kp=READ_ONLY_KP),
+                {"hello", "item3"},
+                True
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      tags=["hello", 'world', "item3"],
+                      kp=READ_ONLY_KP),
+                {"hello", 'world', "item3"},
+                True
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      tags=["hello", 'world', "item3"],
+                      kp=READ_ONLY_KP),
+                {"hello", 'world'},
+                True
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      tags=["hello", 'world', "item3"],
+                      kp=READ_ONLY_KP),
+                {"item3", 'world'},
+                True
+        )
+    ]
+)
+def test_is_entry_tagged_by_tag_set(entry: Entry, tags: Set[str], should_match: bool):
+    assert is_entry_tagged_by_tag_set(tags)(entry) == should_match
+
+
+@pytest.mark.parametrize(
+    ("entry", "tag", "should_match"),
+    [
+        (
+                Entry("",
+                      "",
+                      "",
+                      kp=READ_ONLY_KP),
+                "hello",
+                False
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      tags=["item1", "item2", 'item3'],
+                      kp=READ_ONLY_KP),
+                "item4",
+                False
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      tags=["item1", "item2"],
+                      kp=READ_ONLY_KP),
+                "item3",
+                False
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      tags=["item1"],
+                      kp=READ_ONLY_KP),
+                "item3",
+                False
+        ),
+        (
+                None,
+                "hello",
+                False
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      kp=READ_ONLY_KP),
+                "",
+                True
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      kp=READ_ONLY_KP),
+                None,
+                True
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      tags=["hello", 'world'],
+                      kp=READ_ONLY_KP),
+                "hello",
+                True
+        ),
+        (
+                Entry("",
+                      "",
+                      "",
+                      tags=["hello", 'world', "item3"],
+                      kp=READ_ONLY_KP),
+                "hello",
+                True
+        )
+    ]
+)
+def test_is_entry_tagged(entry: Entry, tag: str, should_match: bool):
+    assert is_entry_tagged(tag)(entry) == should_match
