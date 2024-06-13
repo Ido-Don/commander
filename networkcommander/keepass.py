@@ -1,7 +1,8 @@
 import os
-from typing import List, Any, Tuple, Set
+from typing import List, Any, Tuple, Set, Iterable
 
 import pykeepass
+import pykeepass.entry
 from pykeepass import pykeepass
 from rich.prompt import Prompt
 
@@ -237,3 +238,7 @@ def untag_entry(entry: pykeepass.Entry, tag: str):
         raise LookupError(f"entry {entry.title} is not tagged with {tag}")
     tags.remove(tag)
     entry.tags = tags
+
+
+def entries_to_devices(entries: Iterable[pykeepass.entry.Entry]) -> Tuple[Device, ...]:
+    return tuple((entry_to_device(entry) for entry in entries))

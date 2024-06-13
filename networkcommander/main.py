@@ -3,10 +3,9 @@ import os.path
 import sys
 from functools import reduce
 from pathlib import Path
-from typing import List, Optional, Iterable, Union, Set, Tuple, Annotated
+from typing import List, Optional, Iterable, Union, Set, Annotated
 
 import netmiko
-import pykeepass.entry
 import rich
 import typer
 from rich.progress import Progress
@@ -21,7 +20,7 @@ from networkcommander.init import is_initialized, init_program, delete_project_f
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin, convert_to_yaml, load_user_config
 from networkcommander.keepass import KeepassDB, remove_device, \
     add_device_entry, get_all_entries, entry_to_device, \
-    tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tag_set
+    tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tag_set, entries_to_devices
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -112,10 +111,6 @@ def add_tag(device_tag: str, device_names: List[str]):
         for entry_to_tag in entries_to_tag:
             tag_entry(entry_to_tag, device_tag)
         rich.print(f"added '{device_tag}' tag to {len(device_names_to_be_tagged)} devices")
-
-
-def entries_to_devices(entries: Iterable[pykeepass.entry.Entry]) -> Tuple[Device, ...]:
-    return tuple((entry_to_device(entry) for entry in entries))
 
 
 @tag_command_group.command(name="list")
