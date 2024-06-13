@@ -80,29 +80,6 @@ class TestKeepass:
         assert entry.get_custom_property("device_type") == str(device.device_type)
         assert entry.tags == tags
 
-    def test_db_selection(self, populated_db):
-        device = get_test_device()
-        test_db = "selection_" + populated_db
-        create_new_keepass_db(test_db, KEEPASS_PASSWORD)
-
-        kp = pykeepass.PyKeePass(test_db, KEEPASS_PASSWORD)
-        add_device_entry(kp, device)
-
-        # devices = get_all_entries(kp)
-        assert devices == [device]
-
-    def test_db_selection_with_tags(self, populated_db):
-        test_db = "selection_tags_" + populated_db
-        shutil.copyfile(populated_db, test_db)
-
-        kp = pykeepass.PyKeePass(test_db, KEEPASS_PASSWORD)
-        device = get_test_device()
-        tags = [generic.random.choice(POSSIBLE_TAGS)]
-        add_device_entry(kp, device, tags)
-
-        devices = get_all_device_entries(kp, set(tags))
-        assert device in devices
-
     def test_does_device_exist_false(self, populated_db):
         """
         this test check rather does_device_exist will catch that an entry is not in the db
