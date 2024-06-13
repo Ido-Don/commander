@@ -219,7 +219,7 @@ def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = 
     """
     entry_title = device.name
     if not entry_title:
-        raise ValueError("device doesn't have a name...")
+        raise ValueError("devices must have a name...")
 
     if does_device_exist(kp, entry_title):
         raise LookupError(f"{entry_title} already exist in db")
