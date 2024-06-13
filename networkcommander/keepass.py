@@ -149,7 +149,6 @@ def is_entry_tagged_by_tag_set(tags: Set[str]):
     return inner
 
 
-
 def does_device_exist(kp: pykeepass.PyKeePass, device_name: str) -> bool:
     """
     Check if a device with the given name exists in the KeePass database.
@@ -212,7 +211,12 @@ def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = 
         new_entry.set_custom_property(key, str(val), True)
 
 
-def tag_entry(entry: pykeepass.Entry, tag: str):
+def tag_entry(entry: pykeepass.Entry, tag: str) -> None:
+    """
+    add a tag to an entry
+    :param entry: a database entry
+    :param tag: the tag to be added to the entry
+    """
     existing_tags = entry.tags
     if existing_tags:
         existing_tags += [tag]
@@ -222,8 +226,14 @@ def tag_entry(entry: pykeepass.Entry, tag: str):
 
 
 def untag_entry(entry: pykeepass.Entry, tag: str):
+    """
+    remove a tag from an entry
+    :param entry: a database entry
+    :param tag: the tag to be removed from the entry
+    :raise LookupError: when the tag doesn't exist in the entry
+    """
     tags = entry.tags
     if not tags or tag not in tags:
-        raise ValueError(f"entry {entry.title} is not tagged with {tag}")
+        raise LookupError(f"entry {entry.title} is not tagged with {tag}")
     tags.remove(tag)
     entry.tags = tags
