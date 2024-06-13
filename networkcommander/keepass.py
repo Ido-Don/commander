@@ -125,6 +125,10 @@ def entry_to_device(device_entry: pykeepass.Entry) -> Device:
 
 
 def is_entry_tagged(tag: str):
+    """
+    this function returns a function which checks if an entry is tagged by a specific tag
+    :param tag: a string that may be in the tags in entry
+    """
     def inner(entry: pykeepass.Entry) -> bool:
         if not entry:
             return False
@@ -138,6 +142,11 @@ def is_entry_tagged(tag: str):
 
 
 def is_entry_tagged_by_tag_set(tags: Set[str]):
+    """
+    this function returns a function which checks if an entry is tagged by all the tags in argument tags.
+    note: the entry must have all the tags in order to return true
+    :param tags: a set of strings representing the tags to search
+    """
     def inner(entry: pykeepass.Entry) -> bool:
         if not entry:
             return False
