@@ -54,7 +54,6 @@ def change_log_level(log_level: Annotated[
     typer.Option("--log-level", "-l")
 ] = None
                      ):
-    print("hello")
     if not log_level:
         return
     add_stream_handler(log_level)
@@ -75,6 +74,7 @@ def initialization_check(keepass_password: Optional[str] = typer.Option(None)):
             USER_CONFIG_FILE
     ):
         raise EnvironmentError("program is not initialized, please run commander init!")
+    commander_logger.debug("finished the initialization check")
 
 
 @tag_command_group.command(name="add")
@@ -114,7 +114,7 @@ def add_tag(device_tag: str, device_names: List[str]):
         rich.print(f"added '{device_tag}' tag to {len(device_names_to_be_tagged)} devices")
 
 
-def entries_to_devices(entries: Iterable[pykeepass.entry.Entry]) -> Tuple[Device]:
+def entries_to_devices(entries: Iterable[pykeepass.entry.Entry]) -> Tuple[Device, ...]:
     return tuple((entry_to_device(entry) for entry in entries))
 
 
@@ -408,7 +408,12 @@ def add_devices(
         all_device_names = extract_device_names(all_devices)
         devices_to_add = new_devices
         if not ignore_pre_existing:
-            pre_existing_device_names = {device.name in all_device_names for device in new_devices}
+            pre_existing_device_names = tuple(
+                filter(
+                    lambda new_device: new_device.name in all_device_names,
+                    new_devices
+                )
+            )
             if any(pre_existing_device_names):
                 raise LookupError(
                     "devices ["
@@ -417,7 +422,7 @@ def add_devices(
                 )
         else:
             new_non_existing_devices = tuple(filter(
-                lambda device: device not in all_devices and device.name not in all_device_names,
+                lambda new_device: new_device.name not in all_device_names,
                 new_devices
             ))
             new_non_existing_unique_devices = remove_device_duplicates(new_non_existing_devices)
