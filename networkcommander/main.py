@@ -336,7 +336,7 @@ def list_devices(
         all_entries = get_all_entries(kp)
 
     all_tagged_entries = tuple(filter(is_entry_tagged_by_tag_set(tags_set), all_entries))
-    all_tagged_devices = tuple((entry_to_device(entry) for entry in all_tagged_entries))
+    all_tagged_devices = entries_to_devices(all_tagged_entries)
 
     print_objects(all_tagged_devices, "devices")
 
