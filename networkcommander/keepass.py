@@ -149,20 +149,6 @@ def is_entry_tagged_by_tag_set(tags: Set[str]):
     return inner
 
 
-def get_device_tags(kp: pykeepass.PyKeePass):
-    """
-    Retrieve all unique device tags from the KeePass database.
-
-    :param kp: The connection to the KeePass database.
-    :Returns: A set containing all unique device tags.
-    """
-    tags = set()
-    for entry in kp.entries:
-        if entry.tags:
-            tags.update(entry.tags)
-
-    return tags
-
 
 def does_device_exist(kp: pykeepass.PyKeePass, device_name: str) -> bool:
     """
@@ -187,25 +173,11 @@ def remove_device(kp: pykeepass.PyKeePass, device_name: str) -> None:
     """
     if not does_device_exist(kp, device_name):
         raise LookupError(f"{device_name} doesn't exist in db")
-    device_entries = get_device_entries(kp, device_name)
-    for device_entry in device_entries:
-        kp.delete_entry(device_entry)
 
-
-def get_device_entries(kp: pykeepass.PyKeePass, device_name: str):
-    """
-    Retrieve all entries of a device from the KeePass database by its name.
-
-    :param kp: The connection to the KeePass database.
-    :param device_name: The name of the device.
-    :Returns: A list of pykeepass.Entry objects representing the retrieved device entries.
-    :Raises: LookupError if the device does not exist in the database.
-    """
-    if not does_device_exist(kp, device_name):
-        raise LookupError(f"{device_name} doesn't exist in db")
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     device_entries = kp.find_entries(group=device_group, title=device_name)
-    return device_entries
+    for device_entry in device_entries:
+        kp.delete_entry(device_entry)
 
 
 def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = None) -> None:
