@@ -115,7 +115,7 @@ def entry_to_device(device_entry: pykeepass.Entry) -> Device:
     device_type = DeviceType(custom_properties["device_type"])
     host = custom_properties["host"]
 
-    def key_in_required_properties(pair: Tuple[Any, Any]):
+    def key_in_required_properties(pair: Tuple[Any, Any]) -> bool:
         key = pair[0]
         return key not in required_properties
 
@@ -125,7 +125,7 @@ def entry_to_device(device_entry: pykeepass.Entry) -> Device:
 
 
 def is_entry_tagged(tag: str):
-    def inner(entry: pykeepass.Entry):
+    def inner(entry: pykeepass.Entry) -> bool:
         if not entry:
             return False
         if not tag:
@@ -138,7 +138,7 @@ def is_entry_tagged(tag: str):
 
 
 def is_entry_tagged_by_tag_set(tags: Set[str]):
-    def inner(entry: pykeepass.Entry):
+    def inner(entry: pykeepass.Entry) -> bool:
         if not entry:
             return False
         if not tags:
@@ -226,7 +226,7 @@ def tag_entry(entry: pykeepass.Entry, tag: str) -> None:
     entry.tags = existing_tags
 
 
-def untag_entry(entry: pykeepass.Entry, tag: str):
+def untag_entry(entry: pykeepass.Entry, tag: str) -> None:
     """
     remove a tag from an entry
     :param entry: a database entry
@@ -240,5 +240,5 @@ def untag_entry(entry: pykeepass.Entry, tag: str):
     entry.tags = tags
 
 
-def entries_to_devices(entries: Iterable[pykeepass.entry.Entry]) -> Tuple[Device, ...]:
+def entries_to_devices(entries: Iterable[pykeepass.Entry]) -> Tuple[Device, ...]:
     return tuple((entry_to_device(entry) for entry in entries))
