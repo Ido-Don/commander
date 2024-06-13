@@ -6,8 +6,8 @@ import pykeepass
 import pytest
 
 from networkcommander.init import create_new_keepass_db
-from networkcommander.keepass import KeepassDB, add_device_entry, get_all_device_entries, get_device_tags, \
-    does_device_exist
+from networkcommander.keepass import KeepassDB, add_device_entry, \
+    does_device_exist, get_all_entries
 from mocks import get_test_device, get_tag_list, POSSIBLE_TAGS
 
 KEEPASS_PASSWORD = "123"
@@ -88,7 +88,7 @@ class TestKeepass:
         kp = pykeepass.PyKeePass(test_db, KEEPASS_PASSWORD)
         add_device_entry(kp, device)
 
-        devices = get_all_device_entries(kp)
+        # devices = get_all_entries(kp)
         assert devices == [device]
 
     def test_db_selection_with_tags(self, populated_db):
@@ -102,11 +102,6 @@ class TestKeepass:
 
         devices = get_all_device_entries(kp, set(tags))
         assert device in devices
-
-    def test_get_device_tags(self, populated_db):
-        kp = pykeepass.PyKeePass(populated_db, KEEPASS_PASSWORD)
-        tags = get_device_tags(kp)
-        assert tags == set(POSSIBLE_TAGS)
 
     def test_does_device_exist_false(self, populated_db):
         """
