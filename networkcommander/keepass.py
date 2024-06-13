@@ -226,12 +226,8 @@ def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = 
 
     device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
 
-    username = device.username
-    password = device.password
-    if not username:
-        username = ""
-    if not password:
-        password = ""
+    username = normalize_input(device.username)
+    password = normalize_input(device.password)
 
     new_entry = kp.add_entry(device_group, entry_title, username, password, tags=tags)
 
