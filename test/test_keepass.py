@@ -110,6 +110,11 @@ class TestKeepass:
         entry = generic.random.choice(kp.entries)
         assert does_device_exist(kp, entry.title)
 
+    def test_get_all_entries(self, populated_db):
+        kp = pykeepass.PyKeePass(populated_db, KEEPASS_PASSWORD)
+        entries = get_all_entries(kp)
+        assert entries == tuple(kp.entries)
+
 
 @pytest.mark.parametrize(
     ("entry", "tags", "should_match"),
