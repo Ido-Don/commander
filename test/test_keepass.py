@@ -1,6 +1,6 @@
 import os.path
 import shutil
-from typing import Set
+from typing import Set, List, Optional, Union
 
 import mimesis
 import pykeepass
@@ -8,7 +8,7 @@ import pytest
 from pykeepass.pykeepass import Entry
 from networkcommander.init import create_new_keepass_db
 from networkcommander.keepass import KeepassDB, add_device_entry, \
-    does_device_exist, get_all_entries, is_entry_tagged_by_tag_set, is_entry_tagged
+    does_device_exist, get_all_entries, is_entry_tagged_by_tag_set, is_entry_tagged, tag_entry, untag_entry
 from mocks import get_test_device, get_tag_list, POSSIBLE_TAGS
 
 KEEPASS_PASSWORD = "123"
@@ -114,6 +114,68 @@ class TestKeepass:
         kp = pykeepass.PyKeePass(populated_db, KEEPASS_PASSWORD)
         entries = get_all_entries(kp)
         assert entries == tuple(kp.entries)
+
+    @pytest.mark.parametrize(
+        ("entry", "tag", "expected_tags"),
+        [
+            (
+                    Entry("",
+                          "",
+                          "",
+                          tags=["hello"],
+                          kp=READ_ONLY_KP),
+                    "world",
+                    ["hello", "world"]
+            ),
+            (
+                    Entry("",
+                          "",
+                          "",
+                          kp=READ_ONLY_KP),
+                    "world",
+                    ["world"]
+            ),
+        ]
+    )
+    def test_tag_entry(self, entry: Entry, tag: str, expected_tags: Optional[List[str]]):
+        tag_entry(entry, tag)
+        assert entry.tags == expected_tags
+
+    @pytest.mark.parametrize(
+        ("entry", "tag", "expected_tags"),
+        [
+            (
+                    Entry("",
+                          "",
+                          "",
+                          tags=["hello"],
+                          kp=READ_ONLY_KP),
+                    "hello",
+                    ""
+            ),
+            (
+                    Entry("",
+                          "",
+                          "",
+                          tags=["hello", "world"],
+                          kp=READ_ONLY_KP),
+                    "world",
+                    ["hello"]
+            ),
+            (
+                    Entry("",
+                          "",
+                          "",
+                          tags=["hello", "world", "item2"],
+                          kp=READ_ONLY_KP),
+                    "world",
+                    ["hello", "item2"]
+            ),
+        ]
+    )
+    def test_untag_entry(self, entry: Entry, tag: str, expected_tags: Optional[Union[List[str], str]]):
+        untag_entry(entry, tag)
+        assert entry.tags == expected_tags
 
 
 @pytest.mark.parametrize(
