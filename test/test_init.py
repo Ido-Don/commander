@@ -112,23 +112,23 @@ def test_is_initialized(fake_filesystem):
     init_file_system(fake_filesystem)
 
     # the folder, database and user config doesn't exist
-    assert not is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH)
+    assert not is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH, fake_logger)
 
     os.makedirs(COMMANDER_FOLDER_PATH, exist_ok=True)
 
     # the folder exists, but the database and user config doesn't exist
-    assert not is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH)
+    assert not is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH, fake_logger)
 
     create_new_keepass_db(DEFAULT_KEEPASS_DB_PATH, fake_logger, KEEPASS_PASSWORD)
 
     # the folder and database exists, but the user config file doesn't exist
-    assert not is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH)
+    assert not is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH, fake_logger)
 
     with open(USER_CONFIG_FILE_PATH, 'w+', encoding="UTF-8") as user_config_file:
         json.dump(config, user_config_file)
 
     # the folder, database and user config file exists
-    assert is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH)
+    assert is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH, fake_logger)
 
 
 def test_init_commander(fake_filesystem):

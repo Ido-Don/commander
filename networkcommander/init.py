@@ -39,7 +39,7 @@ def init_commander(config: Dict[str, Any], logger: Logger, keepass_password=None
     config_file_path = config["config_file_path"]
 
     logger.debug("checking if commander is initialized")
-    if is_initialized(commander_directory, keepass_db_path, config_file_path):
+    if is_initialized(commander_directory, keepass_db_path, config_file_path, logger):
         logger.debug("commander is already initialized")
         return
     logger.debug("commander is not initialized")
@@ -74,20 +74,29 @@ def create_new_keepass_db(keepass_db_path: str, logger: Logger, keepass_password
         kp.add_group(kp.root_group, DEVICE_GROUP_NAME)
 
 
-def is_initialized(directory: str, keepass_db_path: str, config_file_path: str):
+def is_initialized(directory: str, keepass_db_path: str, config_file_path: str, logger: Logger):
     """
     this function checks if the commander directory is properly initialized
+    :param logger:
     :param directory: the parent directory
     :param keepass_db_path: the keepass database path
     :param config_file_path: the commander config file path
     :return: true if everything is initialized correctly and false otherwise
     """
+    logger.info(f"checking if commander is initialized")
     if not os.path.isdir(directory):
+        logger.debug(f"commander is not initialized in this folder {directory}")
         return False
+    logger.debug(f"commander is initialized in this folder {directory}")
     if not os.path.isfile(keepass_db_path):
+        logger.debug(f"commander is not initilized with this db {keepass_db_path}")
         return False
+    logger.debug(f"commander is initilized with this db {keepass_db_path}")
     if not is_file_json(config_file_path):
+        logger.debug(f"commander is not initialized with this user file {config_file_path}")
         return False
+    logger.debug(f"commander is initialized with this user file {config_file_path}")
+    logger.info(f"commander is initialized")
     return True
 
 

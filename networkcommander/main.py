@@ -70,7 +70,8 @@ def initialization_check(keepass_password: Optional[str] = typer.Option(None)):
     if not is_initialized(
             config['commander_directory'],
             config['keepass_db_path'],
-            USER_CONFIG_FILE_PATH
+            USER_CONFIG_FILE_PATH,
+            commander_logger
     ):
         raise EnvironmentError("program is not initialized, please run commander init!")
     commander_logger.debug("finished the initialization check")
@@ -494,11 +495,8 @@ def init():
     initialize the project
     """
     rich.print("Welcome to commander!")
-    if is_initialized(
-            config['commander_directory'],
-            config['keepass_db_path'],
-            USER_CONFIG_FILE_PATH
-    ):
+    if is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE_PATH,
+                      commander_logger):
         rich.print("commander is already initialized")
         reinitialize = typer.confirm("do you want to delete everything (including config and database) and start over?")
 
@@ -508,7 +506,8 @@ def init():
     if not is_initialized(
             config['commander_directory'],
             config['keepass_db_path'],
-            USER_CONFIG_FILE_PATH
+            USER_CONFIG_FILE_PATH,
+            commander_logger
     ):
         rich.print(f"creating a new database in {config['commander_directory']}")
         init_commander(config, commander_logger)
