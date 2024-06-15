@@ -44,7 +44,12 @@ def create_new_keepass_db(keepass_db_path: str, keepass_password=None):
         kp.add_group(kp.root_group, DEVICE_GROUP_NAME)
 
 
-def is_initialized(directory, keepass_db_path, config_file_path):
-    if os.path.isdir(directory):
-        return os.path.isfile(keepass_db_path) and os.path.isfile(config_file_path)
-    return False
+def is_initialized(directory: str, keepass_db_path: str, config_file_path: str):
+    """
+    this function checks if the commander directory is properly initialized
+    :param directory: the parent directory
+    :param keepass_db_path: the keepass database path
+    :param config_file_path: the commander config file path
+    :return: true if everything is initialized correctly and false otherwise
+    """
+    return os.path.isdir(directory) and os.path.isfile(keepass_db_path) and os.path.isfile(config_file_path)
