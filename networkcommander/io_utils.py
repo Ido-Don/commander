@@ -7,7 +7,7 @@ import typer
 import yaml
 
 from networkcommander.commander_logging import commander_logger
-from networkcommander.config import USER_CONFIG_FILE, config
+from networkcommander.config import USER_CONFIG_FILE_PATH, config
 
 
 def print_objects(objects: Iterable, object_name: str) -> None:
@@ -60,13 +60,13 @@ def load_user_config():
 
     Note: The configuration file is expected to be in JSON format.
     """
-    commander_logger.info("loading user config from %s", USER_CONFIG_FILE)
-    if os.path.isfile(USER_CONFIG_FILE):
-        with open(USER_CONFIG_FILE, encoding="UTF-8") as json_file:
-            commander_logger.info("successfully opened file located at %s", USER_CONFIG_FILE)
+    commander_logger.info("loading user config from %s", USER_CONFIG_FILE_PATH)
+    if os.path.isfile(USER_CONFIG_FILE_PATH):
+        with open(USER_CONFIG_FILE_PATH, encoding="UTF-8") as json_file:
+            commander_logger.info("successfully opened file located at %s", USER_CONFIG_FILE_PATH)
             file_content = json_file.read()
             if not file_content:
-                commander_logger.info("file %s had no data", USER_CONFIG_FILE)
+                commander_logger.info("file %s had no data", USER_CONFIG_FILE_PATH)
                 return
             user_custom_config = json.loads(file_content)
             config.update(user_custom_config)

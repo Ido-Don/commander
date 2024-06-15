@@ -12,7 +12,7 @@ from rich.progress import Progress
 
 from networkcommander.__init__ import __version__
 from networkcommander.commander_logging import commander_logger, add_stream_handler, LogLevel
-from networkcommander.config import config, USER_CONFIG_FILE
+from networkcommander.config import config, USER_CONFIG_FILE_PATH
 from networkcommander.deploy import deploy_commands
 from networkcommander.device import device_from_string, Device
 from networkcommander.device_executer import PermissionLevel
@@ -70,7 +70,7 @@ def initialization_check(keepass_password: Optional[str] = typer.Option(None)):
     if not is_initialized(
             config['commander_directory'],
             config['keepass_db_path'],
-            USER_CONFIG_FILE
+            USER_CONFIG_FILE_PATH
     ):
         raise EnvironmentError("program is not initialized, please run commander init!")
     commander_logger.debug("finished the initialization check")
@@ -497,7 +497,7 @@ def init():
     if is_initialized(
             config['commander_directory'],
             config['keepass_db_path'],
-            USER_CONFIG_FILE
+            USER_CONFIG_FILE_PATH
     ):
         rich.print("commander is already initialized")
         reinitialize = typer.confirm("do you want to delete everything (including config and database) and start over?")
@@ -508,10 +508,10 @@ def init():
     if not is_initialized(
             config['commander_directory'],
             config['keepass_db_path'],
-            USER_CONFIG_FILE
+            USER_CONFIG_FILE_PATH
     ):
         rich.print(f"creating a new database in {config['commander_directory']}")
-        init_program(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE, config)
+        init_program(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE_PATH, config)
 
     rich.print("finished the initialization process, have a great day")
 
