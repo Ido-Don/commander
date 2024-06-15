@@ -6,9 +6,8 @@ import pykeepass.entry
 from pykeepass import pykeepass
 from rich.prompt import Prompt
 
+from networkcommander.config import DEVICE_GROUP_NAME
 from networkcommander.device import Device, DeviceType
-
-DEVICE_GROUP_NAME = "device"
 
 
 class KeepassDB:

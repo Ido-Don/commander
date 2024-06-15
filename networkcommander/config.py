@@ -19,3 +19,4 @@ config = {
     "logger_name": "commander",
     "log_file_path": DEFAULT_LOG_FILE_PATH
 }
+DEVICE_GROUP_NAME = "device"
