@@ -50,15 +50,18 @@ def init_commander(config: Dict[str, Any], logger: Logger, keepass_password=None
     if not os.path.exists(commander_directory):
         logger.debug("the commander directory does not exist")
         os.makedirs(commander_directory)
-        logger.debug(f"created directory in {commander_directory}")
+        rich.print(f"created a directory in {commander_directory}")
+        logger.debug(f"created a directory in {commander_directory}")
 
     if not os.path.isfile(config_file_path):
         with open(config_file_path, 'w', encoding="utf-8") as config_file:
             json.dump(config, config_file, indent=2)
+        rich.print(f"created a config file in {config_file_path}")
         logger.debug(f"created a config file in {config_file_path}")
 
     if not os.path.isfile(keepass_db_path):
         create_new_keepass_db(keepass_db_path, logger, keepass_password)
+        rich.print(f"created a database in {keepass_db_path}")
 
 
 def create_new_keepass_db(keepass_db_path: str, logger: Logger, keepass_password=None):

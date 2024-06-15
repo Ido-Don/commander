@@ -509,7 +509,6 @@ def init():
             USER_CONFIG_FILE_PATH,
             commander_logger
     ):
-        rich.print(f"creating a new database in {config['commander_directory']}")
         init_commander(config, commander_logger)
 
     rich.print("finished the initialization process, have a great day")
