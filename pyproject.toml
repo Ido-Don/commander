@@ -18,6 +18,9 @@ commander = "networkcommander.main:app"
 [tool.poetry.group.dev.dependencies]
 pyinstaller = "^6.3.0"
 pylint = "^3.0.3"
+pyfakefs = "^5.5.0"
+pytest = "^8.2.2"
+faker = "^25.8.0"
 
 [build-system]
 requires = ["poetry-core"]
