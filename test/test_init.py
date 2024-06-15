@@ -7,9 +7,9 @@ from logging import Logger
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem, OSType
 
-from networkcommander.config import config, COMMANDER_FOLDER
+from networkcommander.config import config, COMMANDER_FOLDER, DEVICE_GROUP_NAME
 from networkcommander.init import delete_project_files, create_new_keepass_db
-from networkcommander.keepass import KeepassDB, DEVICE_GROUP_NAME
+from networkcommander.keepass import KeepassDB
 
 fake_logger = Logger("fake_logger_commander", "DEBUG")
 stream_handler = logging.StreamHandler(sys.stdout)
