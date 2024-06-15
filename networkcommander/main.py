@@ -19,8 +19,8 @@ from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_program, delete_project_files
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin, convert_to_yaml, load_user_config
 from networkcommander.keepass import KeepassDB, remove_device, \
-    add_device_entry, get_all_entries, entry_to_device, \
-    tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tag_set, entries_to_devices
+    add_device_entry, get_all_entries, tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tag_set, \
+    entries_to_devices
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -426,7 +426,7 @@ def add_devices(
         for device in devices_to_add:
             add_device_entry(kp, device)
             typer.echo(f"added device {str(device)} to database")
-    typer.echo(f"added {len(devices_to_add)} to database")
+    typer.echo(f"added {len(devices_to_add)} devices to database")
 
 
 def remove_device_duplicates(devices: Iterable[Device]) -> List[Device]:
