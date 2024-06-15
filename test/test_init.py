@@ -7,8 +7,9 @@ from logging import Logger
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem, OSType
 
-from networkcommander.config import config, COMMANDER_FOLDER, DEVICE_GROUP_NAME
-from networkcommander.init import delete_project_files, create_new_keepass_db, is_file_json
+from networkcommander.config import config, COMMANDER_FOLDER_PATH, DEVICE_GROUP_NAME, DEFAULT_KEEPASS_DB_PATH, \
+    USER_CONFIG_FILE_PATH
+from networkcommander.init import delete_project_files, create_new_keepass_db, is_file_json, is_initialized
 from networkcommander.keepass import KeepassDB
 
 fake_logger = Logger("fake_logger_commander", "DEBUG")
@@ -64,9 +65,9 @@ def init_file_system(fake_filesystem: FakeFilesystem):
 
 def test_delete_project_files(fake_filesystem):
     init_file_system(fake_filesystem)
-    create_fake_commander_folder(COMMANDER_FOLDER)
-    delete_project_files(COMMANDER_FOLDER, fake_logger)
-    assert not os.path.exists(COMMANDER_FOLDER)
+    create_fake_commander_folder(COMMANDER_FOLDER_PATH)
+    delete_project_files(COMMANDER_FOLDER_PATH, fake_logger)
+    assert not os.path.exists(COMMANDER_FOLDER_PATH)
 
 
 def test_create_new_keepass_db(fake_filesystem):
@@ -106,3 +107,26 @@ def test_is_file_json(fake_filesystem):
     with open(not_json_file_path, "w+") as not_json_file:
         not_json_file.write("askdjljnasdkjnlsnf;jnjoi12nkj1o}{}")
     assert not is_file_json(not_json_file_path)
+
+
+def test_is_initialized(fake_filesystem):
+    init_file_system(fake_filesystem)
+
+    # the folder, database and user config doesn't exist
+    assert not is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH)
+
+    os.makedirs(COMMANDER_FOLDER_PATH, exist_ok=True)
+
+    # the folder exists, but the database and user config doesn't exist
+    assert not is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH)
+
+    create_new_keepass_db(DEFAULT_KEEPASS_DB_PATH, KEEPASS_PASSWORD)
+
+    # the folder and database exists, but the user config file doesn't exist
+    assert not is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH)
+
+    with open(USER_CONFIG_FILE_PATH, 'w+', encoding="UTF-8") as user_config_file:
+        json.dump(config, user_config_file)
+
+    # the folder, database and user config file exists
+    assert is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH)
