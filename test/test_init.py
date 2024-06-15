@@ -5,10 +5,11 @@ import sys
 from logging import Logger
 
 import pytest
+from pyfakefs.fake_filesystem import FakeFilesystem, OSType
 
 from networkcommander.config import config, COMMANDER_FOLDER
-from networkcommander.init import delete_project_files
-from networkcommander.keepass import KeepassDB
+from networkcommander.init import delete_project_files, create_new_keepass_db
+from networkcommander.keepass import KeepassDB, DEVICE_GROUP_NAME
 
 fake_logger = Logger("fake_logger_commander", "DEBUG")
 stream_handler = logging.StreamHandler(sys.stdout)
@@ -29,11 +30,11 @@ blank_database_paths = [
 
 
 @pytest.fixture
-def fake_filesystem(fs):  # pylint:disable=invalid-name
+def fake_filesystem(fs: FakeFilesystem):  # pylint:disable=invalid-name
     """Variable name 'fs' causes a pylint warning. Provide a longer name
     acceptable to pylint for use in tests.
     """
-    yield fs
+    return fs
 
 
 def create_fake_commander_folder(directory_path: str):
@@ -56,8 +57,32 @@ def create_blank_database():
             blank_database_file.write(blank_database_data)
 
 
-def test_delete_project_files(fake_filesystem):
+def init_file_system(fake_filesystem: FakeFilesystem):
+    fake_filesystem.os = OSType.WINDOWS
     create_blank_database()
+
+
+def test_delete_project_files(fake_filesystem):
+    init_file_system(fake_filesystem)
     create_fake_commander_folder(COMMANDER_FOLDER)
     delete_project_files(COMMANDER_FOLDER, fake_logger)
     assert not os.path.exists(COMMANDER_FOLDER)
+
+
+def test_create_new_keepass_db(fake_filesystem):
+    init_file_system(fake_filesystem)
+    root_path = str(fake_filesystem.root.path)
+    keepass_db_path = os.path.join(root_path, KEEPASS_DATABASE_FILE_NAME)
+    create_new_keepass_db(keepass_db_path, KEEPASS_PASSWORD)
+    assert os.path.exists(keepass_db_path)
+    with KeepassDB(keepass_db_path, KEEPASS_PASSWORD) as kp:
+
+        groups = kp.find_groups(name=DEVICE_GROUP_NAME)
+        assert groups
+        assert len(groups) == 1
+        first_group = groups[0]
+        assert first_group.name == DEVICE_GROUP_NAME
+
+        entries = kp.entries
+        assert not entries
+
