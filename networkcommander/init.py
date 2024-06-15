@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 from logging import Logger
+from typing import Any, Dict
 
 import rich
 
@@ -23,24 +24,53 @@ def delete_project_files(directory: str, logger: Logger):
     logger.info(f"finished deleting directory: {directory}")
 
 
-def init_program(directory, keepass_db_path, config_file_path, config):
-    if is_initialized(directory, keepass_db_path, config_file_path):
+def init_commander(config: Dict[str, Any], logger: Logger, keepass_password=None):
+    """
+    This function, if not present before, will create a new commander folder,
+    a new user config file and a new keepass database
+    :param config: a dictionary containing
+    :param logger:
+    :param keepass_password:
+    :return:
+    """
+    logger.info("starting to initialize commander")
+    commander_directory = config["commander_directory"]
+    keepass_db_path = config["keepass_db_path"]
+    config_file_path = config["config_file_path"]
+
+    logger.debug("checking if commander is initialized")
+    if is_initialized(commander_directory, keepass_db_path, config_file_path):
+        logger.debug("commander is already initialized")
         return
-    os.makedirs(directory, exist_ok=True)
+    logger.debug("commander is not initialized")
+
+    if os.path.isfile(commander_directory):
+        raise NotADirectoryError(f"{commander_directory} is a file and not a folder")
+
+    if not os.path.exists(commander_directory):
+        logger.debug("the commander directory does not exist")
+        os.makedirs(commander_directory)
+        logger.debug(f"created directory in {commander_directory}")
+
     if not os.path.isfile(config_file_path):
         with open(config_file_path, 'w', encoding="utf-8") as config_file:
             json.dump(config, config_file, indent=2)
+        logger.debug(f"created a config file in {config_file_path}")
+
     if not os.path.isfile(keepass_db_path):
-        create_new_keepass_db(keepass_db_path)
+        create_new_keepass_db(keepass_db_path, logger, keepass_password)
 
 
-def create_new_keepass_db(keepass_db_path: str, keepass_password=None):
+def create_new_keepass_db(keepass_db_path: str, logger: Logger, keepass_password=None):
     """
     this function creates a new keepass database with a group.
+    :param logger:
     :param keepass_db_path: the path to the new keepass db
     :param keepass_password: the new keepass password
     """
+    logger.info(f"creating a new database in {keepass_db_path}")
     with KeepassDB(keepass_db_path, keepass_password) as kp:
+        logger.debug(f"added a new group named {DEVICE_GROUP_NAME} to the database")
         kp.add_group(kp.root_group, DEVICE_GROUP_NAME)
 
 
