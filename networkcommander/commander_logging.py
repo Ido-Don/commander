@@ -1,4 +1,5 @@
 import logging
+import os.path
 import sys
 import uuid
 from enum import Enum
@@ -10,17 +11,18 @@ logging_id = uuid.uuid4()
 
 commander_logger = logging.getLogger(config["logger_name"])
 commander_logger.setLevel(config["logging_file_level"])
-
-file_handler = logging.FileHandler(config["log_file_path"])
 stream_handler = logging.StreamHandler(sys.stdout)
 
-file_formatter = logging.Formatter(f'{logging_id} : %(asctime)s : %(levelname)s : %(name)s : %(message)s')
-file_handler.setFormatter(file_formatter)
 
 stream_formatter = logging.Formatter("%(asctime)s : %(levelname)s : %(name)s : %(message)s")
 stream_handler.setFormatter(stream_formatter)
 
-commander_logger.addHandler(file_handler)
+if os.path.isfile(config["log_file_path"]):
+    file_handler = logging.FileHandler(config["log_file_path"])
+    file_formatter = logging.Formatter(f'{logging_id} : %(asctime)s : %(levelname)s : %(name)s : %(message)s')
+    file_handler.setFormatter(file_formatter)
+
+    commander_logger.addHandler(file_handler)
 
 
 class LogLevel(str, Enum):
