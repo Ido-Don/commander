@@ -9,6 +9,7 @@ DEFAULT_LOG_FILE_PATH = os.path.join(HOME_FOLDER, ".commander/commander_logs.log
 config = {
     "commander_directory": COMMANDER_FOLDER_PATH,
     'keepass_db_path': DEFAULT_KEEPASS_DB_PATH,
+    "config_file_path": USER_CONFIG_FILE_PATH,
     "max_worker": 60,
     "default_device_type": "cisco_ios",
     "optional_parameters": {
