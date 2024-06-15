@@ -9,6 +9,11 @@ from networkcommander.keepass import KeepassDB, DEVICE_GROUP_NAME
 
 
 def delete_project_files(directory: str, logger: Logger):
+    """
+    Delete all the local commander files.
+    :param directory: the folder all the project files live in
+    :param logger: the logger the function will use.
+    """
     logger.info(f"starting to delete directory: {directory}")
     rich.print(f"deleting directory: {directory}")
     if not os.path.isdir(directory):
