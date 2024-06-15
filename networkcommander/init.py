@@ -19,7 +19,7 @@ def delete_project_files(directory: str, logger: Logger):
     if not os.path.isdir(directory):
         raise FileNotFoundError(f"directory {directory} doesn't exist")
     shutil.rmtree(directory)
-    logger.info(f"starting to delete directory: {directory}")
+    logger.info(f"finished deleting directory: {directory}")
 
 
 def init_program(directory, keepass_db_path, config_file_path, config):
