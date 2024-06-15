@@ -35,6 +35,11 @@ def init_program(directory, keepass_db_path, config_file_path, config):
 
 
 def create_new_keepass_db(keepass_db_path: str, keepass_password=None):
+    """
+    this function creates a new keepass database with a group.
+    :param keepass_db_path: the path to the new keepass db
+    :param keepass_password: the new keepass password
+    """
     with KeepassDB(keepass_db_path, keepass_password) as kp:
         kp.add_group(kp.root_group, DEVICE_GROUP_NAME)
 
