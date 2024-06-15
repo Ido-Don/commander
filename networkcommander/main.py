@@ -16,7 +16,7 @@ from networkcommander.config import config, USER_CONFIG_FILE_PATH
 from networkcommander.deploy import deploy_commands
 from networkcommander.device import device_from_string, Device
 from networkcommander.device_executer import PermissionLevel
-from networkcommander.init import is_initialized, init_program, delete_project_files
+from networkcommander.init import is_initialized, init_commander, delete_project_files
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin, convert_to_yaml, load_user_config
 from networkcommander.keepass import KeepassDB, remove_device, \
     add_device_entry, get_all_entries, tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tag_set, \
@@ -511,7 +511,7 @@ def init():
             USER_CONFIG_FILE_PATH
     ):
         rich.print(f"creating a new database in {config['commander_directory']}")
-        init_program(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE_PATH, config)
+        init_commander(config, commander_logger)
 
     rich.print("finished the initialization process, have a great day")
 

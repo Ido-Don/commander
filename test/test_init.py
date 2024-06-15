@@ -1,23 +1,15 @@
 import json
-import logging
 import os
-import sys
-from logging import Logger
 
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem, OSType
 
 from networkcommander.config import config, COMMANDER_FOLDER_PATH, DEVICE_GROUP_NAME, DEFAULT_KEEPASS_DB_PATH, \
     USER_CONFIG_FILE_PATH
-from networkcommander.init import delete_project_files, create_new_keepass_db, is_file_json, is_initialized
+from networkcommander.init import delete_project_files, create_new_keepass_db, is_file_json, is_initialized, \
+    init_commander
 from networkcommander.keepass import KeepassDB
-
-fake_logger = Logger("fake_logger_commander", "DEBUG")
-stream_handler = logging.StreamHandler(sys.stdout)
-fake_logger.addHandler(stream_handler)
-
-stream_formatter = logging.Formatter("%(asctime)s : %(levelname)s : %(name)s : %(message)s")
-stream_handler.setFormatter(stream_formatter)
+from test.logging_for_testing import fake_logger
 
 COMMANDER_CONFIG_FILE_NAME = ".commanderconfig"
 KEEPASS_DATABASE_FILE_NAME = "db.kdbx"
@@ -74,8 +66,12 @@ def test_create_new_keepass_db(fake_filesystem):
     init_file_system(fake_filesystem)
     root_path = str(fake_filesystem.root.path)
     keepass_db_path = os.path.join(root_path, KEEPASS_DATABASE_FILE_NAME)
-    create_new_keepass_db(keepass_db_path, KEEPASS_PASSWORD)
+    create_new_keepass_db(keepass_db_path, fake_logger, KEEPASS_PASSWORD)
     assert os.path.exists(keepass_db_path)
+    check_if_keepass_is_initilized_correctly(keepass_db_path)
+
+
+def check_if_keepass_is_initilized_correctly(keepass_db_path):
     with KeepassDB(keepass_db_path, KEEPASS_PASSWORD) as kp:
         groups = kp.find_groups(name=DEVICE_GROUP_NAME)
         assert groups
@@ -120,7 +116,7 @@ def test_is_initialized(fake_filesystem):
     # the folder exists, but the database and user config doesn't exist
     assert not is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH)
 
-    create_new_keepass_db(DEFAULT_KEEPASS_DB_PATH, KEEPASS_PASSWORD)
+    create_new_keepass_db(DEFAULT_KEEPASS_DB_PATH, fake_logger, KEEPASS_PASSWORD)
 
     # the folder and database exists, but the user config file doesn't exist
     assert not is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH)
@@ -132,6 +128,11 @@ def test_is_initialized(fake_filesystem):
     assert is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH)
 
 
-def test_init_program(fake_filesystem):
+def test_init_commander(fake_filesystem):
     init_file_system(fake_filesystem)
-
+    init_commander(config, fake_logger, KEEPASS_PASSWORD)
+    assert os.path.isdir(COMMANDER_FOLDER_PATH)
+    check_if_keepass_is_initilized_correctly(DEFAULT_KEEPASS_DB_PATH)
+    with open(USER_CONFIG_FILE_PATH, encoding="UTF-8") as user_config_file:
+        user_config = json.load(user_config_file)
+        assert user_config == config

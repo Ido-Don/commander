@@ -10,6 +10,7 @@ from networkcommander.init import create_new_keepass_db
 from networkcommander.keepass import KeepassDB, add_device_entry, \
     does_device_exist, get_all_entries, is_entry_tagged_by_tag_set, is_entry_tagged, tag_entry, untag_entry
 from mocks import get_test_device, get_tag_list, POSSIBLE_TAGS
+from test.logging_for_testing import fake_logger
 
 KEEPASS_PASSWORD = "123"
 POSSIBLE_NAMES = list(POSSIBLE_TAGS)
@@ -23,7 +24,7 @@ READ_ONLY_KP = pykeepass.PyKeePass(POPULATED_DB_PATH, password=KEEPASS_PASSWORD)
 def populate_db(keepass_db_path: str):
     if os.path.isfile(keepass_db_path):
         os.remove(keepass_db_path)
-    create_new_keepass_db(keepass_db_path, KEEPASS_PASSWORD)
+    create_new_keepass_db(keepass_db_path, fake_logger, KEEPASS_PASSWORD)
     with KeepassDB(keepass_db_path, KEEPASS_PASSWORD) as kp:
         for _ in range(300):
             device = get_test_device()
