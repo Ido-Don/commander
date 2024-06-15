@@ -8,7 +8,7 @@ import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem, OSType
 
 from networkcommander.config import config, COMMANDER_FOLDER, DEVICE_GROUP_NAME
-from networkcommander.init import delete_project_files, create_new_keepass_db
+from networkcommander.init import delete_project_files, create_new_keepass_db, is_file_json
 from networkcommander.keepass import KeepassDB
 
 fake_logger = Logger("fake_logger_commander", "DEBUG")
@@ -76,7 +76,6 @@ def test_create_new_keepass_db(fake_filesystem):
     create_new_keepass_db(keepass_db_path, KEEPASS_PASSWORD)
     assert os.path.exists(keepass_db_path)
     with KeepassDB(keepass_db_path, KEEPASS_PASSWORD) as kp:
-
         groups = kp.find_groups(name=DEVICE_GROUP_NAME)
         assert groups
         assert len(groups) == 1
@@ -86,3 +85,24 @@ def test_create_new_keepass_db(fake_filesystem):
         entries = kp.entries
         assert not entries
 
+
+def test_is_file_json(fake_filesystem):
+    init_file_system(fake_filesystem)
+    test_dictionary = {
+        "hello": 1,
+        "world": 2,
+        "commander": [
+            "is",
+            "the",
+            "best"
+        ]
+    }
+    json_file_path = "json_file.json"
+    with open(json_file_path, "w+") as json_file:
+        json.dump(test_dictionary, json_file)
+    assert is_file_json(json_file_path)
+
+    not_json_file_path = "not_json_file.json"
+    with open(not_json_file_path, "w+") as not_json_file:
+        not_json_file.write("askdjljnasdkjnlsnf;jnjoi12nkj1o}{}")
+    assert not is_file_json(not_json_file_path)
