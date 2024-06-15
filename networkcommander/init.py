@@ -52,4 +52,25 @@ def is_initialized(directory: str, keepass_db_path: str, config_file_path: str):
     :param config_file_path: the commander config file path
     :return: true if everything is initialized correctly and false otherwise
     """
-    return os.path.isdir(directory) and os.path.isfile(keepass_db_path) and os.path.isfile(config_file_path)
+    if not os.path.isdir(directory):
+        return False
+    if not os.path.isfile(keepass_db_path):
+        return False
+    if not is_file_json(config_file_path):
+        return False
+    return True
+
+
+def is_file_json(file_path: str):
+    """
+    :param file_path: The path to the json file.
+    :return: True if the file contains a valid json False otherwise
+    """
+    if not os.path.isfile(file_path):
+        return False
+    try:
+        with open(file_path, encoding="UTF-8") as config_file:
+            _ = json.load(config_file)
+            return True
+    except json.decoder.JSONDecodeError:
+        return False
