@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem, OSType
@@ -16,9 +17,11 @@ KEEPASS_DATABASE_FILE_NAME = "db.kdbx"
 KEEPASS_PASSWORD = '123'
 
 blank_database_data = open(r"blank_database.kdbx", 'rb').read()
+PYTHON_EXE_FILE_PATH = sys.executable
+PYTHON_FOLDER_PATH = os.path.dirname(PYTHON_EXE_FILE_PATH)
+
 blank_database_paths = [
-    'C:\\Users\\עידו\\AppData\\Local\\Programs\\Python\\Python310\\Lib\\site-packages\\pykeepass\\blank_database.kdbx',
-    "C:\\venv\\python3.10\\Lib\\site-packages\\pykeepass\\blank_database.kdbx"
+    os.path.join(PYTHON_FOLDER_PATH, 'Lib\\site-packages\\pykeepass\\blank_database.kdbx'),
 ]
 
 
