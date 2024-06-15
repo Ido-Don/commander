@@ -23,7 +23,7 @@ COMMANDER_CONFIG_FILE_NAME = ".commanderconfig"
 KEEPASS_DATABASE_FILE_NAME = "db.kdbx"
 KEEPASS_PASSWORD = '123'
 
-blank_database_data = open(r"C:\code\network-commander\test\blank_database.kdbx", 'rb').read()
+blank_database_data = open(r"blank_database.kdbx", 'rb').read()
 blank_database_paths = [
     'C:\\Users\\עידו\\AppData\\Local\\Programs\\Python\\Python310\\Lib\\site-packages\\pykeepass\\blank_database.kdbx',
     "C:\\venv\\python3.10\\Lib\\site-packages\\pykeepass\\blank_database.kdbx"
@@ -130,3 +130,8 @@ def test_is_initialized(fake_filesystem):
 
     # the folder, database and user config file exists
     assert is_initialized(COMMANDER_FOLDER_PATH, DEFAULT_KEEPASS_DB_PATH, USER_CONFIG_FILE_PATH)
+
+
+def test_init_program(fake_filesystem):
+    init_file_system(fake_filesystem)
+
