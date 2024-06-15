@@ -503,7 +503,7 @@ def init():
         reinitialize = typer.confirm("do you want to delete everything (including config and database) and start over?")
 
         if reinitialize:
-            delete_project_files(config['commander_directory'])
+            delete_project_files(config['commander_directory'], commander_logger)
 
     if not is_initialized(
             config['commander_directory'],

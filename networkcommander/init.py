@@ -1,17 +1,20 @@
 import json
 import os
 import shutil
+from logging import Logger
 
 import rich
 
 from networkcommander.keepass import KeepassDB, DEVICE_GROUP_NAME
 
 
-def delete_project_files(directory):
+def delete_project_files(directory, logger: Logger):
+    logger.info(f"starting to delete directory: {directory}")
     rich.print(f"deleting directory: {directory}")
     if not os.path.isdir(directory):
         raise FileNotFoundError(f"directory {directory} doesn't exist")
     shutil.rmtree(directory)
+    logger.info(f"starting to delete directory: {directory}")
 
 
 def init_program(directory, keepass_db_path, config_file_path, config):
