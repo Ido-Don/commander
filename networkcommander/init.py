@@ -8,7 +8,7 @@ import rich
 from networkcommander.keepass import KeepassDB, DEVICE_GROUP_NAME
 
 
-def delete_project_files(directory, logger: Logger):
+def delete_project_files(directory: str, logger: Logger):
     logger.info(f"starting to delete directory: {directory}")
     rich.print(f"deleting directory: {directory}")
     if not os.path.isdir(directory):
