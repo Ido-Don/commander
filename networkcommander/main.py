@@ -300,16 +300,13 @@ def write_to_folder(file_name, output_folder, result):
         rich.print(f"'saved output to {str(output_file_path)}'")
 
 
-def filter_entries_by_tags_and_names(all_entries: Tuple[pykeepass.Entry], extra_device_names: Set[str],
+def filter_entries_by_tags_and_names(entries: Tuple[pykeepass.Entry], extra_device_names: Set[str],
                                      tags: Set[str]) -> Tuple[pykeepass.Entry, ...]:
-    assert tags
-    assert extra_device_names
-    assert all_entries
 
-    all_tagged_entries = filter_entries_by_tags(all_entries, tags)
+    all_tagged_entries = filter_entries_by_tags(entries, tags)
     every_tagged_entry_title: Set[str] = {entry.title for entry in all_tagged_entries}
 
-    extra_entries = filter_entries_by_titles(all_entries, extra_device_names)
+    extra_entries = filter_entries_by_titles(entries, extra_device_names)
     extra_not_tagged_entries = filter_entries_by_title_not_in_titles(extra_entries, every_tagged_entry_title)
 
     devices = extra_not_tagged_entries + all_tagged_entries
