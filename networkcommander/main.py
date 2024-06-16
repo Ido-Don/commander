@@ -17,7 +17,7 @@ from networkcommander.device import device_from_string, Device
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_commander, delete_project_files
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin, convert_to_yaml, load_user_config, \
-    create_folder_if_non_existent
+    create_folder_if_non_existent, password_input
 from networkcommander.keepass import KeepassDB, remove_device, \
     add_device_entry, get_all_entries, tag_entry, untag_entry, is_entry_tagged, entries_to_devices, \
     filter_entries_by_tags, \
@@ -234,13 +234,20 @@ def deploy(
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp, commander_logger)
 
+    if not all_entries:
+        raise ValueError("you don't have any devices in the database.")
+
     if not tags:
-        tags = []
-
-    if not extra_device_names:
-        extra_device_names = []
-
-    devices = filter_devices_by_tags_and_names(all_entries, set(extra_device_names), set(tags))
+        devices = entries_to_devices(all_entries)
+    else:
+        tags = set(tags)
+        if not extra_device_names:
+            all_tagged_entries = filter_entries_by_tags(all_entries, tags)
+            devices = entries_to_devices(all_tagged_entries)
+        else:
+            extra_device_names = set(extra_device_names)
+            every_tagged_entry_and_extra_entry = filter_entries_by_tags_and_names(all_entries, extra_device_names, tags)
+            devices = entries_to_devices(every_tagged_entry_and_extra_entry)
 
     if not devices:
         raise ValueError("you don't have any devices in the database.")
@@ -293,26 +300,19 @@ def write_to_folder(file_name, output_folder, result):
         rich.print(f"'saved output to {str(output_file_path)}'")
 
 
-def filter_devices_by_tags_and_names(all_entries: Tuple[pykeepass.Entry], extra_device_names: Set[str],
-                                     tags: Set[str]) -> Tuple[Device, ...]:
-    all_devices = entries_to_devices(all_entries)
-
-    if not tags:
-        return all_devices
+def filter_entries_by_tags_and_names(all_entries: Tuple[pykeepass.Entry], extra_device_names: Set[str],
+                                     tags: Set[str]) -> Tuple[pykeepass.Entry, ...]:
+    assert tags
+    assert extra_device_names
+    assert all_entries
 
     all_tagged_entries = filter_entries_by_tags(all_entries, tags)
-    all_tagged_devices = entries_to_devices(all_tagged_entries)
-
-    if not extra_device_names:
-        return all_tagged_devices
-
     every_tagged_entry_title: Set[str] = {entry.title for entry in all_tagged_entries}
 
     extra_entries = filter_entries_by_titles(all_entries, extra_device_names)
     extra_not_tagged_entries = filter_entries_by_title_not_in_titles(extra_entries, every_tagged_entry_title)
-    extra_not_tagged_devices = entries_to_devices(extra_not_tagged_entries)
 
-    devices = extra_not_tagged_devices + all_tagged_devices
+    devices = extra_not_tagged_entries + all_tagged_entries
     return devices
 
 
@@ -394,7 +394,7 @@ def add_devices(
         joined_file_content = '\n'.join(file_content)
         optional_parameters.update(convert_to_yaml(joined_file_content))
 
-    new_devices = convert_devices(device_strings, password, optional_parameters)
+    new_devices = convert_strings_to_devices(device_strings, password, optional_parameters)
 
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp, commander_logger)
@@ -428,7 +428,7 @@ def add_devices(
     typer.echo(f"added {len(devices_to_add)} devices to database")
 
 
-def remove_device_duplicates(devices: Iterable[Device]) -> List[Device]:
+def remove_device_duplicates(devices: Iterable[Device]) -> Tuple[Device, ...]:
     unique_devices = []
     unique_device_names = set()
     for new_device in devices:
@@ -437,27 +437,17 @@ def remove_device_duplicates(devices: Iterable[Device]) -> List[Device]:
         if is_unique_device and is_unique_device_name:
             unique_devices.append(new_device)
             unique_device_names.update(new_device.name)
-    return unique_devices
+    return tuple(unique_devices)
 
 
-def convert_devices(devices: Iterable[str], password, optional_parameters) -> List[Device]:
-    new_devices = [convert_device(device, password, optional_parameters) for device in devices]
+def convert_strings_to_devices(devices: Iterable[str], password, optional_parameters) -> List[Device]:
+    new_devices = [convert_string_to_device(device, password, optional_parameters) for device in devices]
     return new_devices
 
 
-def convert_device(device: str, password, optional_parameters=None):
+def convert_string_to_device(device: str, password, optional_parameters=None):
     new_device = device_from_string(device, password, optional_parameters)
     return new_device
-
-
-def password_input(prompt):
-    password = typer.prompt(
-        prompt,
-        hide_input=True,
-        default="",
-        show_default=False
-    )
-    return password
 
 
 @device_command_group.command(name="remove")

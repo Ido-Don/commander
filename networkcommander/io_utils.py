@@ -79,3 +79,13 @@ def create_folder_if_non_existent(output_folder):
             raise NotADirectoryError(f"{str(output_folder)} exist and is not a directory")
         if not output_folder.exists():
             os.mkdir(output_folder)
+
+
+def password_input(prompt):
+    password = typer.prompt(
+        prompt,
+        hide_input=True,
+        default="",
+        show_default=False
+    )
+    return password
