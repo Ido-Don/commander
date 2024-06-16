@@ -1,4 +1,5 @@
 import os
+from logging import Logger
 from typing import List, Any, Tuple, Set, Iterable
 
 import pykeepass
@@ -71,12 +72,21 @@ class KeepassDB:
         return password
 
 
-def get_all_entries(kp: pykeepass.PyKeePass) -> Tuple[pykeepass.Entry]:
+def get_all_entries(kp: pykeepass.PyKeePass, logger: Logger) -> Tuple[pykeepass.Entry]:
+    """
+    this function retrieves all entries and return them in a tuple
+    :param kp: the keepass database object
+    :param logger: the logger this function log massages to
+    :return: a tuple containing all the entries in the kp object
+    """
+    logger.debug(f"retrieving all entries from keepass: {kp.filename}")
     primary_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
     entries = primary_group.entries
     if not entries:
+        logger.debug("no entries were found")
         entries = []
     tuple_entries = tuple(entries)
+    logger.debug(f"retrieved {len(tuple_entries)} entries")
     return tuple_entries
 
 
