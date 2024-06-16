@@ -2,23 +2,21 @@ import os.path
 import shutil
 from typing import Set, List, Optional, Union
 
-import mimesis
+from faker import Faker
 import pykeepass
 import pytest
 from pykeepass.pykeepass import Entry
 from networkcommander.init import create_new_keepass_db
 from networkcommander.keepass import KeepassDB, add_device_entry, \
     does_device_exist, get_all_entries, is_entry_tagged_by_tag_set, is_entry_tagged, tag_entry, untag_entry
-from mocks import get_test_device, get_tag_list, POSSIBLE_TAGS
+from test.mocks import get_test_device, get_tag_list, POSSIBLE_TAGS
 from test.logging_for_testing import fake_logger
 
 KEEPASS_PASSWORD = "123"
 POSSIBLE_NAMES = list(POSSIBLE_TAGS)
-internet = mimesis.Internet()
-generic = mimesis.Generic()
-hardware = mimesis.Hardware()
 POPULATED_DB_PATH = "populated_db.kdbx"
 READ_ONLY_KP = pykeepass.PyKeePass(POPULATED_DB_PATH, password=KEEPASS_PASSWORD)
+faker = Faker()
 
 
 def populate_db(keepass_db_path: str):
@@ -92,7 +90,7 @@ class TestKeepass:
         kp = pykeepass.PyKeePass(test_db, KEEPASS_PASSWORD)
 
         # delete some random entry
-        entry_to_delete = generic.random.choice(kp.entries)
+        entry_to_delete = faker.random_element(kp.entries)
         entry_to_delete_title = entry_to_delete.title
         entries_to_delete = kp.find_entries(title=entry_to_delete_title)
         for entry in entries_to_delete:
@@ -108,7 +106,7 @@ class TestKeepass:
         kp = pykeepass.PyKeePass(populated_db, KEEPASS_PASSWORD)
         print(kp.entries)
 
-        entry = generic.random.choice(kp.entries)
+        entry = faker.random_element(kp.entries)
         assert does_device_exist(kp, entry.title)
 
     def test_get_all_entries(self, populated_db):

@@ -1,10 +1,8 @@
-import mimesis
+from faker import Faker
 
 from networkcommander.device import DeviceType, Device
 
-generic = mimesis.Generic()
-internet = mimesis.Internet()
-
+faker = Faker()
 
 POSSIBLE_TAGS = ['manhã', 'vivo', 'pelo', 'tia', 'assuntos', 'mexe', 'diabos', 'correcto', 'rapariga', 'socorro',
                  'trouxe', 'raparigas', 'liga', 'momentos', 'levar', 'papai', 'eu', 'morgan', 'acreditas', 'vim',
@@ -20,20 +18,19 @@ POSSIBLE_TAGS = ['manhã', 'vivo', 'pelo', 'tia', 'assuntos', 'mexe', 'diabos', 
 
 
 def get_test_device():
-    username = generic.person.name()
-    password = generic.person.password()
-    ip = internet.ip_v4()
-    name = f"{ip}{internet.top_level_domain()}"
+    username = faker.user_name()
+    password = faker.password()
+    ip = faker.ipv4()
+    name = faker.hostname()
     host = ip
-    port = internet.port()
-    device_type = generic.random.choice([device.value for device in DeviceType])
+    port = faker.port_number()
+    device_type = faker.random_element([str(device) for device in DeviceType])
     device = Device(name, username, password, host, device_type, {'port': str(port)})
     return device
 
 
 def get_tag_list():
-    tags = generic.random.choices(POSSIBLE_TAGS, k=generic.random.randint(0, 10))
+    tags = faker.random_choices(POSSIBLE_TAGS)
     if not tags:
         tags = None
     return tags
-
