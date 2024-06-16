@@ -1,7 +1,7 @@
 import sys
 from functools import reduce
 from pathlib import Path
-from typing import List, Optional, Iterable, Union, Set, Annotated
+from typing import List, Optional, Iterable, Union, Set, Annotated, Tuple
 
 import netmiko
 import rich
@@ -20,7 +20,8 @@ from networkcommander.io_utils import print_objects, read_file, read_from_stdin,
     create_folder_if_non_existent
 from networkcommander.keepass import KeepassDB, remove_device, \
     add_device_entry, get_all_entries, tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tags, \
-    entries_to_devices
+    entries_to_devices, filter_entries_by_tags, is_entry_title_not_in_set, \
+    filter_entries_by_titles
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -197,10 +198,6 @@ def ping(
             progress.advance(task)
 
 
-def filter_entries_by_tags(all_entries: Iterable[pykeepass.Entry], tags: Set):
-    return tuple(filter(is_entry_tagged_by_tags(tags), all_entries))
-
-
 @device_command_group.command()
 def deploy(
         commands: List[str] = typer.Argument(
@@ -234,13 +231,17 @@ def deploy(
     """
     create_folder_if_non_existent(output_folder)
 
-    if not extra_device_names:
-        extra_device_names = []
+    with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
+        all_entries = get_all_entries(kp, commander_logger)
 
     if not tags:
         tags = []
 
-    devices = get_devices_from_tags_and_names(set(extra_device_names), set(tags))
+    if not extra_device_names:
+        extra_device_names = []
+
+
+    devices = filter_devices_by_tags_and_names(all_entries, set(extra_device_names), set(tags))
 
     if not devices:
         raise ValueError("you don't have any devices in the database.")
@@ -293,26 +294,26 @@ def write_to_folder(file_name, output_folder, result):
         rich.print(f"'saved output to {str(output_file_path)}'")
 
 
-def get_devices_from_tags_and_names(extra_device_names: Set[str], tags: Set[str]):
-    with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        all_entries = get_all_entries(kp, commander_logger)
+def filter_devices_by_tags_and_names(all_entries: Tuple[pykeepass.Entry], extra_device_names: Set[str],
+                                     tags: Set[str]) -> Tuple[Device, ...]:
+    all_devices = entries_to_devices(all_entries)
 
     if not tags:
-        devices = entries_to_devices(all_entries)
-        return devices
+        return all_devices
+
     all_tagged_entries = filter_entries_by_tags(all_entries, tags)
-
-    if not extra_device_names:
-        devices = entries_to_devices(all_tagged_entries)
-        return devices
-
-    extra_explicit_entries = filter(lambda entry: entry.title in extra_device_names, all_entries)
-    extra_explicit_devices = entries_to_devices(extra_explicit_entries)
     all_tagged_devices = entries_to_devices(all_tagged_entries)
 
-    devices = tuple(
-        filter(lambda device: device not in all_tagged_devices, extra_explicit_devices)
-    ) + all_tagged_devices
+    if not extra_device_names:
+        return all_tagged_devices
+
+    every_tagged_entry_title: Set[str] = {entry.title for entry in all_tagged_entries}
+
+    extra_entries = filter_entries_by_titles(all_entries, extra_device_names)
+    extra_not_tagged_entries = tuple(filter(is_entry_title_not_in_set(every_tagged_entry_title), extra_entries))
+    extra_not_tagged_devices = entries_to_devices(extra_not_tagged_entries)
+
+    devices = extra_not_tagged_devices + all_tagged_devices
     return devices
 
 

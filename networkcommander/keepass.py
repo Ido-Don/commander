@@ -260,3 +260,33 @@ def untag_entry(entry: pykeepass.Entry, tag: str) -> None:
 
 def entries_to_devices(entries: Iterable[pykeepass.Entry]) -> Tuple[Device, ...]:
     return tuple((entry_to_device(entry) for entry in entries))
+
+
+def filter_entries_by_tags(all_entries: Iterable[pykeepass.Entry], tags: Set) -> Tuple[pykeepass.Entry]:
+    return tuple(filter(is_entry_tagged_by_tags(tags), all_entries))
+
+
+def is_entry_title_in_set(titles: Set[str]):
+    def inner(entry: pykeepass.Entry):
+        if not entry:
+            return False
+        if not titles:
+            return False
+        return entry.title in titles
+
+    return inner
+
+
+def is_entry_title_not_in_set(titles: Set[str]):
+    def inner(entry: pykeepass.Entry):
+        if not entry:
+            return False
+        if not titles:
+            return False
+        return entry.title not in titles
+
+    return inner
+
+
+def filter_entries_by_titles(entries: Iterable[pykeepass.Entry], titles: Set[str]) -> Tuple[pykeepass.Entry]:
+    return tuple(filter(is_entry_title_in_set(titles), entries))
