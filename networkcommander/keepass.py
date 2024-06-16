@@ -290,3 +290,10 @@ def is_entry_title_not_in_set(titles: Set[str]):
 
 def filter_entries_by_titles(entries: Iterable[pykeepass.Entry], titles: Set[str]) -> Tuple[pykeepass.Entry]:
     return tuple(filter(is_entry_title_in_set(titles), entries))
+
+
+def filter_entries_by_title_not_in_titles(
+        entries: Iterable[pykeepass.Entry],
+        titles: Set[str]
+) -> Tuple[pykeepass.Entry]:
+    return tuple(filter(is_entry_title_not_in_set(titles), entries))
