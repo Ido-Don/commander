@@ -11,7 +11,7 @@ import typer
 from rich.progress import Progress
 
 from networkcommander.__init__ import __version__
-from networkcommander.commander_logging import commander_logger, add_stream_handler, LogLevel
+from networkcommander.commander_logging import commander_logger, add_console_handler
 from networkcommander.config import config, USER_CONFIG_FILE_PATH
 from networkcommander.deploy import deploy_commands
 from networkcommander.device import device_from_string, Device
@@ -55,7 +55,7 @@ def change_log_level(verbose: Annotated[
                      ):
     if not verbose:
         return
-    add_stream_handler(config["logging_file_level"])
+    add_console_handler(config["logging_file_level"])
 
 
 @device_command_group.callback(no_args_is_help=True)
@@ -332,6 +332,7 @@ def list_devices(
     """
     list all the devices under your command.
     """
+    commander_logger.info(f"executing commander device list with these tags: {tags_list}")
     tags_set = set(tags_list)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp)
