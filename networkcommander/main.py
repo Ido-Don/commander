@@ -6,6 +6,7 @@ from typing import List, Optional, Iterable, Union, Set, Annotated
 import netmiko
 import rich
 import typer
+from pykeepass import pykeepass
 from rich.progress import Progress
 
 from networkcommander.__init__ import __version__
@@ -18,7 +19,7 @@ from networkcommander.init import is_initialized, init_commander, delete_project
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin, convert_to_yaml, load_user_config, \
     create_folder_if_non_existent
 from networkcommander.keepass import KeepassDB, remove_device, \
-    add_device_entry, get_all_entries, tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tag_set, \
+    add_device_entry, get_all_entries, tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tags, \
     entries_to_devices
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
@@ -169,7 +170,7 @@ def ping(
 
     if tags:
         tags = set(tags)
-        all_tagged_entries = tuple(filter(is_entry_tagged_by_tag_set(tags), all_entries))
+        all_tagged_entries = filter_entries_by_tags(all_entries, tags)
         devices = entries_to_devices(all_tagged_entries)
     else:
         devices = entries_to_devices(all_entries)
@@ -194,6 +195,10 @@ def ping(
             else:
                 rich.print(f"connected successfully to {str(device)}")
             progress.advance(task)
+
+
+def filter_entries_by_tags(all_entries: Iterable[pykeepass.Entry], tags: Set):
+    return tuple(filter(is_entry_tagged_by_tags(tags), all_entries))
 
 
 @device_command_group.command()
@@ -292,23 +297,23 @@ def get_devices_from_tags_and_names(extra_device_names: Set[str], tags: Set[str]
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp, commander_logger)
 
-        if not tags:
-            devices = entries_to_devices(all_entries)
-            return devices
-        all_tagged_entries = tuple(filter(is_entry_tagged_by_tag_set(tags), all_entries))
-
-        if not extra_device_names:
-            devices = entries_to_devices(all_tagged_entries)
-            return devices
-
-        extra_explicit_entries = filter(lambda entry: entry.title in extra_device_names, all_entries)
-        extra_explicit_devices = entries_to_devices(extra_explicit_entries)
-        all_tagged_devices = entries_to_devices(all_tagged_entries)
-
-        devices = tuple(
-            filter(lambda device: device not in all_tagged_devices, extra_explicit_devices)
-        ) + all_tagged_devices
+    if not tags:
+        devices = entries_to_devices(all_entries)
         return devices
+    all_tagged_entries = filter_entries_by_tags(all_entries, tags)
+
+    if not extra_device_names:
+        devices = entries_to_devices(all_tagged_entries)
+        return devices
+
+    extra_explicit_entries = filter(lambda entry: entry.title in extra_device_names, all_entries)
+    extra_explicit_devices = entries_to_devices(extra_explicit_entries)
+    all_tagged_devices = entries_to_devices(all_tagged_entries)
+
+    devices = tuple(
+        filter(lambda device: device not in all_tagged_devices, extra_explicit_devices)
+    ) + all_tagged_devices
+    return devices
 
 
 @device_command_group.command(name="list")
@@ -329,7 +334,7 @@ def list_devices(
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp, commander_logger)
 
-    all_tagged_entries = tuple(filter(is_entry_tagged_by_tag_set(tags_set), all_entries))
+    all_tagged_entries = tuple(filter(is_entry_tagged_by_tags(tags_set), all_entries))
     all_tagged_devices = entries_to_devices(all_tagged_entries)
 
     print_objects(all_tagged_devices, "devices")

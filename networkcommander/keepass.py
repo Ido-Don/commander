@@ -150,7 +150,7 @@ def is_entry_tagged(tag: str):
     return inner
 
 
-def is_entry_tagged_by_tag_set(tags: Set[str]):
+def is_entry_tagged_by_tags(tags: Set[str]):
     """
     this function returns a function which checks if an entry is tagged by all the tags in argument tags.
     note: the entry must have all the tags in order to return true
