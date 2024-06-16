@@ -494,6 +494,7 @@ def init():
     """
     initialize the project
     """
+    commander_logger.info("executing commander init")
     rich.print("Welcome to commander!")
     if is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE_PATH,
                       commander_logger):
