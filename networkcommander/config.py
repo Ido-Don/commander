@@ -16,7 +16,7 @@ config = {
         "ssh_strict": True,
         "system_host_keys": True
     },
-    "logging_file_level": "INFO",
+    "logging_file_level": "DEBUG",
     "logger_name": "commander",
     "log_file_path": DEFAULT_LOG_FILE_PATH
 }
