@@ -19,9 +19,9 @@ from networkcommander.init import is_initialized, init_commander, delete_project
 from networkcommander.io_utils import print_objects, read_file, read_from_stdin, convert_to_yaml, load_user_config, \
     create_folder_if_non_existent
 from networkcommander.keepass import KeepassDB, remove_device, \
-    add_device_entry, get_all_entries, tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tags, \
-    entries_to_devices, filter_entries_by_tags, is_entry_title_not_in_set, \
-    filter_entries_by_titles
+    add_device_entry, get_all_entries, tag_entry, untag_entry, is_entry_tagged, entries_to_devices, \
+    filter_entries_by_tags, \
+    filter_entries_by_titles, filter_entries_by_title_not_in_titles
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -240,7 +240,6 @@ def deploy(
     if not extra_device_names:
         extra_device_names = []
 
-
     devices = filter_devices_by_tags_and_names(all_entries, set(extra_device_names), set(tags))
 
     if not devices:
@@ -250,7 +249,7 @@ def deploy(
     print_objects(commands, "commands")
 
     typer.confirm(
-        f"do you want to deploy these {len(commands)} commands on {len(devices)} devices?",
+        f"do you want to deploy {len(commands)} commands on {len(devices)} devices in {permission_level} mode?",
         abort=True
     )
 
@@ -310,7 +309,7 @@ def filter_devices_by_tags_and_names(all_entries: Tuple[pykeepass.Entry], extra_
     every_tagged_entry_title: Set[str] = {entry.title for entry in all_tagged_entries}
 
     extra_entries = filter_entries_by_titles(all_entries, extra_device_names)
-    extra_not_tagged_entries = tuple(filter(is_entry_title_not_in_set(every_tagged_entry_title), extra_entries))
+    extra_not_tagged_entries = filter_entries_by_title_not_in_titles(extra_entries, every_tagged_entry_title)
     extra_not_tagged_devices = entries_to_devices(extra_not_tagged_entries)
 
     devices = extra_not_tagged_devices + all_tagged_devices
@@ -335,7 +334,7 @@ def list_devices(
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp, commander_logger)
 
-    all_tagged_entries = tuple(filter(is_entry_tagged_by_tags(tags_set), all_entries))
+    all_tagged_entries = filter_entries_by_tags(all_entries, tags_set)
     all_tagged_devices = entries_to_devices(all_tagged_entries)
 
     print_objects(all_tagged_devices, "devices")
