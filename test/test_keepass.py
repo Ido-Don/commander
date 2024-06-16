@@ -8,7 +8,7 @@ import pytest
 from pykeepass.pykeepass import Entry
 from networkcommander.init import create_new_keepass_db
 from networkcommander.keepass import KeepassDB, add_device_entry, \
-    does_device_exist, get_all_entries, is_entry_tagged_by_tag_set, is_entry_tagged, tag_entry, untag_entry
+    does_device_exist, get_all_entries, is_entry_tagged_by_tags, is_entry_tagged, tag_entry, untag_entry
 from test.mocks import get_test_device, get_tag_list, POSSIBLE_TAGS
 from test.logging_for_testing import fake_logger
 
@@ -292,7 +292,7 @@ class TestKeepass:
     ]
 )
 def test_is_entry_tagged_by_tag_set(entry: Entry, tags: Set[str], should_match: bool):
-    assert is_entry_tagged_by_tag_set(tags)(entry) == should_match
+    assert is_entry_tagged_by_tags(tags)(entry) == should_match
 
 
 @pytest.mark.parametrize(
