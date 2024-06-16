@@ -1,5 +1,3 @@
-import os.path
-import os.path
 import sys
 from functools import reduce
 from pathlib import Path
@@ -17,7 +15,8 @@ from networkcommander.deploy import deploy_commands
 from networkcommander.device import device_from_string, Device
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_commander, delete_project_files
-from networkcommander.io_utils import print_objects, read_file, read_from_stdin, convert_to_yaml, load_user_config
+from networkcommander.io_utils import print_objects, read_file, read_from_stdin, convert_to_yaml, load_user_config, \
+    create_folder_if_non_existent
 from networkcommander.keepass import KeepassDB, remove_device, \
     add_device_entry, get_all_entries, tag_entry, untag_entry, is_entry_tagged, is_entry_tagged_by_tag_set, \
     entries_to_devices
@@ -44,6 +43,7 @@ def version():
     """
         show the version of the application
     """
+    commander_logger.info("executing commander version.")
     typer.echo(f"Commander version: {__version__}")
 
 
@@ -74,7 +74,7 @@ def initialization_check(keepass_password: Optional[str] = typer.Option(None)):
             commander_logger
     ):
         raise EnvironmentError("program is not initialized, please run commander init!")
-    commander_logger.debug("finished the initialization check")
+    commander_logger.debug("finished the initialization check callback")
 
 
 @tag_command_group.command(name="add")
@@ -84,7 +84,7 @@ def add_tag(device_tag: str, device_names: List[str]):
     """
     device_names_to_be_tagged = set(device_names)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        all_entries = get_all_entries(kp)
+        all_entries = get_all_entries(kp, commander_logger)
         all_devices = entries_to_devices(all_entries)
         all_device_names = extract_device_names(all_devices)
 
@@ -120,7 +120,7 @@ def list_tags():
     list every tag you put on devices
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        all_entries = get_all_entries(kp)
+        all_entries = get_all_entries(kp, commander_logger)
     entries_tags: List[Union[List[str], None]] = [entry.tags for entry in all_entries]
     entries_tags_without_none: Iterable[List[str]] = filter(None, entries_tags)
     flatten_tag_list: Iterable[str] = reduce(
@@ -139,7 +139,7 @@ def remove_tag(device_tag: str, device_names: List[str]):
     """
     device_names_to_be_untagged = set(device_names)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        all_entries = get_all_entries(kp)
+        all_entries = get_all_entries(kp, commander_logger)
         all_devices = entries_to_devices(all_entries)
         all_device_names = extract_device_names(all_devices)
         non_existent_devices = device_names_to_be_untagged - all_device_names
@@ -165,7 +165,7 @@ def ping(
     try to connect to the devices in your database.
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        all_entries = get_all_entries(kp)
+        all_entries = get_all_entries(kp, commander_logger)
 
     if tags:
         tags = set(tags)
@@ -290,7 +290,7 @@ def write_to_folder(file_name, output_folder, result):
 
 def get_devices_from_tags_and_names(extra_device_names: Set[str], tags: Set[str]):
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        all_entries = get_all_entries(kp)
+        all_entries = get_all_entries(kp, commander_logger)
 
         if not tags:
             devices = entries_to_devices(all_entries)
@@ -311,14 +311,6 @@ def get_devices_from_tags_and_names(extra_device_names: Set[str], tags: Set[str]
         return devices
 
 
-def create_folder_if_non_existent(output_folder):
-    if output_folder:
-        if output_folder.exists() and not output_folder.is_dir():
-            raise NotADirectoryError(f"{str(output_folder)} exist and is not a directory")
-        if not output_folder.exists():
-            os.mkdir(output_folder)
-
-
 @device_command_group.command(name="list")
 def list_devices(
         tags_list: List[str] = typer.Option(
@@ -335,7 +327,7 @@ def list_devices(
     commander_logger.info(f"executing commander device list with these tags: {tags_list}")
     tags_set = set(tags_list)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        all_entries = get_all_entries(kp)
+        all_entries = get_all_entries(kp, commander_logger)
 
     all_tagged_entries = tuple(filter(is_entry_tagged_by_tag_set(tags_set), all_entries))
     all_tagged_devices = entries_to_devices(all_tagged_entries)
@@ -400,7 +392,7 @@ def add_devices(
     new_devices = convert_devices(device_strings, password, optional_parameters)
 
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        all_entries = get_all_entries(kp)
+        all_entries = get_all_entries(kp, commander_logger)
         all_devices = entries_to_devices(all_entries)
         all_device_names = extract_device_names(all_devices)
         devices_to_add = new_devices
@@ -470,7 +462,7 @@ def remove_devices(device_names: List[str]):
     """
     device_names_to_be_removed = set(device_names)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
-        all_entries = get_all_entries(kp)
+        all_entries = get_all_entries(kp, commander_logger)
         all_devices = entries_to_devices(all_entries)
         all_device_names = extract_device_names(all_devices)
 

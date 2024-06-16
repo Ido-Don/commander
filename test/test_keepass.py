@@ -111,7 +111,7 @@ class TestKeepass:
 
     def test_get_all_entries(self, populated_db):
         kp = pykeepass.PyKeePass(populated_db, KEEPASS_PASSWORD)
-        entries = get_all_entries(kp)
+        entries = get_all_entries(kp, fake_logger)
         assert entries == tuple(kp.entries)
 
     @pytest.mark.parametrize(

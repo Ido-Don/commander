@@ -71,3 +71,11 @@ def load_user_config():
             user_custom_config = json.loads(file_content)
             config.update(user_custom_config)
             commander_logger.info("finished loading user config")
+
+
+def create_folder_if_non_existent(output_folder):
+    if output_folder:
+        if output_folder.exists() and not output_folder.is_dir():
+            raise NotADirectoryError(f"{str(output_folder)} exist and is not a directory")
+        if not output_folder.exists():
+            os.mkdir(output_folder)
