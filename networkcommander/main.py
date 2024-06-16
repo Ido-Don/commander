@@ -48,14 +48,14 @@ def version():
 
 
 @app.callback()
-def change_log_level(log_level: Annotated[
-    Optional[LogLevel],
-    typer.Option("--log-level", "-l")
-] = None
+def change_log_level(verbose: Annotated[
+    Optional[bool],
+    typer.Option("--verbose", "-v")
+] = False
                      ):
-    if not log_level:
+    if not verbose:
         return
-    add_stream_handler(log_level)
+    add_stream_handler(config["logging_file_level"])
 
 
 @device_command_group.callback(no_args_is_help=True)
