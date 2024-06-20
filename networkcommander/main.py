@@ -1,3 +1,7 @@
+"""
+this is the main file in commander.
+from here the app is created and in here all the endpoints live.
+"""
 import sys
 from functools import reduce
 from pathlib import Path
