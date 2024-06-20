@@ -70,7 +70,7 @@ def execute_commands(
 def send_commands(device: netmiko.BaseConnection, commands: List[str]) -> str:
     """
     Send a list of commands to a network device.
-    the commands will be sent one by one and not togather.
+    the commands will be sent one by one and not together.
 
     :param device: Netmiko connection object.
     :param commands: List of commands to send.
@@ -82,7 +82,7 @@ def send_commands(device: netmiko.BaseConnection, commands: List[str]) -> str:
         output += device.find_prompt()
         output += command
         output += '\n'
-        output += device.send_command(command)
+        output += device.send_command(command)  # type: ignore
         output += '\n'
     return output
 
@@ -109,6 +109,7 @@ class Connection:
 
     usage - Use with a context manager (with Connection(...) as conn).
     """
+
     def __init__(self, device_options):
         self._device_options = device_options
         self._device = None
@@ -118,4 +119,5 @@ class Connection:
         return self._device
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        assert isinstance(self._device, netmiko.BaseConnection)
         self._device.disconnect()
