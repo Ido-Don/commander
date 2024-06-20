@@ -48,18 +48,23 @@ device_command_group.add_typer(tag_command_group, name="tag")
 @app.command()
 def version():
     """
-        show the version of the application
+    show the version of the application
     """
     commander_logger.info("executing commander version.")
     typer.echo(f"Commander version: {__version__}")
 
 
-@app.callback()
+@app.callback(help="")
 def change_log_level(verbose: Annotated[
     Optional[bool],
     typer.Option("--verbose", "-v")
 ] = False
 ):
+    """
+    this callback is here to give the user the ability to print to console the logging massages.
+
+    :param verbose: if true log everything to console, defaults to False
+    """
     if not verbose:
         return
     add_console_handler(config["logging_file_level"])
@@ -110,12 +115,12 @@ def add_tag(device_tag: str, device_names: List[str]):
 
         # if there are any devices that need to be tagged and are already tagged they will be in
         # the intersection between the two groups
-        device_names_already_tagged_that_need_to_be_tagged = device_names_to_be_tagged.intersection(
+        tagged_device_names_that_need_to_be_tagged = device_names_to_be_tagged.intersection(
             every_tagged_device_name
         )
-        if device_names_already_tagged_that_need_to_be_tagged:
+        if tagged_device_names_that_need_to_be_tagged:
             raise ValueError(
-                f"devices [{', '.join(device_names_already_tagged_that_need_to_be_tagged)}] are already tagged"
+                f"devices [{', '.join(tagged_device_names_that_need_to_be_tagged)}] are already tagged"
             )
         entries_to_tag = filter(
             lambda entry: entry.title in device_names_to_be_tagged, all_entries)
@@ -220,7 +225,7 @@ def deploy(
         ),
         output_folder: Path = typer.Option(None, "--output_folder", "-o"),
         tags: List[str] = typer.Option(
-            None,
+            list(),
             "--tag",
             "-t",
             help="deploy the commands to devices matching these tags",
@@ -233,7 +238,7 @@ def deploy(
             help="the permission level the commands will run at"
         ),
         extra_device_names: List[str] = typer.Option(
-            None,
+            list(),
             "--device",
             "-d",
             help="you can specify devices you wish would run these commands on."
@@ -250,18 +255,15 @@ def deploy(
     if not all_entries:
         raise ValueError("you don't have any devices in the database.")
 
-    if not tags:
-        devices = entries_to_devices(all_entries)
-    else:
-        tags = set(tags)
-        if not extra_device_names:
-            all_tagged_entries = filter_entries_by_tags(all_entries, tags)
-            devices = entries_to_devices(all_tagged_entries)
-        else:
-            extra_device_names = set(extra_device_names)
-            every_tagged_entry_and_extra_entry = filter_entries_by_tags_and_names(
-                all_entries, tags, extra_device_names)
-            devices = entries_to_devices(every_tagged_entry_and_extra_entry)
+    tag_set = set(tags)
+    extra_device_name_set = set(extra_device_names)
+
+    every_tagged_entry_and_extra_entry = filter_entries_by_tags_and_names(
+        all_entries,
+        tag_set,
+        extra_device_name_set
+    )
+    devices = entries_to_devices(every_tagged_entry_and_extra_entry)
 
     if not devices:
         raise ValueError("you don't have any devices in the database.")
@@ -317,7 +319,7 @@ def write_to_folder(file_name, output_folder, result):
 
 
 def filter_entries_by_tags_and_names(
-        entries: Tuple[pykeepass.Entry],
+        entries: Tuple[pykeepass.Entry, ...],
         tags: Set[str],
         extra_entry_names: Set[str]
 ) -> Tuple[pykeepass.Entry, ...]:
@@ -334,7 +336,8 @@ def filter_entries_by_tags_and_names(
         return entries
 
     # if there are no tags to filter then every entry is selected.
-    # in this case extra_device_names is irrelevant because even if there are some names in it, it doesn't matter.
+    # in this case extra_device_names is irrelevant because
+    #  even if there are some names in it, it doesn't matter.
     # every entry is selected.
     if not tags:
         return entries
