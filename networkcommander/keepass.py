@@ -1,3 +1,7 @@
+"""
+this file contains all of the functions that interact with keepass objects
+"""
+
 import os
 from logging import Logger
 from typing import List, Any, Tuple, Set, Iterable
@@ -9,6 +13,8 @@ from rich.prompt import Prompt
 
 from networkcommander.config import DEVICE_GROUP_NAME
 from networkcommander.device import Device, DeviceType
+
+REQUIRED_DEVICE_PROPERTIES = ["device_type", "host"]
 
 
 class KeepassDB:
@@ -58,6 +64,8 @@ class KeepassDB:
         :param exc_val: Exception value.
         :param exc_tb: Exception traceback.
         """
+        if not self._kp:
+            raise ValueError("kp must have a value in order to properly exit")
         if not exc_val:
             self._kp.save()
 
@@ -68,11 +76,12 @@ class KeepassDB:
 
         :return: The master password for the KeePass database.
         """
-        password = Prompt.ask("enter keepass database master password", password=True)
+        password = Prompt.ask(
+            "enter keepass database master password", password=True)
         return password
 
 
-def get_all_entries(kp: pykeepass.PyKeePass, logger: Logger) -> Tuple[pykeepass.Entry]:
+def get_all_entries(kp: pykeepass.PyKeePass, logger: Logger) -> Tuple[pykeepass.Entry, ...]:
     """
     this function retrieves all entries and return them in a tuple
     :param kp: the keepass database object
@@ -80,14 +89,26 @@ def get_all_entries(kp: pykeepass.PyKeePass, logger: Logger) -> Tuple[pykeepass.
     :return: a tuple containing all the entries in the kp object
     """
     logger.debug(f"retrieving all entries from keepass: {kp.filename}")
-    primary_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
-    entries = primary_group.entries
+    device_group = get_device_group(kp)
+    entries: List[pykeepass.Entry] = device_group.entries
     if not entries:
         logger.debug("no entries were found")
         entries = []
-    tuple_entries = tuple(entries)
+    tuple_entries = (*entries,)
     logger.debug(f"retrieved {len(tuple_entries)} entries")
     return tuple_entries
+
+
+def get_device_group(kp: pykeepass.PyKeePass) -> pykeepass.Group:
+    """
+    this function returns the primary group named DEVICE_GROUP_NAME
+    """
+    primary_group = kp.find_groups(name=DEVICE_GROUP_NAME, first=True)
+    if not primary_group:
+        raise LookupError(
+            f"group {DEVICE_GROUP_NAME} doesn't exist in keepass database")
+    assert isinstance(primary_group, pykeepass.Group)
+    return primary_group
 
 
 def normalize_input(value: Any) -> str:
@@ -114,23 +135,27 @@ def entry_to_device(device_entry: pykeepass.Entry) -> Device:
     password = normalize_input(device_entry.password)
     custom_properties = device_entry.custom_properties
 
-    required_properties = ["device_type", "host"]
-    non_existing_properties = [
-        required_property not in custom_properties for required_property in required_properties
-    ]
-    if any(non_existing_properties):
-        raise ValueError(f"there are no {', '.join(non_existing_properties)} in {name}.")
+    non_existent_device_properties = tuple(filter(
+        lambda required_property: required_property not in custom_properties,
+        REQUIRED_DEVICE_PROPERTIES
+    ))
+
+    if any(non_existent_device_properties):
+        raise ValueError(
+            f"there are no {', '.join(non_existent_device_properties)} in {name}.")
 
     device_type = DeviceType(custom_properties["device_type"])
     host = custom_properties["host"]
 
     def key_in_required_properties(pair: Tuple[Any, Any]) -> bool:
         key = pair[0]
-        return key not in required_properties
+        return key not in REQUIRED_DEVICE_PROPERTIES
 
-    optional_parameters = dict(filter(key_in_required_properties, custom_properties.items()))
-    device_entry = Device(name, username, password, host, device_type, optional_parameters)
-    return device_entry
+    optional_parameters = dict(
+        filter(key_in_required_properties, custom_properties.items()))
+    device = Device(name, username, password, host,
+                    device_type, optional_parameters)
+    return device
 
 
 def is_entry_tagged(tag: str):
@@ -214,12 +239,13 @@ def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = 
     if does_device_exist(kp, entry_title):
         raise LookupError(f"{entry_title} already exist in db")
 
-    device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
+    device_group = get_device_group(kp)
 
     username = normalize_input(device.username)
     password = normalize_input(device.password)
 
-    new_entry = kp.add_entry(device_group, entry_title, username, password, tags=tags)
+    new_entry = kp.add_entry(device_group, entry_title,
+                             username, password, tags=tags)
 
     custom_properties = {
         "host": device.host,
@@ -262,7 +288,7 @@ def entries_to_devices(entries: Iterable[pykeepass.Entry]) -> Tuple[Device, ...]
     return tuple((entry_to_device(entry) for entry in entries))
 
 
-def filter_entries_by_tags(all_entries: Iterable[pykeepass.Entry], tags: Set) -> Tuple[pykeepass.Entry]:
+def filter_entries_by_tags(all_entries: Iterable[pykeepass.Entry], tags: Set) -> Tuple[pykeepass.Entry, ...]:
     return tuple(filter(is_entry_tagged_by_tags(tags), all_entries))
 
 
@@ -288,7 +314,10 @@ def is_entry_title_not_in_set(titles: Set[str]):
     return inner
 
 
-def filter_entries_by_titles(entries: Iterable[pykeepass.Entry], titles: Set[str]) -> Tuple[pykeepass.Entry]:
+def filter_entries_by_titles(
+    entries: Iterable[pykeepass.Entry],
+    titles: Set[str]
+) -> Tuple[pykeepass.Entry]:
     return tuple(filter(is_entry_title_in_set(titles), entries))
 
 
