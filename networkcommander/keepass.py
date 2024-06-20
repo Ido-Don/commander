@@ -14,6 +14,7 @@ from rich.prompt import Prompt
 
 from networkcommander.config import DEVICE_GROUP_NAME
 from networkcommander.device import Device, DeviceType
+from networkcommander.utils import subtract_tuples
 
 REQUIRED_DEVICE_PROPERTIES = ["device_type", "host"]
 
@@ -369,3 +370,41 @@ def filter_entries_by_title_not_in_titles(
 
 def filter_entries_by_tag(entries: Iterable[pykeepass.Entry], tag: str):
     return filter(is_entry_tagged(tag), entries)
+
+
+def filter_entries_by_tags_and_names(
+        entries: Tuple[pykeepass.Entry, ...],
+        tags: Set[str],
+        extra_entry_names: Set[str]
+) -> Tuple[pykeepass.Entry, ...]:
+    """
+    this function filters the entries by the tags and the extra entries it is provided with.
+    if there are no tags then it would return all the entries.
+    if there are
+    :param entries:
+    :param tags:
+    :param extra_entry_names:
+    :return:
+    """
+    if not entries:
+        return entries
+
+    # if there are no tags to filter then every entry is selected.
+    # in this case extra_device_names is irrelevant because
+    #  even if there are some names in it, it doesn't matter.
+    # every entry is selected.
+    if not tags:
+        return entries
+
+    tagged_entries = filter_entries_by_tags(entries, tags)
+
+    # if there are tags but no extra_device_names then it should return the tagged entries.
+    if not extra_entry_names:
+        return tagged_entries
+
+    not_tagged_entries = subtract_tuples(entries, tagged_entries)
+    extra_not_tagged_entries = filter_entries_by_titles(
+        not_tagged_entries, extra_entry_names)
+
+    extra_entries_with_tagged_entries = extra_not_tagged_entries + tagged_entries
+    return extra_entries_with_tagged_entries

@@ -5,12 +5,11 @@ from here the app is created and in here all the endpoints live.
 import sys
 from functools import reduce
 from pathlib import Path
-from typing import List, Optional, Iterable, Union, Set, Annotated, Tuple, TypeVar
+from typing import List, Optional, Iterable, Union, Annotated, Tuple, TypeVar
 
 import netmiko
 import rich
 import typer
-from pykeepass import pykeepass
 from rich.progress import Progress
 
 from networkcommander.__init__ import __version__
@@ -21,8 +20,8 @@ from networkcommander.device import Device, convert_strings_to_devices, extract_
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_commander, delete_project_files
 from networkcommander.utils import print_objects, read_file, read_from_stdin, convert_to_yaml, \
-    load_user_config, create_folder_if_non_existent, password_input, subtract_tuples, write_to_folder
-from networkcommander.keepass import KeepassDB, filter_entries_by_tag, remove_device, \
+    load_user_config, create_folder_if_non_existent, password_input, write_to_folder
+from networkcommander.keepass import KeepassDB, filter_entries_by_tag, filter_entries_by_tags_and_names, remove_device, \
     add_device_entry, get_all_entries, tag_entry, untag_entry, entries_to_devices, filter_entries_by_tags, filter_entries_by_titles
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
@@ -320,44 +319,6 @@ def handel_results(device, exception, output_folder, result):
             rich.print(result)
 
 
-def filter_entries_by_tags_and_names(
-        entries: Tuple[pykeepass.Entry, ...],
-        tags: Set[str],
-        extra_entry_names: Set[str]
-) -> Tuple[pykeepass.Entry, ...]:
-    """
-    this function filters the entries by the tags and the extra entries it is provided with.
-    if there are no tags then it would return all the entries.
-    if there are
-    :param entries:
-    :param tags:
-    :param extra_entry_names:
-    :return:
-    """
-    if not entries:
-        return entries
-
-    # if there are no tags to filter then every entry is selected.
-    # in this case extra_device_names is irrelevant because
-    #  even if there are some names in it, it doesn't matter.
-    # every entry is selected.
-    if not tags:
-        return entries
-
-    tagged_entries = filter_entries_by_tags(entries, tags)
-
-    # if there are tags but no extra_device_names then it should return the tagged entries.
-    if not extra_entry_names:
-        return tagged_entries
-
-    not_tagged_entries = subtract_tuples(entries, tagged_entries)
-    extra_not_tagged_entries = filter_entries_by_titles(
-        not_tagged_entries, extra_entry_names)
-
-    extra_entries_with_tagged_entries = extra_not_tagged_entries + tagged_entries
-    return extra_entries_with_tagged_entries
-
-
 @device_command_group.command(name="list")
 def list_devices(
         tags_list: List[str] = typer.Option(
@@ -403,6 +364,7 @@ def add_devices(
     """
     add new devices to the list of devices
     """
+    # TODO: make this function smaller, brake it up.
     device_strings = []
     if devices_file == sys.stdin:
         rich.print("please enter the devices you want to connect to.")
