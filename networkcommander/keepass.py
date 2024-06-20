@@ -306,7 +306,10 @@ def entries_to_devices(entries: Iterable[pykeepass.Entry]) -> Tuple[Device, ...]
     return tuple(entry_to_device(entry) for entry in entries)
 
 
-def filter_entries_by_tags(all_entries: Iterable[pykeepass.Entry], tags: Set) -> Tuple[pykeepass.Entry, ...]:
+def filter_entries_by_tags(
+    entries: Iterable[pykeepass.Entry],
+    tags: Set
+) -> Tuple[pykeepass.Entry, ...]:
     """
     filter entries by the given tags.
     every entry must have every tag in order to return it.
@@ -315,7 +318,7 @@ def filter_entries_by_tags(all_entries: Iterable[pykeepass.Entry], tags: Set) ->
     :param tags: the tags
     :return: a tuple with the relevant entries
     """
-    return tuple(filter(is_entry_tagged_by_tags(tags), all_entries))
+    return tuple(filter(is_entry_tagged_by_tags(tags), entries))
 
 
 def is_entry_title_in_titles(titles: Set[str]):
@@ -323,7 +326,7 @@ def is_entry_title_in_titles(titles: Set[str]):
     this function return a function that checks 
     if an entry's title is in the titles set.
 
-    :param tags: a set of strings representing the titles to search
+    :param titles: a set of strings representing the titles to search
     :Returns: function which checks if an entry's title is in titles.
     """
     def inner(entry: pykeepass.Entry):
@@ -340,6 +343,13 @@ def filter_entries_by_titles(
     entries: Iterable[pykeepass.Entry],
     titles: Set[str]
 ) -> Tuple[pykeepass.Entry, ...]:
+    """
+    filter the entries by the titles.
+
+    :param entries: the entries to search in.
+    :param titles: a set of strings representing the titles to search
+    :return: a tuple containing all the entries that their titles are present in titles
+    """
     return tuple(filter(is_entry_title_in_titles(titles), entries))
 
 
@@ -348,5 +358,10 @@ def filter_entries_by_title_not_in_titles(
         titles: Set[str]
 ) -> Tuple[pykeepass.Entry, ...]:
     """
+    filter the all the entries their title is not in titles.
+
+    :param entries: the entries to search in.
+    :param titles: a set of strings representing the titles to search
+    :return: a tuple containing all the entries that their titles are not present in titles
     """
     return tuple(filterfalse(is_entry_title_in_titles(titles), entries))
