@@ -2,6 +2,7 @@ import os
 
 
 HOME_FOLDER = os.path.expanduser("~")
+assert HOME_FOLDER
 COMMANDER_FOLDER_PATH = os.path.join(HOME_FOLDER, '.commander')
 USER_CONFIG_FILE_PATH = os.path.join(COMMANDER_FOLDER_PATH, ".commanderconfig")
 DEFAULT_KEEPASS_DB_PATH = os.path.join(COMMANDER_FOLDER_PATH, 'db.kdbx')
