@@ -26,7 +26,7 @@ class KeepassDB:
         Use with a context manager (with KeepassDB(...) as kp).
     """
 
-    def __init__(self, keepass_db_path: str, keepass_password: str):
+    def __init__(self, keepass_db_path: str, keepass_password: Optional[str]):
         """
         Initialize KeepassDB with the path to the KeePass database and its password.
 
