@@ -2,14 +2,16 @@ import json
 import os
 from pathlib import Path
 import sys
-from typing import Iterable, TextIO, List, Tuple
+from typing import Iterable, TextIO, List, Tuple, TypeVar
 
+import rich
 import typer
 import yaml
 
 from networkcommander.commander_logging import commander_logger
 from networkcommander.config import USER_CONFIG_FILE_PATH, config
-from networkcommander.main import T
+
+T = TypeVar('T')
 
 
 def print_objects(objects: Iterable, object_name: str) -> None:
