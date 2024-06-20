@@ -24,7 +24,7 @@ class KeepassDB:
     A class for creating connections to a KeePass database.
 
     Usage:
-        Use with a context manager (with KeepassDB(...) as kp).
+        Use with a context manager: with KeepassDB(...) as kp.
     """
 
     def __init__(self, keepass_db_path: str, keepass_password: Optional[str]):
