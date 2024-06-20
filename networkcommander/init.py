@@ -2,7 +2,7 @@ import json
 import os
 import shutil
 from logging import Logger
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import rich
 
@@ -45,7 +45,8 @@ def init_commander(config: Dict[str, Any], logger: Logger, keepass_password=None
     logger.debug("commander is not initialized")
 
     if os.path.isfile(commander_directory):
-        raise NotADirectoryError(f"{commander_directory} is a file and not a folder")
+        raise NotADirectoryError(
+            f"{commander_directory} is a file and not a folder")
 
     if not os.path.exists(commander_directory):
         logger.debug("the commander directory does not exist")
@@ -64,7 +65,7 @@ def init_commander(config: Dict[str, Any], logger: Logger, keepass_password=None
         rich.print(f"created a database in {keepass_db_path}")
 
 
-def create_new_keepass_db(keepass_db_path: str, logger: Logger, keepass_password=None):
+def create_new_keepass_db(keepass_db_path: str, logger: Logger, keepass_password: Optional[str] = None):
     """
     this function creates a new keepass database with a group.
     :param logger:
@@ -73,7 +74,8 @@ def create_new_keepass_db(keepass_db_path: str, logger: Logger, keepass_password
     """
     logger.info(f"creating a new database in {keepass_db_path}")
     with KeepassDB(keepass_db_path, keepass_password) as kp:
-        logger.debug(f"added a new group named {DEVICE_GROUP_NAME} to the database")
+        logger.debug(
+            f"added a new group named {DEVICE_GROUP_NAME} to the database")
         kp.add_group(kp.root_group, DEVICE_GROUP_NAME)
 
 
@@ -86,20 +88,24 @@ def is_initialized(directory: str, keepass_db_path: str, config_file_path: str, 
     :param config_file_path: the commander config file path
     :return: true if everything is initialized correctly and false otherwise
     """
-    logger.info(f"checking if commander is initialized")
+    logger.info("checking if commander is initialized")
     if not os.path.isdir(directory):
-        logger.debug(f"commander is not initialized in this folder {directory}")
+        logger.debug(
+            f"commander is not initialized in this folder {directory}")
         return False
     logger.debug(f"commander is initialized in this folder {directory}")
     if not os.path.isfile(keepass_db_path):
-        logger.debug(f"commander is not initilized with this db {keepass_db_path}")
+        logger.debug(
+            f"commander is not initialized with this db {keepass_db_path}")
         return False
-    logger.debug(f"commander is initilized with this db {keepass_db_path}")
+    logger.debug(f"commander is initialized with this db {keepass_db_path}")
     if not is_file_json(config_file_path):
-        logger.debug(f"commander is not initialized with this user file {config_file_path}")
+        logger.debug(
+            f"commander is not initialized with this user file {config_file_path}")
         return False
-    logger.debug(f"commander is initialized with this user file {config_file_path}")
-    logger.info(f"commander is initialized")
+    logger.debug(
+        f"commander is initialized with this user file {config_file_path}")
+    logger.info("commander is initialized")
     return True
 
 
