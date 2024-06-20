@@ -201,14 +201,14 @@ def does_device_exist(kp: pykeepass.PyKeePass, device_name: str) -> bool:
     :param device_name: The name of the device to check.
     :Returns: True if the device exists, False otherwise.
     """
-    device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
+    device_group = get_device_group(kp)
     devices = kp.find_entries(group=device_group, title=device_name)
     return bool(devices)
 
 
 def remove_device(kp: pykeepass.PyKeePass, device_name: str) -> None:
     """
-    Remove a device from the KeePass database by its name.
+    Remove all devices from the KeePass database that based on the name.
 
     :param kp: The connection to the KeePass database.
     :param device_name: The name of the device to remove.
@@ -217,8 +217,12 @@ def remove_device(kp: pykeepass.PyKeePass, device_name: str) -> None:
     if not does_device_exist(kp, device_name):
         raise LookupError(f"{device_name} doesn't exist in db")
 
-    device_group = kp.find_groups(name=DEVICE_GROUP_NAME)[0]
+    device_group = get_device_group(kp)
     device_entries = kp.find_entries(group=device_group, title=device_name)
+
+    if not device_entries:
+        raise LookupError(f"{device_name} doesn't exist in db")
+
     for device_entry in device_entries:
         kp.delete_entry(device_entry)
 
