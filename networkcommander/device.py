@@ -1,3 +1,7 @@
+"""
+This file contains the class Device. 
+The Device class is the class that the the device_executer receives.
+"""
 import dataclasses
 from enum import Enum
 from typing import Dict, Tuple, Optional, Any
@@ -69,7 +73,11 @@ class Device:
         }
 
 
-def device_from_string(device: str, password: str = "", optional_parameters: Optional[Dict[str, Any]] = None):
+def device_from_string(
+    device: str,
+    password: str = "",
+    optional_parameters: Optional[Dict[str, Any]] = None
+):
     """
     this function convert a string in the format:
         {name}({device_type}) -> {username}@{hostname}:{port}
@@ -161,7 +169,9 @@ def deconstruct_socket_id(socket_id: str) -> Tuple[str, int]:
     :return: the hostname or ip address and port number
     """
     if socket_id.count(':') != 1:
-        raise ValueError(f"{socket_id} is not a valid IPv4 socket id, it has more then 1 ':'.")
+        raise ValueError(
+            f"{socket_id} is not a valid IPv4 socket id, it has more then 1 ':'."
+        )
     hostname, port = socket_id.split(':')
     if not port or not port.isnumeric():
         raise ValueError(f"{socket_id} doesn't contain a valid port number")
