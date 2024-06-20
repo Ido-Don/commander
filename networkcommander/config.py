@@ -6,7 +6,8 @@ assert HOME_FOLDER
 COMMANDER_FOLDER_PATH = os.path.join(HOME_FOLDER, '.commander')
 USER_CONFIG_FILE_PATH = os.path.join(COMMANDER_FOLDER_PATH, ".commanderconfig")
 DEFAULT_KEEPASS_DB_PATH = os.path.join(COMMANDER_FOLDER_PATH, 'db.kdbx')
-DEFAULT_LOG_FILE_PATH = os.path.join(HOME_FOLDER, ".commander/commander_logs.log")
+DEFAULT_LOG_FILE_PATH = os.path.join(
+    HOME_FOLDER, ".commander/commander_logs.log")
 config = {
     "commander_directory": COMMANDER_FOLDER_PATH,
     'keepass_db_path': DEFAULT_KEEPASS_DB_PATH,
@@ -22,3 +23,4 @@ config = {
     "log_file_path": DEFAULT_LOG_FILE_PATH
 }
 DEVICE_GROUP_NAME = "device"
+__version__ = '0.4.7'
