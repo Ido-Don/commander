@@ -2,6 +2,7 @@
 this file contains all of the functions that interact with keepass objects
 """
 
+from itertools import filterfalse
 import os
 from logging import Logger
 from typing import Callable, List, Any, Optional, Tuple, Set, Iterable
@@ -335,24 +336,6 @@ def is_entry_title_in_titles(titles: Set[str]):
     return inner
 
 
-def is_entry_title_not_in_titles(titles: Set[str]):
-    """
-    this function return a function that checks 
-    if an entry's title is not in the titles set.
-
-    :param tags: a set of strings representing the titles to search
-    :Returns: function which checks if an entry's title is not in titles.
-    """
-    def inner(entry: pykeepass.Entry):
-        if not entry:
-            return False
-        if not titles:
-            return False
-        return entry.title not in titles
-
-    return inner
-
-
 def filter_entries_by_titles(
     entries: Iterable[pykeepass.Entry],
     titles: Set[str]
@@ -366,4 +349,4 @@ def filter_entries_by_title_not_in_titles(
 ) -> Tuple[pykeepass.Entry, ...]:
     """
     """
-    return tuple(filter(is_entry_title_not_in_titles(titles), entries))
+    return tuple(filterfalse(is_entry_title_in_titles(titles), entries))
