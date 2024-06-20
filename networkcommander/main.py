@@ -12,9 +12,8 @@ import rich
 import typer
 from rich.progress import Progress
 
-from networkcommander.__init__ import __version__
 from networkcommander.commander_logging import commander_logger, add_console_handler
-from networkcommander.config import config, USER_CONFIG_FILE_PATH
+from networkcommander.config import config, USER_CONFIG_FILE_PATH, __version__
 from networkcommander.deploy import deploy_commands
 from networkcommander.device import Device, convert_strings_to_devices, extract_device_names, remove_device_duplicates
 from networkcommander.device_executer import PermissionLevel
