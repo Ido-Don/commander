@@ -1,7 +1,7 @@
 import sys
 from functools import reduce
 from pathlib import Path
-from typing import List, Optional, Iterable, Union, Set, Annotated, Tuple
+from typing import List, Optional, Iterable, Union, Set, Annotated, Tuple, TypeVar
 
 import netmiko
 import rich
@@ -16,14 +16,15 @@ from networkcommander.deploy import deploy_commands
 from networkcommander.device import device_from_string, Device
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_commander, delete_project_files
-from networkcommander.io_utils import print_objects, read_file, read_from_stdin, convert_to_yaml, load_user_config, \
-    create_folder_if_non_existent, password_input
+from networkcommander.utils import print_objects, read_file, read_from_stdin, convert_to_yaml, \
+    load_user_config, create_folder_if_non_existent, password_input, subtract_tuples
 from networkcommander.keepass import KeepassDB, remove_device, \
-    add_device_entry, get_all_entries, tag_entry, untag_entry, is_entry_tagged, entries_to_devices, \
-    filter_entries_by_tags, \
-    filter_entries_by_titles, filter_entries_by_title_not_in_titles
+    add_device_entry, get_all_entries, tag_entry, untag_entry, is_entry_tagged, \
+    entries_to_devices, filter_entries_by_tags, filter_entries_by_titles
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
+
+T = TypeVar('T')
 
 device_command_group = typer.Typer(
     pretty_exceptions_show_locals=False,
@@ -54,7 +55,7 @@ def change_log_level(verbose: Annotated[
     Optional[bool],
     typer.Option("--verbose", "-v")
 ] = False
-                     ):
+):
     if not verbose:
         return
     add_console_handler(config["logging_file_level"])
@@ -75,7 +76,8 @@ def initialization_check(keepass_password: Optional[str] = typer.Option(None)):
             USER_CONFIG_FILE_PATH,
             commander_logger
     ):
-        raise EnvironmentError("program is not initialized, please run commander init!")
+        raise EnvironmentError(
+            "program is not initialized, please run commander init!")
     commander_logger.debug("finished the initialization check callback")
 
 
@@ -93,7 +95,8 @@ def add_tag(device_tag: str, device_names: List[str]):
         # if someone entered a wrong device name, it can't be tagged so an error is raised
         fabricated_device_names = device_names_to_be_tagged - all_device_names
         if fabricated_device_names:
-            raise LookupError(f"devices [{', '.join(fabricated_device_names)}] doesn't exist")
+            raise LookupError(
+                f"devices [{', '.join(fabricated_device_names)}] doesn't exist")
 
         # if someone entered a device that was already tagged it can't be tagged again
 
@@ -110,10 +113,12 @@ def add_tag(device_tag: str, device_names: List[str]):
             raise ValueError(
                 f"devices [{', '.join(device_names_already_tagged_that_need_to_be_tagged)}] are already tagged"
             )
-        entries_to_tag = filter(lambda entry: entry.title in device_names_to_be_tagged, all_entries)
+        entries_to_tag = filter(
+            lambda entry: entry.title in device_names_to_be_tagged, all_entries)
         for entry_to_tag in entries_to_tag:
             tag_entry(entry_to_tag, device_tag)
-        rich.print(f"added '{device_tag}' tag to {len(device_names_to_be_tagged)} devices")
+        rich.print(
+            f"added '{device_tag}' tag to {len(device_names_to_be_tagged)} devices")
 
 
 @tag_command_group.command(name="list")
@@ -123,7 +128,8 @@ def list_tags():
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp, commander_logger)
-    entries_tags: List[Union[List[str], None]] = [entry.tags for entry in all_entries]
+    entries_tags: List[Union[List[str], None]] = [
+        entry.tags for entry in all_entries]
     entries_tags_without_none: Iterable[List[str]] = filter(None, entries_tags)
     flatten_tag_list: Iterable[str] = reduce(
         lambda aggregate, tags: aggregate + tags,
@@ -146,8 +152,10 @@ def remove_tag(device_tag: str, device_names: List[str]):
         all_device_names = extract_device_names(all_devices)
         non_existent_devices = device_names_to_be_untagged - all_device_names
         if non_existent_devices:
-            raise LookupError(f"devices {', '.join(non_existent_devices)} doesn't exist")
-        entries_to_untag = filter(lambda entry: entry.title in device_names_to_be_untagged, all_entries)
+            raise LookupError(
+                f"devices {', '.join(non_existent_devices)} doesn't exist")
+        entries_to_untag = filter(
+            lambda entry: entry.title in device_names_to_be_untagged, all_entries)
         for entry_to_untag in entries_to_untag:
             untag_entry(entry_to_untag, device_tag)
         rich.print(f"removed {device_tag} from {len(device_names)} devices")
@@ -170,8 +178,8 @@ def ping(
         all_entries = get_all_entries(kp, commander_logger)
 
     if tags:
-        tags = set(tags)
-        all_tagged_entries = filter_entries_by_tags(all_entries, tags)
+        tag_set = set(tags)
+        all_tagged_entries = filter_entries_by_tags(all_entries, tag_set)
         devices = entries_to_devices(all_tagged_entries)
     else:
         devices = entries_to_devices(all_entries)
@@ -187,10 +195,11 @@ def ping(
     print_objects(devices, "devices")
 
     with Progress() as progress:
-        task = progress.add_task("connecting to devices...", total=len(devices))
+        task = progress.add_task(
+            "connecting to devices...", total=len(devices))
 
         # deploy no commands just to test connectivity
-        for result, device, exception in deploy_commands([], devices, PermissionLevel.USER):
+        for _, device, exception in deploy_commands([], devices, PermissionLevel.USER):
             if exception:
                 handel_exception(device, exception)
             else:
@@ -246,7 +255,8 @@ def deploy(
             devices = entries_to_devices(all_tagged_entries)
         else:
             extra_device_names = set(extra_device_names)
-            every_tagged_entry_and_extra_entry = filter_entries_by_tags_and_names(all_entries, extra_device_names, tags)
+            every_tagged_entry_and_extra_entry = filter_entries_by_tags_and_names(
+                all_entries, tags, extra_device_names)
             devices = entries_to_devices(every_tagged_entry_and_extra_entry)
 
     if not devices:
@@ -261,7 +271,8 @@ def deploy(
     )
 
     with Progress() as progress:
-        task = progress.add_task("connecting to devices...", total=len(devices))
+        task = progress.add_task(
+            "connecting to devices...", total=len(devices))
 
         for result, device, exception in deploy_commands(commands, devices, permission_level):
             handel_results(device, exception, output_folder, result)
@@ -279,7 +290,8 @@ def handel_exception(device: Device, exception: Exception) -> None:
     except netmiko.NetmikoTimeoutException:
         print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
     except Exception as exception:
-        print(f"device {str(device)} encountered an exception: {exception}", file=sys.stderr)
+        print(
+            f"device {str(device)} encountered an exception: {exception}", file=sys.stderr)
 
 
 def handel_results(device, exception, output_folder, result):
@@ -300,17 +312,41 @@ def write_to_folder(file_name, output_folder, result):
         rich.print(f"'saved output to {str(output_file_path)}'")
 
 
-def filter_entries_by_tags_and_names(entries: Tuple[pykeepass.Entry], extra_device_names: Set[str],
-                                     tags: Set[str]) -> Tuple[pykeepass.Entry, ...]:
+def filter_entries_by_tags_and_names(
+        entries: Tuple[pykeepass.Entry],
+        tags: Set[str],
+        extra_entry_names: Set[str]
+) -> Tuple[pykeepass.Entry, ...]:
+    """
+    this function filters the entries by the tags and the extra entries it is provided with.
+    if there are no tags then it would return all the entries.
+    if there are
+    :param entries:
+    :param tags:
+    :param extra_entry_names:
+    :return:
+    """
+    if not entries:
+        return entries
 
-    all_tagged_entries = filter_entries_by_tags(entries, tags)
-    every_tagged_entry_title: Set[str] = {entry.title for entry in all_tagged_entries}
+    # if there are no tags to filter then every entry is selected.
+    # in this case extra_device_names is irrelevant because even if there are some names in it, it doesn't matter.
+    # every entry is selected.
+    if not tags:
+        return entries
 
-    extra_entries = filter_entries_by_titles(entries, extra_device_names)
-    extra_not_tagged_entries = filter_entries_by_title_not_in_titles(extra_entries, every_tagged_entry_title)
+    tagged_entries = filter_entries_by_tags(entries, tags)
 
-    devices = extra_not_tagged_entries + all_tagged_entries
-    return devices
+    # if there are tags but no extra_device_names then it should return the tagged entries.
+    if not extra_entry_names:
+        return tagged_entries
+
+    not_tagged_entries = subtract_tuples(entries, tagged_entries)
+    extra_not_tagged_entries = filter_entries_by_titles(
+        not_tagged_entries, extra_entry_names)
+
+    extra_entries_with_tagged_entries = extra_not_tagged_entries + tagged_entries
+    return extra_entries_with_tagged_entries
 
 
 @device_command_group.command(name="list")
@@ -326,7 +362,8 @@ def list_devices(
     """
     list all the devices under your command.
     """
-    commander_logger.info(f"executing commander device list with these tags: {tags_list}")
+    commander_logger.info(
+        f"executing commander device list with these tags: {tags_list}")
     tags_set = set(tags_list)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp, commander_logger)
@@ -349,8 +386,10 @@ def extract_device_names(devices: Iterable[Device]) -> Set[str]:
 def add_devices(
         password: str = typer.Option(""),
         enable_password: str = typer.Option(""),
-        optional_parameters_file: Optional[typer.FileText] = typer.Option(None, show_default=False),
-        devices_file: typer.FileText = typer.Option(sys.stdin, show_default=False),
+        optional_parameters_file: Optional[typer.FileText] = typer.Option(
+            None, show_default=False),
+        devices_file: typer.FileText = typer.Option(
+            sys.stdin, show_default=False),
         ignore_pre_existing: bool = typer.Option(
             False,
             help="if set then devices that are already in keepass won't be taken "
@@ -391,7 +430,8 @@ def add_devices(
         joined_file_content = '\n'.join(file_content)
         optional_parameters.update(convert_to_yaml(joined_file_content))
 
-    new_devices = convert_strings_to_devices(device_strings, password, optional_parameters)
+    new_devices = convert_strings_to_devices(
+        device_strings, password, optional_parameters)
 
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp, commander_logger)
@@ -416,7 +456,8 @@ def add_devices(
                 lambda new_device: new_device.name not in all_device_names,
                 new_devices
             ))
-            new_non_existing_unique_devices = remove_device_duplicates(new_non_existing_devices)
+            new_non_existing_unique_devices = remove_device_duplicates(
+                new_non_existing_devices)
             devices_to_add = new_non_existing_unique_devices
 
         for device in devices_to_add:
@@ -438,7 +479,8 @@ def remove_device_duplicates(devices: Iterable[Device]) -> Tuple[Device, ...]:
 
 
 def convert_strings_to_devices(devices: Iterable[str], password, optional_parameters) -> List[Device]:
-    new_devices = [convert_string_to_device(device, password, optional_parameters) for device in devices]
+    new_devices = tuple(convert_string_to_device(
+        device, password, optional_parameters) for device in devices)
     return new_devices
 
 
@@ -460,13 +502,17 @@ def remove_devices(device_names: List[str]):
 
         non_existing_devices = device_names_to_be_removed - all_device_names
         if non_existing_devices:
-            raise LookupError(f"devices {', '.join(non_existing_devices)} don't exist")
+            raise LookupError(
+                f"devices {', '.join(non_existing_devices)} don't exist"
+            )
 
         device_entries = tuple(filter(
             lambda device: device.name in device_names_to_be_removed, all_devices
         ))
         print_objects(device_entries, "devices")
-        typer.confirm(f"are you sure you want to delete {len(device_entries)} devices?", abort=True)
+        typer.confirm(
+            f"are you sure you want to delete {len(device_entries)} devices?", abort=True
+        )
 
         for device_name in device_names:
             remove_device(kp, device_name)
@@ -481,13 +527,19 @@ def init():
     """
     commander_logger.info("executing commander init")
     rich.print("Welcome to commander!")
-    if is_initialized(config['commander_directory'], config['keepass_db_path'], USER_CONFIG_FILE_PATH,
-                      commander_logger):
+    if is_initialized(
+            config['commander_directory'],
+            config['keepass_db_path'],
+            USER_CONFIG_FILE_PATH,
+            commander_logger
+    ):
         rich.print("commander is already initialized")
-        reinitialize = typer.confirm("do you want to delete everything (including config and database) and start over?")
+        reinitialize = typer.confirm(
+            "do you want to delete everything (including config and database) and start over?")
 
         if reinitialize:
-            delete_project_files(config['commander_directory'], commander_logger)
+            delete_project_files(
+                config['commander_directory'], commander_logger)
 
     if not is_initialized(
             config['commander_directory'],
