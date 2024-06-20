@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 import sys
 from typing import Iterable, TextIO, List, Tuple
 
@@ -124,3 +125,11 @@ def is_file_json(file_path: str):
             return True
     except json.decoder.JSONDecodeError:
         return False
+
+
+def write_to_folder(file_name_without_extension: str, output_folder: Path, result: str) -> None:
+    output_file_path = output_folder.joinpath(
+        f"{file_name_without_extension}.txt")
+    with open(output_file_path, "w", encoding="utf-8") as output_file:
+        output_file.write(result)
+        rich.print(f"'saved output to {str(output_file_path)}'")

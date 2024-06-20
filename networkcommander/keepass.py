@@ -365,3 +365,7 @@ def filter_entries_by_title_not_in_titles(
     :return: a tuple containing all the entries that their titles are not present in titles
     """
     return tuple(filterfalse(is_entry_title_in_titles(titles), entries))
+
+
+def filter_entries_by_tag(entries: Iterable[pykeepass.Entry], tag: str):
+    return filter(is_entry_tagged(tag), entries)

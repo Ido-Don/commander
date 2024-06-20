@@ -4,7 +4,7 @@ The Device class is the class that the the device_executer receives.
 """
 import dataclasses
 from enum import Enum
-from typing import Dict, Tuple, Optional, Any
+from typing import Dict, Iterable, Set, Tuple, Optional, Any
 
 from networkcommander.config import config
 
@@ -489,3 +489,39 @@ def deconstruct_connection_string(connection: str) -> Tuple[Optional[str], str, 
 
     # return the connection variables
     return username, hostname, port
+
+
+def convert_string_to_device(device: str, password, optional_parameters=None):
+    new_device = device_from_string(device, password, optional_parameters)
+    return new_device
+
+
+def convert_strings_to_devices(devices: Iterable[str], password, optional_parameters) -> Tuple[Device, ...]:
+    new_devices = tuple(convert_string_to_device(
+        device,
+        password,
+        optional_parameters
+    )
+        for device in devices
+    )
+    return new_devices
+
+
+def extract_device_names(devices: Iterable[Device]) -> Set[str]:
+    """
+    :param devices: an iterable containing devices
+    :return: set of every device name in devices
+    """
+    return {device.name for device in devices}
+
+
+def remove_device_duplicates(devices: Iterable[Device]) -> Tuple[Device, ...]:
+    unique_devices = []
+    unique_device_names = set()
+    for new_device in devices:
+        is_unique_device = new_device not in unique_devices
+        is_unique_device_name = new_device.name not in unique_device_names
+        if is_unique_device and is_unique_device_name:
+            unique_devices.append(new_device)
+            unique_device_names.update(new_device.name)
+    return tuple(unique_devices)

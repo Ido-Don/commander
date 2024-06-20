@@ -17,14 +17,13 @@ from networkcommander.__init__ import __version__
 from networkcommander.commander_logging import commander_logger, add_console_handler
 from networkcommander.config import config, USER_CONFIG_FILE_PATH
 from networkcommander.deploy import deploy_commands
-from networkcommander.device import device_from_string, Device
+from networkcommander.device import Device, convert_strings_to_devices, extract_device_names, remove_device_duplicates
 from networkcommander.device_executer import PermissionLevel
 from networkcommander.init import is_initialized, init_commander, delete_project_files
 from networkcommander.utils import print_objects, read_file, read_from_stdin, convert_to_yaml, \
-    load_user_config, create_folder_if_non_existent, password_input, subtract_tuples
-from networkcommander.keepass import KeepassDB, remove_device, \
-    add_device_entry, get_all_entries, tag_entry, untag_entry, is_entry_tagged, \
-    entries_to_devices, filter_entries_by_tags, filter_entries_by_titles
+    load_user_config, create_folder_if_non_existent, password_input, subtract_tuples, write_to_folder
+from networkcommander.keepass import KeepassDB, filter_entries_by_tag, remove_device, \
+    add_device_entry, get_all_entries, tag_entry, untag_entry, entries_to_devices, filter_entries_by_tags, filter_entries_by_titles
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -109,7 +108,7 @@ def add_tag(device_tag: str, device_names: List[str]):
 
         # if someone entered a device that was already tagged it can't be tagged again
 
-        every_tagged_entries = filter(is_entry_tagged(device_tag), all_entries)
+        every_tagged_entries = filter_entries_by_tag(all_entries, device_tag)
         every_tagged_devices = entries_to_devices(every_tagged_entries)
         every_tagged_device_name = extract_device_names(every_tagged_devices)
 
@@ -120,14 +119,19 @@ def add_tag(device_tag: str, device_names: List[str]):
         )
         if tagged_device_names_that_need_to_be_tagged:
             raise ValueError(
-                f"devices [{', '.join(tagged_device_names_that_need_to_be_tagged)}] are already tagged"
+                "devices "
+                f"[{', '.join(tagged_device_names_that_need_to_be_tagged)}] "
+                "are already tagged"
             )
-        entries_to_tag = filter(
-            lambda entry: entry.title in device_names_to_be_tagged, all_entries)
+        entries_to_tag = filter_entries_by_titles(
+            all_entries, device_names_to_be_tagged
+        )
+
         for entry_to_tag in entries_to_tag:
             tag_entry(entry_to_tag, device_tag)
         rich.print(
-            f"added '{device_tag}' tag to {len(device_names_to_be_tagged)} devices")
+            f"added '{device_tag}' tag to {len(device_names_to_be_tagged)} devices"
+        )
 
 
 @tag_command_group.command(name="list")
@@ -137,8 +141,9 @@ def list_tags():
     """
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp, commander_logger)
-    entries_tags: List[Union[List[str], None]] = [
-        entry.tags for entry in all_entries]
+    entries_tags: Tuple[Union[List[str], None], ...] = tuple(
+        entry.tags for entry in all_entries
+    )
     entries_tags_without_none: Iterable[List[str]] = filter(None, entries_tags)
     flatten_tag_list: Iterable[str] = reduce(
         lambda aggregate, tags: aggregate + tags,
@@ -272,7 +277,9 @@ def deploy(
     print_objects(commands, "commands")
 
     typer.confirm(
-        f"do you want to deploy {len(commands)} commands on {len(devices)} devices in {permission_level} mode?",
+        f"do you want to deploy {len(commands)} "
+        f"commands on {len(devices)} devices "
+        f"in {permission_level} mode?",
         abort=True
     )
 
@@ -295,7 +302,7 @@ def handel_exception(device: Device, exception: Exception) -> None:
         print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
     except netmiko.NetmikoTimeoutException:
         print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
-    except Exception:
+    except Exception:  # pylint: disable=broad-exception-caught
         print(
             f"device {str(device)} encountered an exception: {str(exception)}",
             file=sys.stderr
@@ -311,13 +318,6 @@ def handel_results(device, exception, output_folder, result):
             write_to_folder(device.name, output_folder, result)
         else:
             rich.print(result)
-
-
-def write_to_folder(file_name, output_folder, result):
-    output_file_path = output_folder.joinpath(f"{file_name}.txt")
-    with open(output_file_path, "w", encoding="utf-8") as output_file:
-        output_file.write(result)
-        rich.print(f"'saved output to {str(output_file_path)}'")
 
 
 def filter_entries_by_tags_and_names(
@@ -383,14 +383,6 @@ def list_devices(
     all_tagged_devices = entries_to_devices(all_tagged_entries)
 
     print_objects(all_tagged_devices, "devices")
-
-
-def extract_device_names(devices: Iterable[Device]) -> Set[str]:
-    """
-    :param devices: an iterable containing devices
-    :return: set of every device name in devices
-    """
-    return {device.name for device in devices}
 
 
 @device_command_group.command(name="add")
@@ -470,36 +462,14 @@ def add_devices(
                 new_devices
             ))
             new_non_existing_unique_devices = remove_device_duplicates(
-                new_non_existing_devices)
+                new_non_existing_devices
+            )
             devices_to_add = new_non_existing_unique_devices
 
         for device in devices_to_add:
             add_device_entry(kp, device)
             typer.echo(f"added device {str(device)} to database")
     typer.echo(f"added {len(devices_to_add)} devices to database")
-
-
-def remove_device_duplicates(devices: Iterable[Device]) -> Tuple[Device, ...]:
-    unique_devices = []
-    unique_device_names = set()
-    for new_device in devices:
-        is_unique_device = new_device not in unique_devices
-        is_unique_device_name = new_device.name not in unique_device_names
-        if is_unique_device and is_unique_device_name:
-            unique_devices.append(new_device)
-            unique_device_names.update(new_device.name)
-    return tuple(unique_devices)
-
-
-def convert_strings_to_devices(devices: Iterable[str], password, optional_parameters) -> Tuple[Device, ...]:
-    new_devices = tuple(convert_string_to_device(
-        device, password, optional_parameters) for device in devices)
-    return new_devices
-
-
-def convert_string_to_device(device: str, password, optional_parameters=None):
-    new_device = device_from_string(device, password, optional_parameters)
-    return new_device
 
 
 @device_command_group.command(name="remove")
