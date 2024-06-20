@@ -4,7 +4,7 @@ this file contains all of the functions that interact with keepass objects
 
 import os
 from logging import Logger
-from typing import List, Any, Tuple, Set, Iterable
+from typing import Callable, List, Any, Optional, Tuple, Set, Iterable
 
 import pykeepass
 import pykeepass.entry
@@ -175,11 +175,14 @@ def is_entry_tagged(tag: str):
     return inner
 
 
-def is_entry_tagged_by_tags(tags: Set[str]):
+def is_entry_tagged_by_tags(tags: Set[str]) -> Callable[[pykeepass.Entry], bool]:
     """
-    this function returns a function which checks if an entry is tagged by all the tags in argument tags.
-    note: the entry must have all the tags in order to return true
+    this function return a function that checks 
+    if an entry is tagged by all the tags in argument tags.
+    the entry must have all the tags in order to return true.
+
     :param tags: a set of strings representing the tags to search
+    :Returns: function which checks if an entry is tagged by the tags.
     """
     def inner(entry: pykeepass.Entry) -> bool:
         if not entry:
@@ -188,7 +191,7 @@ def is_entry_tagged_by_tags(tags: Set[str]):
             return True
         if not entry.tags:
             return False
-        return all((tag in entry.tags for tag in tags))
+        return all(tag in entry.tags for tag in tags)
 
     return inner
 
@@ -227,7 +230,11 @@ def remove_device(kp: pykeepass.PyKeePass, device_name: str) -> None:
         kp.delete_entry(device_entry)
 
 
-def add_device_entry(kp: pykeepass.PyKeePass, device: Device, tags: List[str] = None) -> None:
+def add_device_entry(
+        kp: pykeepass.PyKeePass,
+        device: Device,
+        tags: Optional[List[str]] = None
+) -> None:
     """
     Add a device entry to the KeePass database.
 
@@ -289,14 +296,35 @@ def untag_entry(entry: pykeepass.Entry, tag: str) -> None:
 
 
 def entries_to_devices(entries: Iterable[pykeepass.Entry]) -> Tuple[Device, ...]:
-    return tuple((entry_to_device(entry) for entry in entries))
+    """
+    this function converts the entry Iterable given to a tuple of devices.
+
+    :param entries: the entries
+    :return: a device tuple from the entries given
+    """
+    return tuple(entry_to_device(entry) for entry in entries)
 
 
 def filter_entries_by_tags(all_entries: Iterable[pykeepass.Entry], tags: Set) -> Tuple[pykeepass.Entry, ...]:
+    """
+    filter entries by the given tags.
+    every entry must have every tag in order to return it.
+
+    :param all_entries: the entries to filter on
+    :param tags: the tags
+    :return: a tuple with the relevant entries
+    """
     return tuple(filter(is_entry_tagged_by_tags(tags), all_entries))
 
 
-def is_entry_title_in_set(titles: Set[str]):
+def is_entry_title_in_titles(titles: Set[str]):
+    """
+    this function return a function that checks 
+    if an entry's title is in the titles set.
+
+    :param tags: a set of strings representing the titles to search
+    :Returns: function which checks if an entry's title is in titles.
+    """
     def inner(entry: pykeepass.Entry):
         if not entry:
             return False
@@ -307,7 +335,14 @@ def is_entry_title_in_set(titles: Set[str]):
     return inner
 
 
-def is_entry_title_not_in_set(titles: Set[str]):
+def is_entry_title_not_in_titles(titles: Set[str]):
+    """
+    this function return a function that checks 
+    if an entry's title is not in the titles set.
+
+    :param tags: a set of strings representing the titles to search
+    :Returns: function which checks if an entry's title is not in titles.
+    """
     def inner(entry: pykeepass.Entry):
         if not entry:
             return False
@@ -321,12 +356,14 @@ def is_entry_title_not_in_set(titles: Set[str]):
 def filter_entries_by_titles(
     entries: Iterable[pykeepass.Entry],
     titles: Set[str]
-) -> Tuple[pykeepass.Entry]:
-    return tuple(filter(is_entry_title_in_set(titles), entries))
+) -> Tuple[pykeepass.Entry, ...]:
+    return tuple(filter(is_entry_title_in_titles(titles), entries))
 
 
 def filter_entries_by_title_not_in_titles(
         entries: Iterable[pykeepass.Entry],
         titles: Set[str]
-) -> Tuple[pykeepass.Entry]:
-    return tuple(filter(is_entry_title_not_in_set(titles), entries))
+) -> Tuple[pykeepass.Entry, ...]:
+    """
+    """
+    return tuple(filter(is_entry_title_not_in_titles(titles), entries))
