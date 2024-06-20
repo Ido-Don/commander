@@ -1,13 +1,14 @@
 import json
 import os
 import sys
-from typing import Iterable, TextIO, List
+from typing import Iterable, TextIO, List, Tuple
 
 import typer
 import yaml
 
 from networkcommander.commander_logging import commander_logger
 from networkcommander.config import USER_CONFIG_FILE_PATH, config
+from networkcommander.main import T
 
 
 def print_objects(objects: Iterable, object_name: str) -> None:
@@ -63,10 +64,12 @@ def load_user_config():
     commander_logger.info("loading user config from %s", USER_CONFIG_FILE_PATH)
     if os.path.isfile(USER_CONFIG_FILE_PATH):
         with open(USER_CONFIG_FILE_PATH, encoding="UTF-8") as json_file:
-            commander_logger.info("successfully opened file located at %s", USER_CONFIG_FILE_PATH)
+            commander_logger.info(
+                "successfully opened file located at %s", USER_CONFIG_FILE_PATH)
             file_content = json_file.read()
             if not file_content:
-                commander_logger.info("file %s had no data", USER_CONFIG_FILE_PATH)
+                commander_logger.info(
+                    "file %s had no data", USER_CONFIG_FILE_PATH)
                 return
             user_custom_config = json.loads(file_content)
             config.update(user_custom_config)
@@ -76,7 +79,8 @@ def load_user_config():
 def create_folder_if_non_existent(output_folder):
     if output_folder:
         if output_folder.exists() and not output_folder.is_dir():
-            raise NotADirectoryError(f"{str(output_folder)} exist and is not a directory")
+            raise NotADirectoryError(
+                f"{str(output_folder)} exist and is not a directory")
         if not output_folder.exists():
             os.mkdir(output_folder)
 
@@ -89,3 +93,34 @@ def password_input(prompt):
         show_default=False
     )
     return password
+
+
+def subtract_tuples(tuple1: Tuple[T, ...], tuple2: Tuple[T, ...]) -> Tuple[T, ...]:
+    """
+    this function takes 2 tuples and subtracts tuple2 from tuple1. equivalent to tuple1 - tuple2.
+    for example: (1,2,3,4) - (1,3,4,5) = (2)
+    :param tuple1: the minuend
+    :param tuple2: the Subtrahend
+    :return: the Difference
+    """
+    if not tuple2:
+        return tuple1
+    if not tuple1:
+        return tuple1
+    new_tuple = tuple(item for item in tuple1 if item not in tuple2)
+    return new_tuple
+
+
+def is_file_json(file_path: str):
+    """
+    :param file_path: The path to the json file.
+    :return: True if the file contains a valid json False otherwise
+    """
+    if not os.path.isfile(file_path):
+        return False
+    try:
+        with open(file_path, encoding="UTF-8") as config_file:
+            _ = json.load(config_file)
+            return True
+    except json.decoder.JSONDecodeError:
+        return False

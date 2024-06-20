@@ -1,3 +1,6 @@
+"""
+this file contains function that help in the initialization process.
+"""
 import json
 import os
 import shutil
@@ -8,6 +11,7 @@ import rich
 
 from networkcommander.keepass import KeepassDB
 from networkcommander.config import DEVICE_GROUP_NAME
+from networkcommander.utils import is_file_json
 
 
 def delete_project_files(directory: str, logger: Logger):
@@ -65,7 +69,11 @@ def init_commander(config: Dict[str, Any], logger: Logger, keepass_password=None
         rich.print(f"created a database in {keepass_db_path}")
 
 
-def create_new_keepass_db(keepass_db_path: str, logger: Logger, keepass_password: Optional[str] = None):
+def create_new_keepass_db(
+        keepass_db_path: str,
+        logger: Logger,
+        keepass_password: Optional[str] = None
+):
     """
     this function creates a new keepass database with a group.
     :param logger:
@@ -107,18 +115,3 @@ def is_initialized(directory: str, keepass_db_path: str, config_file_path: str, 
         f"commander is initialized with this user file {config_file_path}")
     logger.info("commander is initialized")
     return True
-
-
-def is_file_json(file_path: str):
-    """
-    :param file_path: The path to the json file.
-    :return: True if the file contains a valid json False otherwise
-    """
-    if not os.path.isfile(file_path):
-        return False
-    try:
-        with open(file_path, encoding="UTF-8") as config_file:
-            _ = json.load(config_file)
-            return True
-    except json.decoder.JSONDecodeError:
-        return False
