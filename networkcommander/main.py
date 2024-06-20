@@ -295,9 +295,11 @@ def handel_exception(device: Device, exception: Exception) -> None:
         print(f"wasn't able to authenticate to {str(device)}", file=sys.stderr)
     except netmiko.NetmikoTimeoutException:
         print(f"wasn't able to connect to {str(device)}", file=sys.stderr)
-    except Exception as exception:
+    except Exception:
         print(
-            f"device {str(device)} encountered an exception: {exception}", file=sys.stderr)
+            f"device {str(device)} encountered an exception: {str(exception)}",
+            file=sys.stderr
+        )
 
 
 def handel_results(device, exception, output_folder, result):
@@ -370,7 +372,9 @@ def list_devices(
     list all the devices under your command.
     """
     commander_logger.info(
-        f"executing commander device list with these tags: {tags_list}")
+        "executing commander device list with these tags: %s",
+        tags_list
+    )
     tags_set = set(tags_list)
     with KeepassDB(config['keepass_db_path'], config['keepass_password']) as kp:
         all_entries = get_all_entries(kp, commander_logger)
@@ -446,12 +450,14 @@ def add_devices(
         all_device_names = extract_device_names(all_devices)
         devices_to_add = new_devices
         if not ignore_pre_existing:
-            pre_existing_device_names = tuple(
+            pre_existing_devices = tuple(
                 filter(
                     lambda new_device: new_device.name in all_device_names,
                     new_devices
                 )
             )
+            pre_existing_device_names = extract_device_names(
+                pre_existing_devices)
             if any(pre_existing_device_names):
                 raise LookupError(
                     "devices ["
@@ -485,7 +491,7 @@ def remove_device_duplicates(devices: Iterable[Device]) -> Tuple[Device, ...]:
     return tuple(unique_devices)
 
 
-def convert_strings_to_devices(devices: Iterable[str], password, optional_parameters) -> List[Device]:
+def convert_strings_to_devices(devices: Iterable[str], password, optional_parameters) -> Tuple[Device, ...]:
     new_devices = tuple(convert_string_to_device(
         device, password, optional_parameters) for device in devices)
     return new_devices
