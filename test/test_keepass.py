@@ -2,20 +2,23 @@ import os.path
 import shutil
 from typing import Set, List, Optional, Union
 
+from test.mocks import get_test_device, get_tag_list, POSSIBLE_TAGS
+from test.logging_for_testing import fake_logger
+
 from faker import Faker
 import pykeepass
 import pytest
 from pykeepass.pykeepass import Entry
 from networkcommander.init import create_new_keepass_db
 from networkcommander.keepass import KeepassDB, add_device_entry, \
-    does_device_exist, get_all_entries, is_entry_tagged_by_tags, is_entry_tagged, tag_entry, untag_entry
-from test.mocks import get_test_device, get_tag_list, POSSIBLE_TAGS
-from test.logging_for_testing import fake_logger
+    does_device_exist, get_all_entries, is_entry_tagged_by_tags, \
+    is_entry_tagged, tag_entry, untag_entry
 
 KEEPASS_PASSWORD = "123"
 POSSIBLE_NAMES = list(POSSIBLE_TAGS)
 POPULATED_DB_PATH = "populated_db.kdbx"
-READ_ONLY_KP = pykeepass.PyKeePass(POPULATED_DB_PATH, password=KEEPASS_PASSWORD)
+READ_ONLY_KP = pykeepass.PyKeePass(
+    POPULATED_DB_PATH, password=KEEPASS_PASSWORD)
 faker = Faker()
 
 
@@ -55,8 +58,10 @@ class TestKeepass:
         assert entry.password == device.password
         assert entry.username == device.username
         assert entry.get_custom_property("host") == device.host
-        assert entry.get_custom_property("port") == str(device.optional_parameters['port'])
-        assert entry.get_custom_property("device_type") == str(device.device_type)
+        assert entry.get_custom_property("port") == str(
+            device.optional_parameters['port'])
+        assert entry.get_custom_property(
+            "device_type") == str(device.device_type)
 
     def test_keepass_db_insertion_with_tag(self, populated_db):
         # set up test environment
@@ -77,8 +82,10 @@ class TestKeepass:
         assert entry.password == device.password
         assert entry.username == device.username
         assert entry.get_custom_property("host") == device.host
-        assert entry.get_custom_property("port") == str(device.optional_parameters['port'])
-        assert entry.get_custom_property("device_type") == str(device.device_type)
+        assert entry.get_custom_property("port") == str(
+            device.optional_parameters['port'])
+        assert entry.get_custom_property(
+            "device_type") == str(device.device_type)
         assert entry.tags == tags
 
     def test_does_device_exist_false(self, populated_db):
@@ -118,21 +125,21 @@ class TestKeepass:
         ("entry", "tag", "expected_tags"),
         [
             (
-                    Entry("",
-                          "",
-                          "",
-                          tags=["hello"],
-                          kp=READ_ONLY_KP),
-                    "world",
-                    ["hello", "world"]
+                Entry("",
+                      "",
+                      "",
+                      tags=["hello"],
+                      kp=READ_ONLY_KP),
+                "world",
+                ["hello", "world"]
             ),
             (
-                    Entry("",
-                          "",
-                          "",
-                          kp=READ_ONLY_KP),
-                    "world",
-                    ["world"]
+                Entry("",
+                      "",
+                      "",
+                      kp=READ_ONLY_KP),
+                "world",
+                ["world"]
             ),
         ]
     )
@@ -144,31 +151,31 @@ class TestKeepass:
         ("entry", "tag", "expected_tags"),
         [
             (
-                    Entry("",
-                          "",
-                          "",
-                          tags=["hello"],
-                          kp=READ_ONLY_KP),
-                    "hello",
-                    ""
+                Entry("",
+                      "",
+                      "",
+                      tags=["hello"],
+                      kp=READ_ONLY_KP),
+                "hello",
+                ""
             ),
             (
-                    Entry("",
-                          "",
-                          "",
-                          tags=["hello", "world"],
-                          kp=READ_ONLY_KP),
-                    "world",
-                    ["hello"]
+                Entry("",
+                      "",
+                      "",
+                      tags=["hello", "world"],
+                      kp=READ_ONLY_KP),
+                "world",
+                ["hello"]
             ),
             (
-                    Entry("",
-                          "",
-                          "",
-                          tags=["hello", "world", "item2"],
-                          kp=READ_ONLY_KP),
-                    "world",
-                    ["hello", "item2"]
+                Entry("",
+                      "",
+                      "",
+                      tags=["hello", "world", "item2"],
+                      kp=READ_ONLY_KP),
+                "world",
+                ["hello", "item2"]
             ),
         ]
     )
@@ -181,113 +188,113 @@ class TestKeepass:
     ("entry", "tags", "should_match"),
     [
         (
-                Entry("",
-                      "",
-                      "",
-                      kp=READ_ONLY_KP),
-                {"hello"},
-                False
+            Entry("",
+                  "",
+                  "",
+                  kp=READ_ONLY_KP),
+            {"hello"},
+            False
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      tags=["hello", "item2"],
-                      kp=READ_ONLY_KP),
-                {"hello", "world", "item3"},
-                False
+            Entry("",
+                  "",
+                  "",
+                  tags=["hello", "item2"],
+                  kp=READ_ONLY_KP),
+            {"hello", "world", "item3"},
+            False
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      tags=["hello", "item3"],
-                      kp=READ_ONLY_KP),
-                {"hello", "world", "item3"},
-                False
+            Entry("",
+                  "",
+                  "",
+                  tags=["hello", "item3"],
+                  kp=READ_ONLY_KP),
+            {"hello", "world", "item3"},
+            False
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      tags=["item1", 'world', "item3"],
-                      kp=READ_ONLY_KP),
-                {"hello", "item4"},
-                False
+            Entry("",
+                  "",
+                  "",
+                  tags=["item1", 'world', "item3"],
+                  kp=READ_ONLY_KP),
+            {"hello", "item4"},
+            False
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      kp=READ_ONLY_KP),
-                {"hello", "world", "python"},
-                False
+            Entry("",
+                  "",
+                  "",
+                  kp=READ_ONLY_KP),
+            {"hello", "world", "python"},
+            False
         ),
         (
-                None,
-                {"hello", "world"},
-                False
+            None,
+            {"hello", "world"},
+            False
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      kp=READ_ONLY_KP),
-                {},
-                True
+            Entry("",
+                  "",
+                  "",
+                  kp=READ_ONLY_KP),
+            {},
+            True
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      kp=READ_ONLY_KP),
-                None,
-                True
+            Entry("",
+                  "",
+                  "",
+                  kp=READ_ONLY_KP),
+            None,
+            True
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      tags=["hello", 'world'],
-                      kp=READ_ONLY_KP),
-                {"hello"},
-                True
+            Entry("",
+                  "",
+                  "",
+                  tags=["hello", 'world'],
+                  kp=READ_ONLY_KP),
+            {"hello"},
+            True
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      tags=["hello", 'world', "item3"],
-                      kp=READ_ONLY_KP),
-                {"hello", "item3"},
-                True
+            Entry("",
+                  "",
+                  "",
+                  tags=["hello", 'world', "item3"],
+                  kp=READ_ONLY_KP),
+            {"hello", "item3"},
+            True
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      tags=["hello", 'world', "item3"],
-                      kp=READ_ONLY_KP),
-                {"hello", 'world', "item3"},
-                True
+            Entry("",
+                  "",
+                  "",
+                  tags=["hello", 'world', "item3"],
+                  kp=READ_ONLY_KP),
+            {"hello", 'world', "item3"},
+            True
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      tags=["hello", 'world', "item3"],
-                      kp=READ_ONLY_KP),
-                {"hello", 'world'},
-                True
+            Entry("",
+                  "",
+                  "",
+                  tags=["hello", 'world', "item3"],
+                  kp=READ_ONLY_KP),
+            {"hello", 'world'},
+            True
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      tags=["hello", 'world', "item3"],
-                      kp=READ_ONLY_KP),
-                {"item3", 'world'},
-                True
+            Entry("",
+                  "",
+                  "",
+                  tags=["hello", 'world', "item3"],
+                  kp=READ_ONLY_KP),
+            {"item3", 'world'},
+            True
         )
     ]
 )
@@ -299,78 +306,78 @@ def test_is_entry_tagged_by_tag_set(entry: Entry, tags: Set[str], should_match: 
     ("entry", "tag", "should_match"),
     [
         (
-                Entry("",
-                      "",
-                      "",
-                      kp=READ_ONLY_KP),
-                "hello",
-                False
+            Entry("",
+                  "",
+                  "",
+                  kp=READ_ONLY_KP),
+            "hello",
+            False
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      tags=["item1", "item2", 'item3'],
-                      kp=READ_ONLY_KP),
-                "item4",
-                False
+            Entry("",
+                  "",
+                  "",
+                  tags=["item1", "item2", 'item3'],
+                  kp=READ_ONLY_KP),
+            "item4",
+            False
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      tags=["item1", "item2"],
-                      kp=READ_ONLY_KP),
-                "item3",
-                False
+            Entry("",
+                  "",
+                  "",
+                  tags=["item1", "item2"],
+                  kp=READ_ONLY_KP),
+            "item3",
+            False
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      tags=["item1"],
-                      kp=READ_ONLY_KP),
-                "item3",
-                False
+            Entry("",
+                  "",
+                  "",
+                  tags=["item1"],
+                  kp=READ_ONLY_KP),
+            "item3",
+            False
         ),
         (
-                None,
-                "hello",
-                False
+            None,
+            "hello",
+            False
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      kp=READ_ONLY_KP),
-                "",
-                True
+            Entry("",
+                  "",
+                  "",
+                  kp=READ_ONLY_KP),
+            "",
+            True
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      kp=READ_ONLY_KP),
-                None,
-                True
+            Entry("",
+                  "",
+                  "",
+                  kp=READ_ONLY_KP),
+            None,
+            True
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      tags=["hello", 'world'],
-                      kp=READ_ONLY_KP),
-                "hello",
-                True
+            Entry("",
+                  "",
+                  "",
+                  tags=["hello", 'world'],
+                  kp=READ_ONLY_KP),
+            "hello",
+            True
         ),
         (
-                Entry("",
-                      "",
-                      "",
-                      tags=["hello", 'world', "item3"],
-                      kp=READ_ONLY_KP),
-                "hello",
-                True
+            Entry("",
+                  "",
+                  "",
+                  tags=["hello", 'world', "item3"],
+                  kp=READ_ONLY_KP),
+            "hello",
+            True
         )
     ]
 )
