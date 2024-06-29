@@ -50,13 +50,18 @@ def get_tag_list():
     return tags
 
 
+def create_new_empty_database(path):
+    create_new_keepass_db(READ_ONLY_KP_PATH, fake_logger, KEEPASS_PASSWORD)
+    return pykeepass.PyKeePass(
+        path, KEEPASS_PASSWORD
+    )
+
+
 KEEPASS_PASSWORD = "123"
 POSSIBLE_NAMES = list(POSSIBLE_TAGS)
 POPULATED_DB_PATH = "populated_db.kdbx"
 READ_ONLY_KP_PATH = "read_only_keepass.kdbx"
-READ_ONLY_KP = pykeepass.PyKeePass(
-    READ_ONLY_KP_PATH, KEEPASS_PASSWORD
-)  # type: ignore
+READ_ONLY_KP = create_new_empty_database(READ_ONLY_KP_PATH)
 
 
 def populate_db(keepass_db_path: str):
