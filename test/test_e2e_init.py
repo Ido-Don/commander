@@ -1,5 +1,4 @@
 import os.path
-import os.path
 import shutil
 
 import pytest
@@ -26,7 +25,6 @@ def test_frash_install(runner):
 def test_reinitialize(runner):
     if not os.path.isdir(config["commander_directory"]):
         os.mkdir(config["commander_directory"])
-        open(config["keepass_db_path"])
     result = runner.invoke(app, ["init"], input="y\n123")
     assert result.exit_code == 0
     assert "commander is already initialized" in result.stdout

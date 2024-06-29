@@ -25,7 +25,8 @@ def get_test_device():
     host = ip
     port = faker.port_number()
     device_type = faker.random_element([str(device) for device in DeviceType])
-    device = Device(name, username, password, host, device_type, {'port': str(port)})
+    device = Device(name, username, password, host,
+                    device_type, {'port': str(port)})
     return device
 
 

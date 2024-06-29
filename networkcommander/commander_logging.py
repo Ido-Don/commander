@@ -16,7 +16,8 @@ def configure_file_handler(path: str):
     commander_logger.setLevel(config["logging_file_level"])
     if os.path.isfile(path):
         file_handler = logging.FileHandler(path)
-        file_formatter = logging.Formatter(f'{logging_id} : %(asctime)s : %(levelname)s : %(name)s : %(message)s')
+        file_formatter = logging.Formatter(
+            f'{logging_id} : %(asctime)s : %(levelname)s : %(name)s : %(message)s')
         file_handler.setFormatter(file_formatter)
 
         commander_logger.addHandler(file_handler)
@@ -39,7 +40,8 @@ class LogLevel(str, Enum):
 
 def add_console_handler(log_level: LogLevel):
     stream_handler = logging.StreamHandler(sys.stdout)
-    stream_formatter = logging.Formatter("%(asctime)s : %(levelname)s : %(name)s : %(message)s")
+    stream_formatter = logging.Formatter(
+        "%(asctime)s : %(levelname)s : %(name)s : %(message)s")
     stream_handler.setFormatter(stream_formatter)
     stream_handler.setLevel(log_level)
     commander_logger.addHandler(stream_handler)
